@@ -61,8 +61,23 @@ compare_control_data_format <- function(current_df, legacy_df){
       is_more_columns <- length(current_df_col_names) > length(legacy_df_col_names)
       is_matching_column_names <- !(matching_columns_length == length(legacy_df_col_names))
       
-      if(is_matching_column_names){
+      matching_column_indexes <- which(legacy_df_col_names %in% matching_columns)
+      
+      
+      # use agrepl for matching strings 
+      
+      
+      if(is_not_matching_column_names){
+        nonmatching_column_indexes <- legacy_df_col_names[-matching_column_indexes]
+        closest_match_indexs <- c()
+        for(i in nonmatching_column_indexes){
+          levenshtein_distances <- adist(i , nonmatching_column_indexes)
+          closest_matching_index <- which(min(levenshtein_distances))
+          closest_matching_indices <- c(closest_matching_indices, closest_matching_index)
+        }
         #not all columns match
+        
+        
       }
       if(is_fewer_columns){
         #fewer columns than needed
