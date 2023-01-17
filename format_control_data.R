@@ -63,19 +63,22 @@ compare_control_data_format <- function(current_df, legacy_df){
       
       matching_column_indexes <- which(legacy_df_col_names %in% matching_columns)
       
+    
       
-      # use agrepl for matching strings 
-      
-      
+      #Not all columns match. Find closest match
       if(is_not_matching_column_names){
         nonmatching_column_indexes <- legacy_df_col_names[-matching_column_indexes]
         closest_match_indexs <- c()
         for(i in nonmatching_column_indexes){
-          levenshtein_distances <- adist(i , nonmatching_column_indexes)
+          levenshtein_distances <- adist(i , legacy_df_col_names)
           closest_matching_index <- which(min(levenshtein_distances))
           closest_matching_indices <- c(closest_matching_indices, closest_matching_index)
         }
-        #not all columns match
+       
+        # Indices should be unique, check multiple columns wern't matched to the
+        # same column  
+        duplicate_column_indices <- duplicated(closest_matching_indices)
+        is_matching_indices_unique <- !any(duplicated(closest_matching_indices))
         
         
       }
