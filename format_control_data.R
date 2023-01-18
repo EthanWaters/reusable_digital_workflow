@@ -111,8 +111,8 @@ compare_control_data_format <- function(current_df, legacy_df){
                        is_matching_indices_unique, 
                        is_column_name_na) 
       
-      contribute_to_metadata_report(metadata)
-      return(updated_df)
+      output <- list(updated_df, metadata)
+      return(output)
     },
     error=function(cond) {
       metadata <- list(length(legacy_df_col_names),
