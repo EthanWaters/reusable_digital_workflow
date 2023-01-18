@@ -160,17 +160,23 @@ heading_error_handling(Updated_data_format){
       metadata <- Updated_data_format[2]
       
       #Determine initial error flags based on returned metadata
-      
-      
+      initial_error_flag <- rep(1, nrow(new_data_df))
       if(is_not_matching_column_names & !is_not_matching_column_names_updated){
-        
+        #All columns were matched
+        contribute_to_metadata_report()
+      } else if (!is_not_matching_column_names & !is_not_matching_column_names_updated){
+        #Matches weren't found
+        contribute_to_metadata_report()
+        initial_error_flag <- rep(0, nrow(new_data_df))
       }
       if(size_legacy_df > size_curent_df){
+        #not enough information
+        contribute_to_metadata_report()
         initial_error_flag <- rep(0, nrow(new_data_df))
-      } 
-      
-      initial_error_flag <- integer(length)
-      
+      } else if(size_legacy_df > size_curent_df){
+        #Extra column
+        contribute_to_metadata_report()
+      }
       
       metadata <- data.frame(size_legacy_df,
                              size_curent_df,
@@ -201,6 +207,7 @@ create_metadata_report <- function(){
   writeLines(as.character(sessionInfo()), filename, sep = "\n")
   
   class(print(sessionInfo()))
+  
   # my.knit = knitr::knit(paste("Processed Control Data Report ", time, ".Rnw", sep=""))
 
   
