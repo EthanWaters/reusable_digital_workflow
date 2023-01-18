@@ -46,8 +46,10 @@ compare_control_data_format <- function(current_df, legacy_df){
   # legacy format. Changes and errors encounted are recorded for record keeping.
   # current_df: Dataframe
   # legacy_df: Dataframe
-  # output: List
-  
+  # output: Dataframe
+  # Error handling is setup so that the error will be captured and recorded. 
+  # However, this will interrupt the workflow as this indicates the information  
+  # provided is insufficient is required to be correct to proceed. 
   out <- tryCatch(
     {
       # acquire column names 
@@ -108,16 +110,27 @@ compare_control_data_format <- function(current_df, legacy_df){
                        current_df_col_names[updated_nonmatching_column_indices],
                        is_matching_indices_unique, 
                        is_column_name_na) 
-      compare_format_output <- list(updated_df, metadata)
       
-      
-      return(compare_format_output)
+      contribute_to_metadata_report(metadata)
+      return(updated_df)
     },
     error=function(cond) {
-      contribute_to_metadata_report(cond)
+      metadata <- list(length(legacy_df_col_names),
+                       length(current_df_col_names),
+                       is_column_names_matching, 
+                       current_df_col_names[updated_nonmatching_column_indices],
+                       is_matching_indices_unique, 
+                       is_column_name_na, cond) 
+      contribute_to_metadata_report(metadata)
     },
     warning=function(cond) {
-      contribute_to_metadata_report(cond)
+      metadata <- list(length(legacy_df_col_names),
+                       length(current_df_col_names),
+                       is_column_names_matching, 
+                       current_df_col_names[updated_nonmatching_column_indices],
+                       is_matching_indices_unique, 
+                       is_column_name_na, cond) 
+      contribute_to_metadata_report(metadata)
     },
   ) 
   
