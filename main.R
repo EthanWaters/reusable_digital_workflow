@@ -26,29 +26,18 @@ new_RHISS_data_df <- import_data(new_RHISS)
 # The column formatting of New data will be compared with a legacy data set that 
 # is deemed to be in the ideal target format. Any necessary changes will be made 
 # and recorded. This will be executed irrespective of data set provided.
-new_cull_data_df <- compare_control_data_format(new_cull_data_df, cull_legacy)
-new_manta_tow_data_df <- compare_control_data_format(new_manta_tow_data_df, manta_tow_legacy)
-new_RHISS_data_df <- compare_control_data_format(new_RHISS_data_df, RHISS_legacy)
-
-# The function above outputs a list containing the dataframe in the correct 
-# formatting and error flags. The code below seperates these into appropriate
-# variables
-new_cull_data_df <- compare_cull_data_format_output[1]
-new_manta_tow_data_df <- compare_manta_tow_data_format_output[1]
-new_RHISS_data_df <- compare_RHISS_data_format_output[1]
-
-metadata_cull <- compare_cull_data_format_output[2]
-metadata_manta_tow <- compare_manta_tow_data_format_output[2]
-metadata_RHISS <- compare_RHISS_data_format_output[2]
+Updated_cull_data_format <- compare_control_data_format(new_cull_data_df, cull_legacy)
+Updated_manta_tow_data_format <- compare_control_data_format(new_manta_tow_data_df, manta_tow_legacy)
+Updated_RHISS_data_format <- compare_control_data_format(new_RHISS_data_df, RHISS_legacy)
 
 
 # Handle Errors & Generate Metadata Report --------------------------------
 
 # Dictate whether or not the data is in a usable format based on the error flags
 # received.
-new_cull_data_target_format_df <- heading_error_handling(metadata_cull, new_cull_data_df)
-new_manta_tow_data_target_format_df <- heading_error_handling(metadata_manta_tow, new_manta_tow_data_df)
-new_RHISS_data_target_format_df <- heading_error_handling(metadata_RHISS, new_RHISS_data_df)
+new_cull_data_target_format_df <- heading_error_handling(Updated_cull_data_format)
+new_manta_tow_data_target_format_df <- heading_error_handling(Updated_manta_tow_data_format)
+new_RHISS_data_target_format_df <- heading_error_handling(Updated_RHISS_data_format)
 
 
 # Finds discrepancies in previously processed data and the new data input. 

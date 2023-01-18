@@ -46,7 +46,7 @@ compare_control_data_format <- function(current_df, legacy_df){
   # legacy format. Changes and errors encounted are recorded for record keeping.
   # current_df: Dataframe
   # legacy_df: Dataframe
-  # output: Dataframe
+  # output: List containing two dataframes
   # Error handling is setup so that the error will be captured and recorded. 
   # However, this will interrupt the workflow as this indicates the information  
   # provided is insufficient is required to be correct to proceed. 
@@ -55,6 +55,11 @@ compare_control_data_format <- function(current_df, legacy_df){
       # acquire column names 
       current_df_col_names <- colnames(current_df)
       legacy_df_col_names <- colnames(legacy_df)
+      
+      
+      size_legacy_df <- length(legacy_df_col_names)
+      size_curent_df <- length(current_df_col_names)
+                            
       
       # Set the maximum distance for fuzzy string matching
       maxium_levenshtein_distance <- 4
@@ -67,7 +72,7 @@ compare_control_data_format <- function(current_df, legacy_df){
       
       # conditional statements to be passed to error handling so a more detailed 
       # description of any failure mode can be provided. 
-      is_matching_column_names <- !(matching_columns_length == length(legacy_df_col_names))
+      is_not_matching_column_names <- !(matching_columns_length == length(current_df_col_names))
       
       # Find closest matching columns in legacy data with levenshtein distances
       # then update the vector column names
@@ -102,12 +107,16 @@ compare_control_data_format <- function(current_df, legacy_df){
       updated_matching_column_indices <- match(updated_matching_column_names, legacy_df_col_names)
       updated_nonmatching_column_indices <- outersect(current_df_col_names, legacy_df_col_names)
       updated_df <- current_df[,c(updated_matching_column_indices, updated_nonmatching_column_indices)]
-
+      
+      updated_nonmatching_column_names <- current_df_col_names[updated_nonmatching_column_indices]
+      is_not_matching_column_names_updated <- !(length(updated_matching_column_names) == length(current_df_col_names))
+      
       # create list to store data and error flags. 
-      metadata <- list(length(legacy_df_col_names),
-                       length(current_df_col_names),
-                       is_column_names_matching, 
-                       current_df_col_names[updated_nonmatching_column_indices],
+      metadata <- data.frame(size_legacy_df,
+                       size_curent_df,
+                       is_not_matching_column_names, 
+                       is_not_matching_column_names_updated,
+                       updated_nonmatching_column_names,
                        is_matching_indices_unique, 
                        is_column_name_na) 
       
@@ -115,21 +124,23 @@ compare_control_data_format <- function(current_df, legacy_df){
       return(output)
     },
     error=function(cond) {
-      metadata <- list(length(legacy_df_col_names),
-                       length(current_df_col_names),
-                       is_column_names_matching, 
-                       current_df_col_names[updated_nonmatching_column_indices],
-                       is_matching_indices_unique, 
-                       is_column_name_na, cond) 
+      metadata <- data.frame(size_legacy_df,
+                             size_curent_df,
+                             is_not_matching_column_names, 
+                             is_not_matching_column_names_updated,
+                             updated_nonmatching_column_names,
+                             is_matching_indices_unique, 
+                             is_column_name_na, cond) 
       contribute_to_metadata_report(metadata)
     },
     warning=function(cond) {
-      metadata <- list(length(legacy_df_col_names),
-                       length(current_df_col_names),
-                       is_column_names_matching, 
-                       current_df_col_names[updated_nonmatching_column_indices],
-                       is_matching_indices_unique, 
-                       is_column_name_na, cond) 
+      metadata <- data.frame(size_legacy_df,
+                             size_curent_df,
+                             is_not_matching_column_names, 
+                             is_not_matching_column_names_updated,
+                             updated_nonmatching_column_names,
+                             is_matching_indices_unique, 
+                             is_column_name_na, cond) 
       contribute_to_metadata_report(metadata)
     },
   ) 
@@ -137,3 +148,65 @@ compare_control_data_format <- function(current_df, legacy_df){
 }
 
 
+
+heading_error_handling(Updated_data_format){
+ 
+  out <- tryCatch(
+    {
+      # The function above outputs a list containing the dataframe in the correct 
+      # formatting and error flags. The code below seperates these into appropriate
+      # variables
+      new_data_df <- Updated_data_format[1]
+      metadata <- Updated_data_format[2]
+      
+      #Determine initial error flags based on returned metadata
+      
+      
+      if(is_not_matching_column_names & !is_not_matching_column_names_updated){
+        
+      }
+      if(size_legacy_df > size_curent_df){
+        initial_error_flag <- rep(0, nrow(new_data_df))
+      } 
+      
+      initial_error_flag <- integer(length)
+      
+      
+      metadata <- data.frame(size_legacy_df,
+                             size_curent_df,
+                             is_not_matching_column_names, 
+                             updated_nonmatching_column_indices,
+                             is_matching_indices_unique, 
+                             is_column_name_na, cond) 
+      
+      
+      
+      
+      return(output)
+    },
+    error=function(cond) {
+     
+    },
+    warning=function(cond) {
+      
+    },
+  ) 
+  
+}
+
+create_metadata_report <- function(){
+  
+  date <- as.character(Sys.Date())
+  filename <- paste0("Processed Control Data Report ", date, ".tex", sep="")
+  writeLines(as.character(sessionInfo()), filename, sep = "\n")
+  
+  class(print(sessionInfo()))
+  # my.knit = knitr::knit(paste("Processed Control Data Report ", time, ".Rnw", sep=""))
+
+  
+  utils::sessionInfo()
+}
+
+contribute_to_metadata_report <- function(){
+  
+}
