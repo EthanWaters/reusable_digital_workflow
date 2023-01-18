@@ -37,9 +37,9 @@ new_cull_data_df <- compare_cull_data_format_output[1]
 new_manta_tow_data_df <- compare_manta_tow_data_format_output[1]
 new_RHISS_data_df <- compare_RHISS_data_format_output[1]
 
-errors_cull <- compare_cull_data_format_output[2]
-errors_manta_tow <- compare_manta_tow_data_format_output[2]
-errors_RHISS <- compare_RHISS_data_format_output[2]
+metadata_cull <- compare_cull_data_format_output[2]
+metadata_manta_tow <- compare_manta_tow_data_format_output[2]
+metadata_RHISS <- compare_RHISS_data_format_output[2]
 
 
 # Handle Errors & Generate Metadata Report --------------------------------
