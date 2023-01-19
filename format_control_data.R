@@ -188,8 +188,8 @@ heading_error_handling(Updated_data_format, control_data_type, section){
                            legacy formatting.")
         initial_error_flag <- rep(0, nrow(new_data_df))
       }
-      
-      contribute_to_metadata_report <- function(control_data_type, section, new_data_df)
+      metadata['comments'] <- comments
+      contribute_to_metadata_report <- function(control_data_type, section, metadata)
       
       
       
