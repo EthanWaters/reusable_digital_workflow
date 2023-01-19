@@ -116,80 +116,80 @@ compare_control_data_format <- function(current_df, legacy_df){
       
       updated_nonmatching_column_names <- current_df_col_names[updated_nonmatching_column_indices]
       is_not_matching_column_names_updated <- !(length(updated_matching_column_names) == length(current_df_col_names))
-      
+      updated_nonmatching_column_names_str <- paste0(is_not_matching_column_names_updated, collapse=', ')
       # create list to store data and error flags. 
       metadata <- data.frame(size_legacy_df,
                        size_curent_df,
                        is_not_matching_column_names, 
                        is_not_matching_column_names_updated,
-                       updated_nonmatching_column_names,
+                       updated_nonmatching_column_names_str,
                        is_matching_indices_unique, 
                        is_column_name_na) 
       
-      output <- list(updated_df, metadata)
-      return(output)
     },
     error=function(cond) {
       metadata <- data.frame(size_legacy_df,
                              size_curent_df,
                              is_not_matching_column_names, 
                              is_not_matching_column_names_updated,
-                             updated_nonmatching_column_names,
+                             updated_nonmatching_column_names_str,
                              is_matching_indices_unique, 
                              is_column_name_na, cond) 
-      contribute_to_metadata_report(metadata)
     },
     warning=function(cond) {
       metadata <- data.frame(size_legacy_df,
                              size_curent_df,
                              is_not_matching_column_names, 
                              is_not_matching_column_names_updated,
-                             updated_nonmatching_column_names,
-                             is_matching_indices_unique, 
+                             updated_nonmatching_column_names_str,
+                             is_matching_indices_unique,
                              is_column_name_na, cond) 
-      contribute_to_metadata_report(metadata)
-    },
+    }, 
+    finally={
+      
+      output <- list(updated_df, metadata)
+      return(output)
+      
+    }
   ) 
   
 }
 
 
 
-heading_error_handling(Updated_data_format){
+heading_error_handling(Updated_data_format, control_data_type, section){
  
   out <- tryCatch(
     {
       # The function above outputs a list containing the dataframe in the correct 
       # formatting and error flags. The code below seperates these into appropriate
       # variables
+      
+      # create comments variable to store points of interest.
+      comments <- ""
       new_data_df <- Updated_data_format[1]
       metadata <- Updated_data_format[2]
+      if(is.na(new_data_df)){
+        comments <- paste0(comments,"new_data_df has returned NA, indicating 
+                           a fatal error in compare_control_data_format.")
+      }
+      
       
       #Determine initial error flags based on returned metadata
       initial_error_flag <- rep(1, nrow(new_data_df))
-      if(is_not_matching_column_names & !is_not_matching_column_names_updated){
-        #All columns were matched
-        contribute_to_metadata_report()
-      } else if (!is_not_matching_column_names & !is_not_matching_column_names_updated){
-        #Matches weren't found
-        contribute_to_metadata_report()
+      if (!is_not_matching_column_names & !is_not_matching_column_names_updated){
+        comments <- paste0(comments,"One or more columns in legacy format were 
+                           not matched and exceeded the allowable levenshtein 
+                           distance to fuzzy match an avaliable column.")
         initial_error_flag <- rep(0, nrow(new_data_df))
       }
       if(size_legacy_df > size_curent_df){
-        #not enough information
-        contribute_to_metadata_report()
+        comments <- paste0(comments,"Insufficient number of columns to match
+                           legacy formatting.")
         initial_error_flag <- rep(0, nrow(new_data_df))
-      } else if(size_legacy_df > size_curent_df){
-        #Extra column
-        contribute_to_metadata_report()
       }
       
-      metadata <- data.frame(size_legacy_df,
-                             size_curent_df,
-                             is_not_matching_column_names, 
-                             updated_nonmatching_column_indices,
-                             is_matching_indices_unique, 
-                             is_column_name_na, cond) 
+      contribute_to_metadata_report <- function(control_data_type, section, new_data_df)
       
       
       
@@ -206,28 +206,33 @@ heading_error_handling(Updated_data_format){
   
 }
 
-create_metadata_report <- function(){
+
+create_metadata_report <- function(count){
+    #Generate the XML template for the control data process report.
   
-  #create file name systematically
-  date <- as.character(Sys.Date())
-  timestamp <- as.character(Sys.time())
-  filename <- paste0("Processed Control Data Report ", date, ".xml", sep="")
-  
-  #generate template
-  template <- xml_new_root("session") 
-  control_data <- xml_find_all(template, "//session")
-  xml_add_child(control_data, "timestamp", timestamp)  
-  xml_add_child(control_data, "info", sessionInfo()[-c(13,12,11,9,8)])  
-  xml_add_child(control_data, "control_data")
-  control_data <- xml_find_all(template, "//control_data")
-  xml_add_child(control_data, "manta_tow")  
-  xml_add_child(control_data, "cull") 
-  xml_add_child(control_data, "RHISS")
-  write_xml(template, file = filename, options =c("format", "no_declaration"))
-  
-  utils::sessionInfo()
+    #create file name systematically
+    date <- as.character(Sys.Date())
+    timestamp <- as.character(Sys.time())
+    filename <- paste0("Processed Control Data Report ", date, " [", count, "].xml", sep="")
+    
+    #generate template
+    template <- xml_new_root("session") 
+    control_data <- xml_find_all(template, "//session")
+    xml_add_child(control_data, "timestamp", timestamp)  
+    xml_add_child(control_data, "info", sessionInfo()[-c(13,12,11,9,8)])  
+    xml_add_child(control_data, "control_data")
+    control_data <- xml_find_all(template, "//control_data")
+    xml_add_child(control_data, "manta_tow")  
+    xml_add_child(control_data, "cull") 
+    xml_add_child(control_data, "RHISS")
+    write_xml(template, file = filename, options =c("format", "no_declaration"))
 }
 
-contribute_to_metadata_report <- function(){
+
+contribute_to_metadata_report <- function(control_data_type, section, dataframe){
+  # Finds desired control data node and adds a section from the information 
+  # obtained in the previously executed function. 
   
+  control_data <- xml_find_all(template, control_data_type)
+  xml_add_child(control_data, control_data_type, dataframe) 
 }

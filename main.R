@@ -3,11 +3,15 @@
 main <- function(new_cull, previous_cull, cull_legacy, new_manta_tow, previous_manta_tow, manta_tow_legacy, new_RHISS, previous_RHISS, RHISS_legacy, geospatial_sites, nearest_site_algorithm){
 
 
-# Import Data -------------------------------------------------------------
-
-# The following nine lines of code returns a dataframe after recieving the path 
+# Initialize -------------------------------------------------------------
+  
+  # utilised to indicate the relevant node in XML report based on section of 
+  # code executed.
+  section <- "initialize"
+  
+# The following code returns a dataframe after recieving the path 
 # to a CSV, XLSX or TXT file. This can be adapted to use an explorer to choose 
-# the file.
+# the file. 
 cull_legacy_df <- import_data(cull_legacy)
 previous_cull_df <- import_data(previous_cull)
 new_cull_data_df <- import_data(new_cull)
@@ -20,8 +24,22 @@ RHISS_legacy_df <- import_data(RHISS_legacy)
 previous_RHISS_df <- import_data(previous_RHISS)
 new_RHISS_data_df <- import_data(new_RHISS)
   
+# Create new report. If the file cannot be created due to file name issues a new
+# file name will be created.
+file_count <- 1
+report_attempt <- try(create_metadata_report(file_count))
+while ((class(report_attempt)[[1]]=='try-error')&(trywait<=(tries*2))){
+  print(paste('retrying in ', trywait, 'second(s)')) 
+  Sys.sleep(trywait) 
+  trywait <- trywait+1 
+  report_attempt <- try(create_metadata_report(file_count))
+}
+
+
 
 # Format Dataframe Columns ------------------------------------------------
+
+section <- 'structure'
 
 # The column formatting of New data will be compared with a legacy data set that 
 # is deemed to be in the ideal target format. Any necessary changes will be made 
@@ -35,9 +53,9 @@ Updated_RHISS_data_format <- compare_control_data_format(new_RHISS_data_df, RHIS
 
 # Dictate whether or not the data is in a usable format based on the error flags
 # received.
-new_cull_data_target_format_df <- heading_error_handling(Updated_cull_data_format)
-new_manta_tow_data_target_format_df <- heading_error_handling(Updated_manta_tow_data_format)
-new_RHISS_data_target_format_df <- heading_error_handling(Updated_RHISS_data_format)
+new_cull_data_target_format_df <- heading_error_handling(Updated_cull_data_format, 'cull', section )
+new_manta_tow_data_target_format_df <- heading_error_handling(Updated_manta_tow_data_format, 'manta_tow', section)
+new_RHISS_data_target_format_df <- heading_error_handling(Updated_RHISS_data_format, 'RHISS', section)
 
 
 # Finds discrepancies in previously processed data and the new data input. 
