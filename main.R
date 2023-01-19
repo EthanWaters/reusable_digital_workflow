@@ -97,6 +97,7 @@ nearest_sites_manta_tow <- assign_nearest_sites(geospatial_sites, nearest_site_a
 nearest_sites_RHISS <- assign_nearest_sites(geospatial_sites, nearest_site_algorithm)
 
 
+
 }
 
 main()

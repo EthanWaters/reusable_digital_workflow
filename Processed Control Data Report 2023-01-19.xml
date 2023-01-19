@@ -1,0 +1,19 @@
+<session>
+  <timestamp>2023-01-19 12:31:03</timestamp>
+  <info/>
+  <info>list(xml2 = list(Package = "xml2", Title = "Parse XML", Version = "1.3.3", `Authors@R` = "\n    c(person(given = \"Hadley\",\n             family = \"Wickham\",\n             role = c(\"aut\", \"cre\"),\n             email = \"hadley@rstudio.com\"),\n      person(given = \"Jim\",\n             family = \"Hester\",\n             role = \"aut\"),\n      person(given = \"Jeroen\",\n             family = \"Ooms\",\n             role = \"aut\"),\n      person(given = \"RStudio\",\n             role = \"cph\"),\n      person(given = \"R Foundation\",\n             role = \"ctb\",\n             comment = \"Copy of R-project homepage cached as example\"))", 
+    Description = "Work with XML files using a simple, consistent\n    interface. Built on top of the 'libxml2' C library.", License = "MIT + file LICENSE", URL = "https://xml2.r-lib.org/, https://github.com/r-lib/xml2", BugReports = "https://github.com/r-lib/xml2/issues", Depends = "R (&gt;= 3.1.0)", Imports = "methods", Suggests = "covr, curl, httr, knitr, magrittr, mockery, rmarkdown,\ntestthat (&gt;= 2.1.0)", VignetteBuilder = "knitr", Encoding = "UTF-8", RoxygenNote = "7.1.1", SystemRequirements = "libxml2: libxml2-dev (deb), libxml2-devel (rpm)", 
+    Collate = "'S4.R' 'as_list.R' 'xml_parse.R' 'as_xml_document.R'\n'classes.R' 'init.R' 'paths.R' 'utils.R' 'xml_attr.R'\n'xml_children.R' 'xml_find.R' 'xml_modify.R' 'xml_name.R'\n'xml_namespaces.R' 'xml_path.R' 'xml_schema.R'\n'xml_serialize.R' 'xml_structure.R' 'xml_text.R' 'xml_type.R'\n'xml_url.R' 'xml_write.R' 'zzz.R'", NeedsCompilation = "yes", Packaged = "2021-11-29 17:55:43 UTC; jhester", Author = "Hadley Wickham [aut, cre],\n  Jim Hester [aut],\n  Jeroen Ooms [aut],\n  RStudio [cph],\n  R Foundation [ctb] (Copy of R-project homepage cached as example)", 
+    Maintainer = "Hadley Wickham &lt;hadley@rstudio.com&gt;", Repository = "CRAN", `Date/Publication` = "2021-11-30 14:40:02 UTC", Built = "R 4.2.2; x86_64-w64-mingw32; 2023-01-17 02:02:27 UTC; windows", ExperimentalWindowsRuntime = "ucrt", Archs = "x64"))</info>
+  <info>c("stats", "graphics", "grDevices", "utils", "datasets", "methods", "base")</info>
+  <info>c("Mersenne-Twister", "Inversion", "Rejection")</info>
+  <info>Windows 10 x64 (build 22000)</info>
+  <info>LC_COLLATE=English_Australia.utf8;LC_CTYPE=English_Australia.utf8;LC_MONETARY=English_Australia.utf8;LC_NUMERIC=C;LC_TIME=English_Australia.utf8</info>
+  <info>x86_64-w64-mingw32/x64 (64-bit)</info>
+  <info>list(platform = "x86_64-w64-mingw32", arch = "x86_64", os = "mingw32", crt = "ucrt", system = "x86_64, mingw32", status = "", major = "4", minor = "2.1", year = "2022", month = "06", day = "23", `svn rev` = "82513", language = "R", version.string = "R version 4.2.1 (2022-06-23 ucrt)", nickname = "Funny-Looking Kid")</info>
+  <control_data>
+    <manta_tow/>
+    <cull/>
+    <RHISS/>
+  </control_data>
+</session>

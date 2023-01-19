@@ -2,10 +2,16 @@
 
 install.packages("readxl")
 install.packages("sets")
+install.packages("XML")
+install.packages("methods")
+install.packages("xml2")
 
-library("tools")
-library("readxl")
-library("sets")
+library(tools)
+library(readxl)
+library(sets)
+library(XML)
+library(methods)
+library(xml2)
 
 import_data <- function(data){
     out <- tryCatch(
@@ -202,14 +208,22 @@ heading_error_handling(Updated_data_format){
 
 create_metadata_report <- function(){
   
+  #create file name systematically
   date <- as.character(Sys.Date())
-  filename <- paste0("Processed Control Data Report ", date, ".tex", sep="")
-  writeLines(as.character(sessionInfo()), filename, sep = "\n")
+  timestamp <- as.character(Sys.time())
+  filename <- paste0("Processed Control Data Report ", date, ".xml", sep="")
   
-  class(print(sessionInfo()))
-  
-  # my.knit = knitr::knit(paste("Processed Control Data Report ", time, ".Rnw", sep=""))
-
+  #generate template
+  template <- xml_new_root("session") 
+  control_data <- xml_find_all(template, "//session")
+  xml_add_child(control_data, "timestamp", timestamp)  
+  xml_add_child(control_data, "info", sessionInfo()[-c(13,12,11,9,8)])  
+  xml_add_child(control_data, "control_data")
+  control_data <- xml_find_all(template, "//control_data")
+  xml_add_child(control_data, "manta_tow")  
+  xml_add_child(control_data, "cull") 
+  xml_add_child(control_data, "RHISS")
+  write_xml(template, file = filename, options =c("format", "no_declaration"))
   
   utils::sessionInfo()
 }
