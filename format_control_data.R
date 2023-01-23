@@ -1,48 +1,51 @@
 # Format the new control data into the stardard legacy format 
 
 install.packages("readxl")
+install.packages("xlsx")
 install.packages("sets")
 install.packages("XML")
 install.packages("methods")
 install.packages("xml2")
+install.packages("rio")
+install.packages('installr')
 
-library(tools)
-library(readxl)
-library(sets)
-library(XML)
-library(methods)
-library(xml2)
+library("tools")
+library("installr")
+library("xlsx")
+library("readxl")
+library("sets")
+library("XML")
+library("methods")
+library("xml2")
+library("rio")
 
-import_data <- function(data){
+import_data <- function(data, control_data_type, sheet=1){
     out <- tryCatch(
       {
         #Opens file and stores information into dataframe. Different file types
         #require different functions to read data
         file_extension <- file_ext(data)
+        file_name <- tools::file_path_sans_ext(basename(data))
         if (file_extension == 'xlsx'){
-          data_df <- read_excel(data)
+          data_df <- read_xlsx(data, sheet = sheet)
         } else if (file_extension == 'csv'){
-          data_df <- read.csv(data)
+          data_df <- read.csv(data, header = TRUE)
         } else {
           data_df <- read.table(file=data, header=TRUE)
         }
+        
+        warnings <- names(warnings())
+        # contribute_to_metadata_report(control_data_type, "Import", warnings)
         return(data_df)
       },
+      
       error=function(cond) {
         message(paste("Cannot read from:", data))
         message("Original error message:")
         message(cond)
-        return(NULL)
-      },
-      warning=function(cond) {
-        message(paste("File caused a warning:", data))
-        message("Original warning message:")
-        message(cond)
-       
-      },
+      }
     ) 
-  
-    return(out)
+  return(out)
 }
 
 
@@ -116,7 +119,9 @@ compare_control_data_format <- function(current_df, legacy_df){
       
       updated_nonmatching_column_names <- current_df_col_names[updated_nonmatching_column_indices]
       is_not_matching_column_names_updated <- !(length(updated_matching_column_names) == length(current_df_col_names))
-      updated_nonmatching_column_names_str <- paste0(is_not_matching_column_names_updated, collapse=', ')
+      updated_nonmatching_column_names_str <- paste0(updated_nonmatching_column_names, collapse=', ')
+      
+      # remove extra columns
       # create list to store data and error flags. 
       metadata <- data.frame(size_legacy_df,
                        size_curent_df,
@@ -157,7 +162,7 @@ compare_control_data_format <- function(current_df, legacy_df){
 
 
 
-heading_error_handling(Updated_data_format, control_data_type, section){
+heading_error_handling <- function(Updated_data_format, control_data_type, section){
  
   out <- tryCatch(
     {
@@ -232,7 +237,26 @@ create_metadata_report <- function(count){
 contribute_to_metadata_report <- function(control_data_type, section, dataframe){
   # Finds desired control data node and adds a section from the information 
   # obtained in the previously executed function. 
+  file_count <- 1
+  xml_files <- list.files(path= getwd(), pattern = as.character(Sys.Date()))
+  xml_filename <- xml_files[file_count]
+  xml_file <- try(read_xml(file = xml_filename))
+  while ((class(xml_file)[[1]]=='try-error')&(trywait<=(10))){
+    file_count <- file_count + 1
+    print(paste('retrying in ', trywait, 'second(s)')) 
+    Sys.sleep(trywait) 
+    trywait <- trywait + 1 
+    xml_file <- try(read_xml(file = xml_filename))
+  }
+  node <- xml_find_all(xml_file, paste0("//", control_data_type, sep=""))
   
-  control_data <- xml_find_all(template, control_data_type)
-  xml_add_child(control_data, control_data_type, dataframe) 
+  # Only add to node if it exists. Node Should always exist.
+  if(length(node) > 0){
+    xml_add_child(node, section, dataframe)
+  }
+ 
+  
+  write_xml(xml_file, file = xml_filename, options =c("format", "no_declaration"))
 }
+
+

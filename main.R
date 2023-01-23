@@ -4,36 +4,36 @@ main <- function(new_cull, previous_cull, cull_legacy, new_manta_tow, previous_m
 
 
 # Initialize -------------------------------------------------------------
-  
-  # utilised to indicate the relevant node in XML report based on section of 
-  # code executed.
-  section <- "initialize"
-  
-# The following code returns a dataframe after recieving the path 
-# to a CSV, XLSX or TXT file. This can be adapted to use an explorer to choose 
-# the file. 
-cull_legacy_df <- import_data(cull_legacy)
-previous_cull_df <- import_data(previous_cull)
-new_cull_data_df <- import_data(new_cull)
 
-manta_tow_legacy_df <- import_data(manta_tow_legacy)
-previous_manta_tow_df <- import_data(previous_manta_tow)
-new_manta_tow_data_df <- import_data(new_manta_tow)
-
-RHISS_legacy_df <- import_data(RHISS_legacy)
-previous_RHISS_df <- import_data(previous_RHISS)
-new_RHISS_data_df <- import_data(new_RHISS)
+  
+# utilised to indicate the relevant node in XML report based on section of 
+# code executed.
+section <- "Import"
   
 # Create new report. If the file cannot be created due to file name issues a new
 # file name will be created.
 file_count <- 1
 report_attempt <- try(create_metadata_report(file_count))
-while ((class(report_attempt)[[1]]=='try-error')&(trywait<=(tries*2))){
+while ((class(report_attempt)[[1]]=='try-error')&(trywait<=(10))){
   print(paste('retrying in ', trywait, 'second(s)')) 
   Sys.sleep(trywait) 
   trywait <- trywait+1 
   report_attempt <- try(create_metadata_report(file_count))
 }
+if (trywait>(10)) print(paste('Cannot create metadata report'))
+
+# The following code returns a dataframe after recieving the path 
+# to a CSV, XLSX or TXT file. This can be adapted to use an explorer to choose 
+# the file. 
+cull_legacy_df <- import_data(cull_legacy, sheet)
+new_cull_data_df <- import_data(new_cull, sheet)
+
+manta_tow_legacy_df <- import_data(manta_tow_legacy, sheet)
+new_manta_tow_data_df <- import_data(new_manta_tow, sheet)
+
+RHISS_legacy_df <- import_data(RHISS_legacy, sheet)
+new_RHISS_data_df <- import_data(new_RHISS, sheet)
+  
 
 
 
