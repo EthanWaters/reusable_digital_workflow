@@ -44,9 +44,9 @@ section <- 'structure'
 # The column formatting of New data will be compared with a legacy data set that 
 # is deemed to be in the ideal target format. Any necessary changes will be made 
 # and recorded. This will be executed irrespective of data set provided.
-Updated_cull_data_format <- compare_control_data_format(new_cull_data_df, cull_legacy)
-Updated_manta_tow_data_format <- compare_control_data_format(new_manta_tow_data_df, manta_tow_legacy)
-Updated_RHISS_data_format <- compare_control_data_format(new_RHISS_data_df, RHISS_legacy)
+Updated_cull_data_format <- compare_control_data_format(new_cull_data_df, cull_legacy_df)
+Updated_manta_tow_data_format <- compare_control_data_format(new_manta_tow_data_df, manta_tow_legacy_df)
+Updated_RHISS_data_format <- compare_control_data_format(new_RHISS_data_df, RHISS_legacy_df)
 
 
 # Handle Errors & Generate Metadata Report --------------------------------

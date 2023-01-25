@@ -65,40 +65,63 @@ compare_control_data_format <- function(current_df, legacy_df){
       # acquire column names 
       current_df_col_names <- colnames(current_df)
       legacy_df_col_names <- colnames(legacy_df)
+      message("here")
       
+      #clean column names
+      clean_current_col_names <- gsub('[[:punct:] ]+',' ',current_df_col_names)
+      clean_legacy_col_names <- gsub('[[:punct:] ]+',' ',legacy_df_col_names)
+      clean_current_col_names <- tolower(clean_current_col_names)
+      clean_legacy_col_names <- tolower(clean_legacy_col_names)
       
       size_legacy_df <- length(legacy_df_col_names)
       size_curent_df <- length(current_df_col_names)
-                            
+      
+      is_not_matching_column_names <- NA
+      is_not_matching_column_names_updated <- NA
+      updated_nonmatching_column_names_str <- NA
+      is_matching_indices_unique <- NA 
+      is_column_name_na <- NA   
+      updated_df <- NA
       
       # Set the maximum distance for fuzzy string matching
       maxium_levenshtein_distance <- 4
-      
+      message("here")
       # determine the current column names and indices that match a column name 
       # in the legacy format. Count how many match. 
-      matching_columns <- intersect(current_df_col_names, legacy_df_col_names)
+      matching_columns <- intersect(clean_current_col_names, clean_legacy_col_names)
       matching_columns_length <- length(matching_columns)
-      matching_column_indexes <- which(legacy_df_col_names %in% matching_columns)
+      matching_legacy_column_indexes <- which(clean_legacy_col_names %in% matching_columns)
+      matching_current_column_indexes <- which(clean_current_col_names %in% matching_columns)
       
       # conditional statements to be passed to error handling so a more detailed 
       # description of any failure mode can be provided. 
-      is_not_matching_column_names <- !(matching_columns_length == length(current_df_col_names))
-      
+      is_not_matching_column_names <- !(matching_columns_length == length(clean_legacy_col_names))
+      message("here")
       # Find closest matching columns in legacy data with levenshtein distances
       # then update the vector column names
       if(is_not_matching_column_names){
-        nonmatching_column_indices <- 1:length(legacy_df_col_names)[-matching_column_indexes]
+        nonmatching_current_column_indices <- 1:length(current_df_col_names)
+        nonmatching_current_column_indices <- nonmatching_current_column_indices[-matching_current_column_indexes]
         closest_match_indexs <- c()
-        for(i in nonmatching_column_indices){
-          column_name <- current_df_col_names[i]
-          levenshtein_distances <- adist(column_name , legacy_df_col_names)
-          closest_matching_index <- which(min(levenshtein_distances))
-          if (closest_match_index < maxium_levenshtein_distance) {
+        message("if1")
+        for(i in nonmatching_current_column_indices){
+          message("here")
+          column_name <- clean_current_col_names[i]
+          message("here")
+          levenshtein_distances <- adist(column_name , clean_legacy_col_names)
+          message("here")
+          closest_matching_index <- which(levenshtein_distances==min(levenshtein_distances))
+          
+          message("here")
+          if ((length(closest_matching_index) == 1) & (closest_matching_index < maxium_levenshtein_distance)) {
             current_df_col_names[i] <- legacy_df_col_names[closest_matching_index]
-            
-          }
+            clean_current_col_names[i] <- clean_legacy_col_names[closest_matching_index]
+            message("if2")
+          }          
+          message("here")
+          
         }
-       
+        message("@@@")
         # Indices should be unique and not NA. Check multiple columns weren't 
         # matched to the same column. The appropriate cut off distance may need 
         # to be tweaked overtime.
@@ -107,7 +130,7 @@ compare_control_data_format <- function(current_df, legacy_df){
         is_column_name_na <- is.na(current_df_col_names)
         
       }
-      
+      message("here")
       # Update the current dataframe column names with the vector found above.
       colnames(current_df) <- current_df_col_names
       
@@ -121,7 +144,7 @@ compare_control_data_format <- function(current_df, legacy_df){
       updated_nonmatching_column_names <- current_df_col_names[updated_nonmatching_column_indices]
       is_not_matching_column_names_updated <- !(length(updated_matching_column_names) == length(current_df_col_names))
       updated_nonmatching_column_names_str <- paste0(updated_nonmatching_column_names, collapse=', ')
-      
+      message("here")
       # remove extra columns
       # create list to store data and error flags. 
       metadata <- data.frame(size_legacy_df,
@@ -161,7 +184,9 @@ compare_control_data_format <- function(current_df, legacy_df){
   
 }
 
-
+add_manta_tow_specific_formatting <- function(current_df, legacy_df){
+  
+}
 
 heading_error_handling <- function(Updated_data_format, control_data_type, section){
  
