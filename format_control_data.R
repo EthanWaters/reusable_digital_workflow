@@ -35,7 +35,7 @@ import_data <- function(data, control_data_type, sheet=1){
         }
         
         warnings <- names(warnings())
-        # contribute_to_metadata_report(control_data_type, "Import", warnings)
+        contribute_to_metadata_report(control_data_type, "Import", warnings)
         return(data_df)
       },
       
@@ -234,25 +234,34 @@ create_metadata_report <- function(count){
 }
 
 
-contribute_to_metadata_report <- function(control_data_type, section, dataframe){
+contribute_to_metadata_report <- function(control_data_type, section, data, key = "Warning"){
   # Finds desired control data node and adds a section from the information 
   # obtained in the previously executed function. 
   file_count <- 1
+  trywait <- 0
   xml_files <- list.files(path= getwd(), pattern = as.character(Sys.Date()))
   xml_filename <- xml_files[file_count]
-  xml_file <- try(read_xml(file = xml_filename))
-  while ((class(xml_file)[[1]]=='try-error')&(trywait<=(10))){
+  xml_file <- try(read_xml(xml_filename))
+  while ((class(xml_file)[[1]]=='try-error')&(trywait<=(5))){
     file_count <- file_count + 1
     print(paste('retrying in ', trywait, 'second(s)')) 
     Sys.sleep(trywait) 
     trywait <- trywait + 1 
-    xml_file <- try(read_xml(file = xml_filename))
+    xml_file <- try(read_xml(xml_filename))
   }
   node <- xml_find_all(xml_file, paste0("//", control_data_type, sep=""))
   
   # Only add to node if it exists. Node Should always exist.
   if(length(node) > 0){
-    xml_add_child(node, section, dataframe)
+    
+    if(is.data.frame(data)){
+      xml_add_child(node, section, data)
+    } else {
+      xml_add_child(node, section)
+      new_node <- xml_find_all(xml_file, paste0("//", section, sep=""))
+      xml_add_child(new_node, key, data)
+    }
+    
   }
  
   
