@@ -35,7 +35,8 @@ import_data <- function(data, control_data_type, sheet=1){
         }
         
         warnings <- names(warnings())
-        contribute_to_metadata_report(control_data_type, "Import", warnings)
+        warnings_matrix <- matrix(warnings, 1,length(warnings))
+        contribute_to_metadata_report(control_data_type, "Import", warnings_matrix)
         return(data_df)
       },
       
@@ -214,11 +215,12 @@ heading_error_handling <- function(Updated_data_format, control_data_type, secti
 
 create_metadata_report <- function(count){
     #Generate the XML template for the control data process report.
-  
+    reports_location <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\reports\\"
+    
     #create file name systematically
     date <- as.character(Sys.Date())
     timestamp <- as.character(Sys.time())
-    filename <- paste0("Processed Control Data Report ", date, " [", count, "].xml", sep="")
+    filename <- paste0(reports_location, "Processed Control Data Report ", date, " [", count, "].xml", sep="")
     
     #generate template
     template <- xml_new_root("session") 
@@ -238,34 +240,44 @@ contribute_to_metadata_report <- function(control_data_type, section, data, key 
   # Finds desired control data node and adds a section from the information 
   # obtained in the previously executed function. 
   file_count <- 1
+  reports_location <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\reports\\"
   trywait <- 0
-  xml_files <- list.files(path= getwd(), pattern = as.character(Sys.Date()))
+  xml_files <- list.files(path= reports_location, pattern = as.character(Sys.Date()))
   xml_filename <- xml_files[file_count]
-  xml_file <- try(read_xml(xml_filename))
-  while ((class(xml_file)[[1]]=='try-error')&(trywait<=(5))){
+  xml_file <- paste0(reports_location, xml_filename, sep="")
+  xml_file_data <- try(read_xml(xml_file))
+  while ((class(xml_file_data)[[1]]=='try-error')&(trywait<=(5))){
     file_count <- file_count + 1
     print(paste('retrying in ', trywait, 'second(s)')) 
     Sys.sleep(trywait) 
     trywait <- trywait + 1 
-    xml_file <- try(read_xml(xml_filename))
+    xml_file_data <- try(read_xml(paste0(reports_location, xml_filename, sep="")))
   }
-  node <- xml_find_all(xml_file, paste0("//", control_data_type, sep=""))
+  node <- xml_find_all(xml_file_data, paste0("//", control_data_type, sep=""))
   
-  # Only add to node if it exists. Node Should always exist.
+  # Only add to node if it exists. Node Should always exist. 
+  # A dataframe will add a key value pair for each column. A single value will  
+  # directly assigned as a value. Columns with Multiple entries will form a list
+  # before being assigned as a value. 
+  # A vector will pair each entry with the specified key. 
   if(length(node) > 0){
     
     if(is.data.frame(data)){
       xml_add_child(node, section, data)
     } else {
       xml_add_child(node, section)
-      new_node <- xml_find_all(xml_file, paste0("//", section, sep=""))
-      xml_add_child(new_node, key, data)
+      desired_nodes <- xml_find_all(xml_file_data, paste0("//", section, sep=""))
+      newest_desired_node <- desired_nodes[[length(desired_nodes)]]
+      sapply(1:length(data), function(i) {
+        xml_add_child(newest_desired_node, key, data[i])
+      }
+      )
     }
     
   }
  
   
-  write_xml(xml_file, file = xml_filename, options =c("format", "no_declaration"))
+  write_xml(xml_file_data, file = xml_file, options =c("format", "no_declaration"))
 }
 
 
