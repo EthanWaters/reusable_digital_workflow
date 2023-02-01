@@ -25,14 +25,14 @@ if (trywait>(10)) print(paste('Cannot create metadata report'))
 # The following code returns a dataframe after recieving the path 
 # to a CSV, XLSX or TXT file. This can be adapted to use an explorer to choose 
 # the file. 
-cull_legacy_df <- import_data(cull_legacy, sheet)
-new_cull_data_df <- import_data(new_cull, sheet)
+cull_legacy_df <- import_data(cull_legacy, 'cull', sheet)
+new_cull_data_df <- import_data(new_cull, 'cull', sheet)
 
-manta_tow_legacy_df <- import_data(manta_tow_legacy, sheet)
-new_manta_tow_data_df <- import_data(new_manta_tow, sheet)
+manta_tow_legacy_df <- import_data(manta_tow_legacy, 'manta_tow', sheet)
+new_manta_tow_data_df <- import_data(new_manta_tow, 'manta_tow', sheet)
 
-RHISS_legacy_df <- import_data(RHISS_legacy, sheet)
-new_RHISS_data_df <- import_data(new_RHISS, sheet)
+RHISS_legacy_df <- import_data(RHISS_legacy, 'RHISS', sheet)
+new_RHISS_data_df <- import_data(new_RHISS, 'RHISS', sheet)
   
 
 
