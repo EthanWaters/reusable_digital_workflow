@@ -37,6 +37,10 @@ import_data <- function(data, control_data_type, sheet=1){
         warnings <- names(warnings())
         warnings_matrix <- matrix(warnings, 1,length(warnings))
         contribute_to_metadata_report(control_data_type, "Import", warnings_matrix)
+        
+        #add any additional columns no longer in the current dataset.
+        data_df <- add_required_columns(data_df, control_data_type)
+        
         return(data_df)
       },
       
@@ -62,6 +66,7 @@ compare_control_data_format <- function(current_df, legacy_df){
   # provided is insufficient is required to be correct to proceed. 
   out <- tryCatch(
     {
+      
       # acquire column names 
       current_df_col_names <- colnames(current_df)
       legacy_df_col_names <- colnames(legacy_df)
@@ -331,13 +336,17 @@ outersect <- function(x, y) {
 }
 
 map_column_names <- function(column_names){
-  lookup <- read.csv("lookup.csv", header = TRUE)
+  lookup <- read.csv("mapNames.csv", header = TRUE)
   mapped_names <- lapply(column_names, function(x) lookup$target[match(x, lookup$current)])
   return(mapped_names)
 }
   
-  
-  
+add_required_columns <- function(df, control_data_type){
+  lookup <- read.csv("additionalColumns.csv", header = TRUE)
+  new_columns <- lookup[lookup$type == control_data_type, 1]
+  df[new_columns] <- NA
+  return(df)
+}
   
   
   
