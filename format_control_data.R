@@ -65,7 +65,7 @@ compare_control_data_format <- function(current_df, legacy_df){
       # acquire column names 
       current_df_col_names <- colnames(current_df)
       legacy_df_col_names <- colnames(legacy_df)
-      message("here")
+      
       
       #clean column names
       clean_current_col_names <- gsub('[[:punct:] ]+',' ',current_df_col_names)
@@ -109,15 +109,17 @@ compare_control_data_format <- function(current_df, legacy_df){
         
         # check if there is a set mapping to a nonmatching column name.
         mapped_output <- map_column_names(nonmatching_column_names)
-        mapped_name_indices <- which(!is.NA(mapped_output))
-        mapped_names <- mapped_output[mapped_name_indices]
+        mapped_name_indices <- which(!is.na(mapped_output))
         
-        lapply(mapped_name_indices, function(x){ 
+        if(is.list(mapped_output)){
+          mapped_output <- unlist(mapped_output)
+        }
+        for(x in mapped_name_indices){ 
           mapped_index <- nonmatching_current_column_indices[x]
           current_df_col_names[mapped_index] <- mapped_output[x]
           nonmatching_column_names <- nonmatching_column_names[-mapped_index]
           nonmatching_current_column_indices <- nonmatching_current_column_indices[-mapped_index]
-          })
+        }
         
         for(i in nonmatching_current_column_indices){
           column_name <- clean_current_col_names[i]
@@ -142,7 +144,7 @@ compare_control_data_format <- function(current_df, legacy_df){
         # to be tweaked overtime.
         duplicate_column_indices <- duplicated(current_df_col_names)
         is_matching_indices_unique <- !any(duplicated(closest_matching_indices))
-        is_column_name_na <- is.na(current_df_col_names)
+        is_column_name_na <- any(is.na(current_df_col_names))
         
       }
       # Update the current dataframe column names with the vector found above.
@@ -154,10 +156,15 @@ compare_control_data_format <- function(current_df, legacy_df){
       updated_matching_column_names <- clean_current_col_names[updated_matching_column_indices]
       updated_nonmatching_column_indices <- which(!clean_current_col_names %in% clean_legacy_col_names)
       updated_nonmatching_column_names <- clean_current_col_names[updated_nonmatching_column_indices]
-      updated_df <- current_df[,c(updated_matching_column_indices, updated_nonmatching_column_indices)]
+      
+      #Can use this to include extra columns not in the original legacy format
+      #updated_df <- current_df[,c(updated_matching_column_indices, updated_nonmatching_column_indices)]
+      
+      updated_current_df <- current_df[updated_matching_column_indices]
       is_not_matching_column_names_updated <- !(length(updated_matching_column_names) == length(legacy_df_col_names))
       updated_nonmatching_column_names_str <- paste0(updated_nonmatching_column_names, collapse=', ')
-      message("here")
+    
+      
       # remove extra columns
       # create list to store data and error flags. 
       metadata <- data.frame(size_legacy_df,
@@ -189,7 +196,7 @@ compare_control_data_format <- function(current_df, legacy_df){
     }, 
     finally={
       
-      output <- list(updated_df, metadata)
+      output <- list(updated_current_df, metadata)
       return(output)
       
     }
@@ -324,6 +331,7 @@ outersect <- function(x, y) {
 }
 
 map_column_names <- function(column_names){
+  lookup <- read.csv("lookup.csv", header = TRUE)
   mapped_names <- lapply(column_names, function(x) lookup$target[match(x, lookup$current)])
   return(mapped_names)
 }
