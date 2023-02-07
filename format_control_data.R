@@ -85,7 +85,7 @@ compare_control_data_format <- function(current_df, legacy_df){
       
       # Set the maximum distance for fuzzy string matching
       maxium_levenshtein_distance <- 4
-      message("here")
+     
       # determine the current column names and indices that match a column name 
       # in the legacy format. Count how many match. 
       matching_columns <- intersect(clean_current_col_names, clean_legacy_col_names)
@@ -96,14 +96,29 @@ compare_control_data_format <- function(current_df, legacy_df){
       # conditional statements to be passed to error handling so a more detailed 
       # description of any failure mode can be provided. 
       is_not_matching_column_names <- !(matching_columns_length == length(clean_legacy_col_names))
-      message("here")
+      
       # Check if partial string match exists and then find closest matching 
       # columns in legacy data with levenshtein distances then update the vector 
       # column names 
       if(is_not_matching_column_names){
+        closest_matching_indices <- c()
+        
         nonmatching_current_column_indices <- 1:length(current_df_col_names)
         nonmatching_current_column_indices <- nonmatching_current_column_indices[-matching_current_column_indexes]
-        closest_matching_indices <- c()
+        nonmatching_column_names <- clean_current_col_names[nonmatching_current_column_indices]
+        
+        # check if there is a set mapping to a nonmatching column name.
+        mapped_output <- map_column_names(nonmatching_column_names)
+        mapped_name_indices <- which(!is.NA(mapped_output))
+        mapped_names <- mapped_output[mapped_name_indices]
+        
+        lapply(mapped_name_indices, function(x){ 
+          mapped_index <- nonmatching_current_column_indices[x]
+          current_df_col_names[mapped_index] <- mapped_output[x]
+          nonmatching_column_names <- nonmatching_column_names[-mapped_index]
+          nonmatching_current_column_indices <- nonmatching_current_column_indices[-mapped_index]
+          })
+        
         for(i in nonmatching_current_column_indices){
           column_name <- clean_current_col_names[i]
           levenshtein_distances <- adist(column_name , clean_legacy_col_names)
@@ -117,13 +132,11 @@ compare_control_data_format <- function(current_df, legacy_df){
           } else if ((length(closest_matching_indices) == 1) & (minimum_distance < maxium_levenshtein_distance)) {
             current_df_col_names[i] <- legacy_df_col_names[closest_matching_indices]
             clean_current_col_names[i] <- clean_legacy_col_names[closest_matching_indices]
-            message("if2")
           
           } 
           
           
         }
-        message("@@@")
         # Indices should be unique and not NA. Check multiple columns weren't 
         # matched to the same column. The appropriate cut off distance may need 
         # to be tweaked overtime.
@@ -132,7 +145,6 @@ compare_control_data_format <- function(current_df, legacy_df){
         is_column_name_na <- is.na(current_df_col_names)
         
       }
-      message("here")
       # Update the current dataframe column names with the vector found above.
       colnames(current_df) <- current_df_col_names
       
@@ -141,7 +153,7 @@ compare_control_data_format <- function(current_df, legacy_df){
       updated_matching_column_indices <- which(clean_current_col_names %in% clean_legacy_col_names)
       updated_matching_column_names <- clean_current_col_names[updated_matching_column_indices]
       updated_nonmatching_column_indices <- which(!clean_current_col_names %in% clean_legacy_col_names)
-      updated_nonmatching_column_names <- clean_current_col_names[updated_matching_column_indices]
+      updated_nonmatching_column_names <- clean_current_col_names[updated_nonmatching_column_indices]
       updated_df <- current_df[,c(updated_matching_column_indices, updated_nonmatching_column_indices)]
       is_not_matching_column_names_updated <- !(length(updated_matching_column_names) == length(legacy_df_col_names))
       updated_nonmatching_column_names_str <- paste0(updated_nonmatching_column_names, collapse=', ')
@@ -310,3 +322,28 @@ outersect <- function(x, y) {
   sort(c(x[!x%in%y],
          y[!y%in%x]))
 }
+
+map_column_names <- function(column_names){
+  mapped_names <- lapply(column_names, function(x) lookup$target[match(x, lookup$current)])
+  return(mapped_names)
+}
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+
+
+
+
+
+
+
+
