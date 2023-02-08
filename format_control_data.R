@@ -112,6 +112,10 @@ compare_control_data_format <- function(current_df, legacy_df){
         nonmatching_current_column_indices <- nonmatching_current_column_indices[-matching_current_column_indexes]
         nonmatching_column_names <- clean_current_col_names[nonmatching_current_column_indices]
         
+        #[28] "x coral cover affected by cots"                
+        #[15] "x benthos live soft coral"                     
+        #[16] "x benthos live hard coral" 
+        
         # check if there is a set mapping to a nonmatching column name.
         mapped_output <- map_column_names(nonmatching_column_names)
         mapped_name_indices <- which(!is.na(mapped_output))
@@ -119,13 +123,17 @@ compare_control_data_format <- function(current_df, legacy_df){
         if(is.list(mapped_output)){
           mapped_output <- unlist(mapped_output)
         }
-        for(x in mapped_name_indices){ 
-          mapped_index <- nonmatching_current_column_indices[x]
-          current_df_col_names[mapped_index] <- mapped_output[x]
-          nonmatching_column_names <- nonmatching_column_names[-mapped_index]
-          nonmatching_current_column_indices <- nonmatching_current_column_indices[-mapped_index]
+        if (length(na.omit(mapped_name_indices)) > 0){
+          for(x in mapped_name_indices){ 
+            mapped_index <- nonmatching_current_column_indices[x]
+            current_df_col_names[mapped_index] <- mapped_output[x]
+            clean_mapped_name <- gsub('[[:punct:] ]+',' ', mapped_output[x])
+            clean_mapped_name <- tolower(clean_mapped_name)
+            clean_current_col_names[mapped_index] <- clean_mapped_name
+          }
+          nonmatching_column_names <- nonmatching_column_names[-mapped_name_indices]
+          nonmatching_current_column_indices <- nonmatching_current_column_indices[-mapped_name_indices]
         }
-        
         for(i in nonmatching_current_column_indices){
           column_name <- clean_current_col_names[i]
           levenshtein_distances <- adist(column_name , clean_legacy_col_names)
