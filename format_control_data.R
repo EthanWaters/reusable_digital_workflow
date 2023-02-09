@@ -249,7 +249,7 @@ heading_error_handling <- function(Updated_data_format, control_data_type, secti
       # formatting and error flags. The code below seperates these into appropriate
       # variables
       
-      
+      #THIS FUNCTION MAY BE REDUNDANT AND GO AGAINST CODING PRINCIPLES
       
       # create comments variable to store points of interest.
       comments <- ""
@@ -390,10 +390,41 @@ add_required_columns <- function(df, control_data_type){
 }
   
   
+verify_row_entries <- function(data_df){
   
   
+  # seperate new entries and previously process entries
+  seperated_row_entries <- seperate_row_entries(data_df)
+  previously_processed_row_entries_df <- seperated_row_entries[1]
+  new_row_entries_df <- seperated_row_entries[2]
+  
+  verified_previous_entries <- handle_previously_processed_row_entries(previously_processed_row_entries_df)
+  verified_new_entries <- handle_new_row_entries(new_row_entries_df)
+  
+  # merge the verified dataset
+  
+  return(verified_data_df)
+  
+}
+
+
+handle_previously_processed_row_entries <- function(previously_processed_row_entries_df){
   
   
+}
+  
+
+handle_row_discrepancies <- function(row_discrepancies_df){
+  
+  
+}
+
+
+  
+handle_new_row_entries <- function(new_row_entries_df){
+  
+  
+}
   
   
 

@@ -82,13 +82,10 @@ new_manta_tow_data_target_format_df <- heading_error_handling(Updated_manta_tow_
 new_RHIS_data_target_format_df <- heading_error_handling(Updated_RHIS_data_format, 'RHIS', section)
 
 
-# Finds discrepancies in previously processed data and the new data input. 
-# Outputs a list containing three data frames. These data frames are for new row 
-# entries, old row entries that are perfect duplicates and old row entries which 
-# have changed.
-cull_discrepancies_output <- find_cull_discrepancies(previous_cull_df, new_cull_data_target_format_df)
-manta_tow_discrepancies_output <- find_manta_tow_discrepancies(previous_manta_tow_df, new_manta_tow_data_target_format_df)
-RHIS_discrepancies_output <- find_RHIS_discrepancies(previous_RHIS_df, new_RHIS_data_target_format_df)
+# Finds discrepancies in previously processed data and the new data input and handles them appropriately. 
+cull_discrepancies_output <- verify_row_entries(new_cull_data_df)
+manta_tow_discrepancies_output <- verify_row_entries(new_manta_tow_data_df)
+RHIS_discrepancies_output <- verify_row_entries(new_RHIS_data_df)
 
 
 # Find Row Discrepancies --------------------------------------------------
