@@ -58,9 +58,9 @@ compare_control_data_format <- function(current_df, legacy_df){
   out <- tryCatch(
     {
       
-      # acquire column names 
-      current_df_col_names <- colnames(current_df)
-      legacy_df_col_names <- colnames(legacy_df)
+      # acquire column names and ensure they are formatted as characters
+      current_df_col_names <- colnames(as.character(current_df))
+      legacy_df_col_names <- colnames(as.character(legacy_df))
       
       
       # clean column names for easy comparison. The cleaning is done in this 
@@ -249,6 +249,8 @@ heading_error_handling <- function(Updated_data_format, control_data_type, secti
       # formatting and error flags. The code below seperates these into appropriate
       # variables
       
+      
+      
       # create comments variable to store points of interest.
       comments <- ""
       new_data_df <- Updated_data_format[1]
@@ -260,22 +262,31 @@ heading_error_handling <- function(Updated_data_format, control_data_type, secti
       
       
       #Determine initial error flags based on returned metadata
-      initial_error_flag <- rep(1, nrow(new_data_df))
+      initial_error_flag <- rep(0, nrow(new_data_df))
       if (!is_not_matching_column_names & !is_not_matching_column_names_updated){
         comments <- paste0(comments,"One or more columns in legacy format were 
                            not matched and exceeded the allowable levenshtein 
                            distance to fuzzy match an avaliable column.")
-        initial_error_flag <- rep(0, nrow(new_data_df))
+        initial_error_flag <- rep(1, nrow(new_data_df))
       }
       if(size_legacy_df > size_curent_df){
         comments <- paste0(comments,"Insufficient number of columns to match
                            legacy formatting.")
-        initial_error_flag <- rep(0, nrow(new_data_df))
+        initial_error_flag <- rep(1, nrow(new_data_df))
       }
       metadata['comments'] <- comments
       contribute_to_metadata_report <- function(control_data_type, section, metadata)
+        
+      # if error flag column does not exist create it   
+      if(!"error_flag"  %in% colnames(dat)){
+        new_data_df["error_flag"] <- initial_error_flag
+      }
       
-      
+      # if serious error is determined, set all error flags to TRUE as the data
+      # is unusable 
+      if(1 %in% initial_error_flag){
+        new_data_df["error_flag"] <- initial_error_flag
+      }
       
       
       return(output)
