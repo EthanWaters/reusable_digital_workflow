@@ -1,6 +1,24 @@
 
+install.packages("readxl")
+install.packages("xlsx")
+install.packages("sets")
+install.packages("XML")
+install.packages("methods")
+install.packages("xml2")
+install.packages("rio")
+install.packages('installr')
 
-main <- function(new_cull, previous_cull, cull_legacy, new_manta_tow, previous_manta_tow, manta_tow_legacy, new_RHISS, previous_RHISS, RHISS_legacy, geospatial_sites, nearest_site_algorithm){
+library("tools")
+library("installr")
+library("xlsx")
+library("readxl")
+library("sets")
+library("XML")
+library("methods")
+library("xml2")
+library("rio")
+
+main <- function(leg_path, new_cull, new_manta_tow, geospatial_sites, nearest_site_algorithm){
 
 
 # Initialize -------------------------------------------------------------
@@ -24,15 +42,21 @@ if (trywait>(10)) print(paste('Cannot create metadata report'))
 
 # The following code returns a dataframe after recieving the path 
 # to a CSV, XLSX or TXT file. This can be adapted to use an explorer to choose 
-# the file. 
-cull_legacy_df <- import_data(leg_path, 'cull', 3)
-new_cull_data_df <- import_data(cull_new1, 'cull', 3)
+# the file. The sheet index variable refer to the sheet the data is located on
+# in the XLSX files and is irrelevant for CSV as it is considered "Flat". 
+#Defaults to sheet index 1. 
+cull_sheet_index <- 3
+manta_tow_sheet_index <- 4
+RHIS_sheet_index <- 5
 
-manta_tow_legacy_df <- import_data(leg_path, 'manta_tow', 4)
-new_manta_tow_data_df <- import_data(manta_tow_new1, 'manta_tow', 4)
+cull_legacy_df <- import_data(leg_path, 'cull', cull_sheet_index)
+new_cull_data_df <- import_data(cull_new1, 'cull', cull_sheet_index)
 
-RHISS_legacy_df <- import_data(leg_path, 'RHISS', 5)
-new_RHISS_data_df <- import_data(RHISS_new1, 'RHISS', 5)
+manta_tow_legacy_df <- import_data(leg_path, 'manta_tow', manta_tow_sheet_index)
+new_manta_tow_data_df <- import_data(manta_tow_new1, 'manta_tow', manta_tow_sheet_index)
+
+RHIS_legacy_df <- import_data(leg_path, 'RHIS', RHIS_sheet_index)
+new_RHIS_data_df <- import_data(RHIS_new1, 'RHIS', RHIS_tow_sheet_index)
   
 
 
@@ -46,7 +70,7 @@ section <- 'structure'
 # and recorded. This will be executed irrespective of data set provided.
 Updated_cull_data_format <- compare_control_data_format(new_cull_data_df, cull_legacy_df)
 Updated_manta_tow_data_format <- compare_control_data_format(new_manta_tow_data_df, manta_tow_legacy_df)
-Updated_RHISS_data_format <- compare_control_data_format(new_RHISS_data_df, RHISS_legacy_df)
+Updated_RHIS_data_format <- compare_control_data_format(new_RHIS_data_df, RHIS_legacy_df)
 
 
 # Handle Errors & Generate Metadata Report --------------------------------
@@ -55,7 +79,7 @@ Updated_RHISS_data_format <- compare_control_data_format(new_RHISS_data_df, RHIS
 # received.
 new_cull_data_target_format_df <- heading_error_handling(Updated_cull_data_format, 'cull', section )
 new_manta_tow_data_target_format_df <- heading_error_handling(Updated_manta_tow_data_format, 'manta_tow', section)
-new_RHISS_data_target_format_df <- heading_error_handling(Updated_RHISS_data_format, 'RHISS', section)
+new_RHIS_data_target_format_df <- heading_error_handling(Updated_RHIS_data_format, 'RHIS', section)
 
 
 # Finds discrepancies in previously processed data and the new data input. 
@@ -64,7 +88,7 @@ new_RHISS_data_target_format_df <- heading_error_handling(Updated_RHISS_data_for
 # have changed.
 cull_discrepancies_output <- find_cull_discrepancies(previous_cull_df, new_cull_data_target_format_df)
 manta_tow_discrepancies_output <- find_manta_tow_discrepancies(previous_manta_tow_df, new_manta_tow_data_target_format_df)
-RHISS_discrepancies_output <- find_RHISS_discrepancies(previous_RHISS_df, new_RHISS_data_target_format_df)
+RHIS_discrepancies_output <- find_RHIS_discrepancies(previous_RHIS_df, new_RHIS_data_target_format_df)
 
 
 # Find Row Discrepancies --------------------------------------------------
@@ -72,15 +96,15 @@ RHISS_discrepancies_output <- find_RHISS_discrepancies(previous_RHISS_df, new_RH
 # prrevious output seperated into appropriate variables
 cull_discrepancies <- cull_discrepancies_output[1]
 manta_tow_discrepancies <- manta_tow_discrepancies_output[1]
-RHISS_discrepancies <- RHISS_discrepancies_output[1]
+RHIS_discrepancies <- RHIS_discrepancies_output[1]
 
 consistent_previous_cull_data_df <- cull_discrepancies_output[2] 
 consistent_previous_manta_tow_data_df <- manta_tow_discrepancies_output[2] 
-consistent_previous_RHISS_data_df <- RHISS_discrepancies_output[2] 
+consistent_previous_RHIS_data_df <- RHIS_discrepancies_output[2] 
 
 only_new_cull_data_df <- cull_discrepancies_output[3] 
 only_new_manta_tow_data_df <- manta_tow_discrepancies_output[3] 
-only_new_RHISS_data_df <- RHISS_discrepancies_output[3] 
+only_new_RHIS_data_df <- RHIS_discrepancies_output[3] 
 
 
 
@@ -91,7 +115,7 @@ only_new_RHISS_data_df <- RHISS_discrepancies_output[3]
 # all have different requirements.
 verified_new_cull_data_df <- verify_new_cull_suitablility(only_new_cull_data_df)
 verified_new_manta_tow_data_df <- verify_new_manta_tow_suitablility(only_new_manta_tow_data_df)
-verified_new_RHISS_data_df <- verify_new_RHISS_suitablility(only_new_RHISS_data_df)
+verified_new_RHIS_data_df <- verify_new_RHIS_suitablility(only_new_RHIS_data_df)
 
 # Verify that the row entries with highlighted discrepancies still meet all data 
 # requirements before being accepted for further processing. Determine if
@@ -99,20 +123,20 @@ verified_new_RHISS_data_df <- verify_new_RHISS_suitablility(only_new_RHISS_data_
 # specific as they all have different requirements.
 verified_previous_cull_data_df <- handle_cull_discrepancies(cull_discrepancies)
 verified_previous_manta_tow_data_df <- handle_manta_tow_discrepancies(manta_tow_discrepancies)
-verified_previous_RHISS_data_df <- handle_RHISS_discrepancies(RHISS_discrepancies)
+verified_previous_RHIS_data_df <- handle_RHIS_discrepancies(RHIS_discrepancies)
 
 # Combine both verified data sets to form a dataframe containing all processed 
 # data to date. 
 verified_control_data_df <- rbind(verified_previous_cull_data_df, verified_new_cull_data_df)
 verified_manta_tow_data_df <- rbind(verified_previous_manta_tow_data_df, verified_new_manta_tow_data_df)
-verified_RHISS_data_df <- rbind(verified_previous_RHISS_data_df, verified_new_RHISS_data_df)
+verified_RHIS_data_df <- rbind(verified_previous_RHIS_data_df, verified_new_RHIS_data_df)
 
 
 # Assign Nearest Sites ----------------------------------------------------
 
 nearest_sites_cull <- assign_nearest_sites(geospatial_sites, nearest_site_algorithm)
 nearest_sites_manta_tow <- assign_nearest_sites(geospatial_sites, nearest_site_algorithm)
-nearest_sites_RHISS <- assign_nearest_sites(geospatial_sites, nearest_site_algorithm)
+nearest_sites_RHIS <- assign_nearest_sites(geospatial_sites, nearest_site_algorithm)
 
 
 

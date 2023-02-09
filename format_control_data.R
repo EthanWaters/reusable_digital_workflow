@@ -1,31 +1,17 @@
 # Format the new control data into the stardard legacy format 
 
-install.packages("readxl")
-install.packages("xlsx")
-install.packages("sets")
-install.packages("XML")
-install.packages("methods")
-install.packages("xml2")
-install.packages("rio")
-install.packages('installr')
-
-library("tools")
-library("installr")
-library("xlsx")
-library("readxl")
-library("sets")
-library("XML")
-library("methods")
-library("xml2")
-library("rio")
 
 import_data <- function(data, control_data_type, sheet=1){
     out <- tryCatch(
       {
+        # Could assign the control_data_type as the file name. Yet to implement 
+        # this effectively
+        file_name <- tools::file_path_sans_ext(basename(data))
+        
+  
         #Opens file and stores information into dataframe. Different file types
         #require different functions to read data
         file_extension <- file_ext(data)
-        file_name <- tools::file_path_sans_ext(basename(data))
         if (file_extension == 'xlsx'){
           data_df <- read_xlsx(data, sheet = sheet)
         } else if (file_extension == 'csv'){
@@ -34,11 +20,16 @@ import_data <- function(data, control_data_type, sheet=1){
           data_df <- read.table(file=data, header=TRUE)
         }
         
+        #create matrix of warnings so they are added to the specified XML node 
+        # in the metadata report in a vectorised mannor. 
         warnings <- names(warnings())
         warnings_matrix <- matrix(warnings, 1,length(warnings))
         contribute_to_metadata_report(control_data_type, "Import", warnings_matrix)
         
-        #add any additional columns no longer in the current dataset.
+        #add any additional columns no longer in the current dataset. # may wish
+        # to expand upon this to vary depending on where the input data was 
+        # acquired from as PowerBI export and direct database querys have 
+        # different requirements
         data_df <- add_required_columns(data_df, control_data_type)
         
         return(data_df)
@@ -72,7 +63,9 @@ compare_control_data_format <- function(current_df, legacy_df){
       legacy_df_col_names <- colnames(legacy_df)
       
       
-      #clean column names
+      # clean column names for easy comparison. The cleaning is done in this 
+      # specific order to remove characters such as '.' that appear after
+      # removing spaces or specific character from text ina CSV. 
       clean_current_col_names <- gsub('[[:punct:] ]+',' ',current_df_col_names)
       clean_legacy_col_names <- gsub('[[:punct:] ]+',' ',legacy_df_col_names)
       clean_current_col_names <- gsub(' ', '',current_df_col_names)
@@ -84,9 +77,9 @@ compare_control_data_format <- function(current_df, legacy_df){
       clean_current_col_names <- tolower(clean_current_col_names)
       clean_legacy_col_names <- tolower(clean_legacy_col_names)
       
+      # Collect information for metadata report and define variables 
       size_legacy_df <- length(legacy_df_col_names)
       size_curent_df <- length(current_df_col_names)
-      
       is_not_matching_column_names <- NA
       is_not_matching_column_names_updated <- NA
       updated_nonmatching_column_names_str <- NA
@@ -108,9 +101,13 @@ compare_control_data_format <- function(current_df, legacy_df){
       # description of any failure mode can be provided. 
       is_not_matching_column_names <- !(matching_columns_length == length(clean_legacy_col_names))
       
-      # Check if partial string match exists and then find closest matching 
-      # columns in legacy data with levenshtein distances then update the vector 
-      # column names 
+      # Map legacy column names to current column names that are not a perfect
+      # match. This occurs by matching partial strings contained within column 
+      # names, check lookup table for pre-defined column name mapppings or find 
+      # closest match within a specified distance with levenshtein distances.
+      # Comparisons will be performed with vector of cleaned column names but 
+      # the original vector of column names with uncleaned text will be utilsied 
+      # to store the column names
       if(is_not_matching_column_names){
         closest_matching_indices <- c()
         
@@ -118,17 +115,17 @@ compare_control_data_format <- function(current_df, legacy_df){
         nonmatching_current_column_indices <- nonmatching_current_column_indices[-matching_current_column_indexes]
         nonmatching_column_names <- clean_current_col_names[nonmatching_current_column_indices]
         
-        #[28] "x coral cover affected by cots"                
-        #[15] "x benthos live soft coral"                     
-        #[16] "x benthos live hard coral" 
-        
-        # check if there is a set mapping to a nonmatching column name.
+        # check if there is a pre-defined mapping to a non-matching column name.
         mapped_output <- map_column_names(nonmatching_column_names)
         mapped_name_indices <- which(!is.na(mapped_output))
         
+        #control statements below utilised to prevent errors
         if(is.list(mapped_output)){
           mapped_output <- unlist(mapped_output)
         }
+        
+        # include pre-defined mappings found and remove them from non-matching 
+        # vector
         if (length(na.omit(mapped_name_indices)) > 0){
           for(x in mapped_name_indices){ 
             mapped_index <- nonmatching_current_column_indices[x]
@@ -143,6 +140,10 @@ compare_control_data_format <- function(current_df, legacy_df){
           nonmatching_column_names <- nonmatching_column_names[-mapped_name_indices]
           nonmatching_current_column_indices <- nonmatching_current_column_indices[-mapped_name_indices]
         }
+        
+        # find closest match within a specified distance with levenshtein
+        # distances or matching partial strings contained within column 
+        # names.
         for(i in nonmatching_current_column_indices){
           column_name <- clean_current_col_names[i]
           levenshtein_distances <- adist(column_name , clean_legacy_col_names)
@@ -175,7 +176,7 @@ compare_control_data_format <- function(current_df, legacy_df){
       # find list of vector of indices which indicate the position of current columns names in the legacy format. 
       # this will be used to indicate if at the end of the mapping and matching process, the program was able to 
       # correctly find all required columns. This will also then be utilised to rearrange the order of the columns 
-      updated_matching_column_indices <- unlist(lapply(clean_legacy_col_names, function(x) match(x, clean_current_col_names)))
+      updated_matching_column_indices <- sapply(clean_legacy_col_names, function(x) match(x, clean_current_col_names))
       updated_matching_column_indices <- updated_matching_column_indices[!is.na(updated_matching_column_indices)]
       
       #for metadata report
@@ -308,7 +309,7 @@ create_metadata_report <- function(count){
     control_data <- xml_find_all(template, "//control_data")
     xml_add_child(control_data, "manta_tow")  
     xml_add_child(control_data, "cull") 
-    xml_add_child(control_data, "RHISS")
+    xml_add_child(control_data, "RHIS")
     write_xml(template, file = filename, options =c("format", "no_declaration"))
 }
 
@@ -316,6 +317,8 @@ create_metadata_report <- function(count){
 contribute_to_metadata_report <- function(control_data_type, section, data, key = "Warning"){
   # Finds desired control data node and adds a section from the information 
   # obtained in the previously executed function. 
+  
+  # finds files with current date in file name and attempts to open xml file
   file_count <- 1
   reports_location <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\reports\\"
   trywait <- 0
@@ -336,7 +339,7 @@ contribute_to_metadata_report <- function(control_data_type, section, data, key 
   # A dataframe will add a key value pair for each column. A single value will  
   # directly assigned as a value. Columns with Multiple entries will form a list
   # before being assigned as a value. 
-  # A vector will pair each entry with the specified key. 
+  # A matrix will pair each entry with the specified key. 
   if(length(node) > 0){
     
     if(is.data.frame(data)){
