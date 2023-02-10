@@ -7,6 +7,7 @@ install.packages("methods")
 install.packages("xml2")
 install.packages("rio")
 install.packages('installr')
+install.packages('dplyr')
 
 library("tools")
 library("installr")
@@ -17,6 +18,7 @@ library("XML")
 library("methods")
 library("xml2")
 library("rio")
+library("dplyr")
 
 main <- function(leg_path, new_cull, new_manta_tow, geospatial_sites, nearest_site_algorithm){
 

@@ -304,7 +304,7 @@ heading_error_handling <- function(Updated_data_format, control_data_type, secti
 
 create_metadata_report <- function(count){
     #Generate the XML template for the control data process report.
-    reports_location <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\reports\\"
+    reports_location <<- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\reports\\"
     
     #create file name systematically
     date <- as.character(Sys.Date())
@@ -390,16 +390,36 @@ add_required_columns <- function(df, control_data_type){
 }
   
   
-verify_row_entries <- function(data_df){
+verify_row_entries <- function(new_data_df, legacy_data_df, control_data_type){
+  
+  # set the data type of all entries to ensure that performed operations have 
+  # expected output
+  legacy_data_df <- set_data_type(legacy_data_df) 
+  new_data_df <- set_data_type(new_data_df) 
   
   
-  # seperate new entries and previously process entries
-  seperated_row_entries <- seperate_row_entries(data_df)
+  # seperate new entries and previously processed entries based on datetimes 
+  # in nominated column ("seperation_column_name").
+  if((control_data_type == "manta_tow") | (control_data_type == "RHIS")){
+    seperation_column_name <- "date"
+  } else if (control_data_type == "cull"){
+    seperation_column_name <- "Voyage Start"
+  }
+  seperated_row_entries <- seperate_row_entries(new_data_df, legacy_data_df, seperation_column_name)
+  
+  
   previously_processed_row_entries_df <- seperated_row_entries[1]
   new_row_entries_df <- seperated_row_entries[2]
   
-  verified_previous_entries <- handle_previously_processed_row_entries(previously_processed_row_entries_df)
-  verified_new_entries <- handle_new_row_entries(new_row_entries_df)
+  if(control_data_type == "manta_tow"){
+    verified_previous_entries <- handle_previously_processed_row_entries(previously_processed_row_entries_df)
+    verified_new_entries <- handle_new_row_entries(new_row_entries_df)
+  } else if (control_data_type == "cull"){
+    
+  } else if (control_data_type == "RHIS"){
+    
+  }
+  
   
   # merge the verified dataset
   
@@ -414,8 +434,14 @@ handle_previously_processed_row_entries <- function(previously_processed_row_ent
 }
   
 
-handle_row_discrepancies <- function(row_discrepancies_df){
-  
+seperate_row_entries <- function(new_data_df, legacy_data_df, seperation_column_name){
+  # check that the specified seperation column name can be found with partial 
+  # string match
+   column_names <- colnames(legacy_data_df)
+   if (any(grepl(seperation_column_name, column_names))){
+     seperation_column_name <- column_names[grep(seperation_column_name, column_names)]
+   }
+    
   
 }
 
@@ -426,9 +452,60 @@ handle_new_row_entries <- function(new_row_entries_df){
   
 }
   
+
+find_previous_process_date <- function(){
+  # finds the dates stored in the metadata report file names with REGEX. 
+  # reports_location is a global variable defined when creating the meta data 
+  # report. 
+  xml_files <- list.files(path= reports_location, pattern = as.character("Processed Control Data Report "))
+  dates <- regmatches(xml_files, regexpr("[0-9-]{10}", xml_files))
+  if(length > 0) {
+    return(max(as.Date(dates)))
+  } else {
+    return(NA)
+  }
+ 
+}
+
+set_data_type <- function(data_df){
+  # sets the data_type of each column of any dataframe input based on the values
+  # in a lookup table stored in a CSV. This method was chosen to increase 
+  # modularity and felxibilty. The look up table is based on partial string
+  # matches to reduce iterations e.g. any column containing "date" should be 
+  # parsed as a date foramt. Entire column names can be specified if the data 
+  # type is unique to that column.
   
-
-
+  # create list of column name partials grouped by desired data type. The data 
+  # types will be utilised as list names. 
+  column_names <- colnames(data_df)
+  setDataType_df <- read.csv("setDataType.csv", header = TRUE)
+  dataTypes <- unique(setDataType_df$dataType)
+  
+  setDataTypeList <- lapply(dataTypes, function(x) setDataType_df$column[which(x == setDataType_df$dataType)])
+  names(setDataTypeList) <- dataTypes 
+  
+  # find all columns that partial match to strings in the list
+  apply(dataTypes, function(x) column_names[grep(paste(setDataTypeList$x, collapse="|"),column_names)])
+  
+  
+  setDataTypeSplit <- setDataType_df %>% group_split(dataType)
+  
+  
+  apply(1:length(setDataTypeSplit), function(x) setDataTypeSplit[[x]] <- setDataTypeSplit[[x]][paste(x, collapse='|'), setDataTypeSplit[[x]]$dataType])
+  
+  
+  column_indices <- c()
+  lapply(dataType, function(x) setDataType_df$column[match(x, setDataType_df$dataType)])
+  for (i in 1:length(columnsIndicators))
+    column_indices <- grep(columnsIndicators[i], column_names)
+  
+  
+  apply(column_indices, function(x) data_df[,x] <- (data_df[,x]) )
+    
+  
+  
+  mapped_names <- lapply(column_names, function(x) lookup$target[match(x, lookup$current)])
+} 
 
 
 
