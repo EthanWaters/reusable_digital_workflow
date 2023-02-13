@@ -394,8 +394,8 @@ verify_row_entries <- function(new_data_df, legacy_data_df, control_data_type){
   
   # set the data type of all entries to ensure that performed operations have 
   # expected output
-  legacy_data_df <- set_data_type(legacy_data_df) 
-  new_data_df <- set_data_type(new_data_df) 
+  legacy_data_df <- set_data_type(legacy_data_df, control_data_type) 
+  new_data_df <- set_data_type(new_data_df, control_data_type) 
   
   
   # seperate new entries and previously processed entries based on datetimes 
@@ -467,48 +467,52 @@ find_previous_process_date <- function(){
  
 }
 
-set_data_type <- function(data_df){
+set_data_type <- function(data_df, control_data_type){
   # sets the data_type of each column of any dataframe input based on the values
   # in a lookup table stored in a CSV. This method was chosen to increase 
-  # modularity and felxibilty. The look up table is based on partial string
-  # matches to reduce iterations e.g. any column containing "date" should be 
-  # parsed as a date foramt. Entire column names can be specified if the data 
-  # type is unique to that column.
+  # molecularity and flexibility. 
   
   # create list of column name partials grouped by desired data type. The data 
   # types will be utilised as list names. 
-  column_names <- colnames(data_df)
+  column_names <- colnames(current_df)
   setDataType_df <- read.csv("setDataType.csv", header = TRUE)
-  dataTypes <- unique(setDataType_df$dataType)
   
   setDataTypeList <- lapply(dataTypes, function(x) setDataType_df$column[which(x == setDataType_df$dataType)])
   names(setDataTypeList) <- dataTypes 
   
-  # find all columns that partial match to strings in the list
-  apply(dataTypes, function(x) column_names[grep(paste(setDataTypeList$x, collapse="|"),column_names)])
-  
-  
-  setDataTypeSplit <- setDataType_df %>% group_split(dataType)
-  
-  
-  apply(1:length(setDataTypeSplit), function(x) setDataTypeSplit[[x]] <- setDataTypeSplit[[x]][paste(x, collapse='|'), setDataTypeSplit[[x]]$dataType])
-  
-  
-  column_indices <- c()
-  lapply(dataType, function(x) setDataType_df$column[match(x, setDataType_df$dataType)])
-  for (i in 1:length(columnsIndicators))
-    column_indices <- grep(columnsIndicators[i], column_names)
-  
-  
-  apply(column_indices, function(x) data_df[,x] <- (data_df[,x]) )
+  # compare column names retrieved from lookup table to column names in the 
+  # in the dataframe. Check and find closest matches. sets the data types for
+  # all columns 
+  for(i in dataTypes){
+    columns <- setDataTypeList$i
+    columns <- match_vector_entries(columns, column_names)
+    if(i == "Numeric"){
+      apply(columns, function(x) data_df$x <- as.numeric(data_df$x))
+    } else if (i == "Date") {
+      apply(columns, function(x) data_df$x <- as.Date(data_df$x))
+    } else if (i == "Integer") {
+      apply(columns, function(x) data_df$x <- as.integer(data_df$x))
+    } else if (i == "Character"){
+      apply(columns, function(x) data_df$x <- as.character(data_df$x))
+    } else if (i == "Logical"){
+      apply(columns, function(x) data_df$x <- as.logical(data_df$x))
+    }
     
+    #create matrix of warnings so they are added to the specified XML node 
+    # in the metadata report in a vectorised mannor. 
+    warnings <- names(warnings())
+    warnings_matrix <- matrix(warnings, 1,length(warnings))
+    contribute_to_metadata_report(control_data_type, paste("Set Data Type", i), warnings_matrix)
+  }
   
   
-  mapped_names <- lapply(column_names, function(x) lookup$target[match(x, lookup$current)])
 } 
 
 
-
+match_vector_entries <- function(current_vec, target_vec){
+  
+  
+}
 
 
 
