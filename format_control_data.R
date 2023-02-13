@@ -509,10 +509,117 @@ set_data_type <- function(data_df, control_data_type){
 } 
 
 
-match_vector_entries <- function(current_vec, target_vec){
+check_vector_entries_match <- function(current_vec, target_vec){
+
+  # clean vector entries for easy comparison. The cleaning is done in this 
+  # specific order to remove characters such as '.' that appear after
+  # removing spaces or specific character from text ina CSV. 
+  clean_current_vec <- gsub('[[:punct:] ]+',' ',current_vec)
+  clean_target_vec <- gsub('[[:punct:] ]+',' ',target_vec)
+  clean_current_vec <- gsub(' ', '',clean_current_vec)
+  clean_target_vec <- gsub(' ', '',clean_target_vec)
+  clean_current_vec <- gsub('\\.', '', clean_current_vec)
+  clean_target_vec <- gsub('\\.', '', clean_target_vec)
+  clean_current_vec <- gsub('[)(/&]', '', clean_current_vec)
+  clean_target_vec <- gsub('[)(/&]', '', clean_target_vec)
+  clean_current_vec <- tolower(clean_current_vec)
+  clean_target_vec <- tolower(clean_target_vec)
   
+  # Collect information for metadata report and define variables 
+  size_target_vec <- length(target_vec)
+  size_current_vec <- length(current_vec)
   
-}
+  # 
+  is_not_matching_column_names <- NA
+  is_not_matching_column_names_updated <- NA
+  updated_nonmatching_column_names_str <- NA
+  is_matching_indices_unique <- NA 
+  is_column_name_na <- NA   
+  updated_df <- NA
+  
+  # Set the maximum distance for fuzzy string matching
+  maxium_levenshtein_distance <- 5
+  
+  # determine the current column names and indices that match a column name 
+  # in the legacy format. Count how many match. 
+  matching_entries <- intersect(clean_current_vec, clean_target_vec)
+  matching_entries_length <- length(matching_entries)
+  matching_target_entries_indices <- which(clean_target_vec %in% matching_entries)
+  matching_current_entries_indexes <- which(clean_current_vec %in% matching_entries)
+  
+  # conditional statements to be passed to error handling so a more detailed 
+  # description of any failure mode can be provided. 
+  is_not_matching_entries <- !((matching_entries_length == length(clean_current_vec)) | (matching_entries_length == length(clean_target_vec)))
+  
+  # Map legacy column names to current column names that are not a perfect
+  # match. This occurs by matching partial strings contained within column 
+  # names, check lookup table for pre-defined column name mapppings or find 
+  # closest match within a specified distance with levenshtein distances.
+  # Comparisons will be performed with vector of cleaned column names but 
+  # the original vector of column names with uncleaned text will be utilsied 
+  # to store the column names
+  if(is_not_matching_entries){
+    closest_matching_indices <- c()
+    
+    nonmatching_current_entry_indices <- 1:length(current_vec)
+    nonmatching_current_entry_indices <- nonmatching_current_entry_indices[-matching_current_entries_indexes]
+    nonmatching_entries <- clean_current_vec[nonmatching_current_entry_indices]
+    
+    # check if there is a pre-defined mapping to a non-matching column name.
+    mapped_output <- map_column_names(nonmatching_entries)
+    mapped_name_indices <- which(!is.na(mapped_output))
+    
+    #control statements below utilised to prevent errors
+    if(is.list(mapped_output)){
+      mapped_output <- unlist(mapped_output)
+    } 
+    
+    # include pre-defined mappings found and remove them from non-matching 
+    # vector
+    if (length(na.omit(mapped_name_indices)) > 0){
+      for(x in mapped_name_indices){ 
+        mapped_index <- nonmatching_current_entry_indices[x]
+        current_vec[mapped_index] <- mapped_output[x]
+        clean_mapped_name <- gsub('[[:punct:] ]+',' ', mapped_output[x])
+        clean_mapped_name <- gsub(' ', '', clean_mapped_name)
+        clean_mapped_name <- gsub('\\.', '', clean_mapped_name)
+        clean_mapped_name <- gsub('[)(/&]', '', clean_mapped_name)
+        clean_mapped_name <- tolower(clean_mapped_name)
+        clean_current_vec[mapped_index] <- clean_mapped_name
+      }
+      nonmatching_entries <- nonmatching_entries[-mapped_name_indices]
+      nonmatching_current_entry_indices <- nonmatching_current_entry_indices[-mapped_name_indices]
+    }
+    
+    # find closest match within a specified distance with levenshtein
+    # distances or matching partial strings contained within column 
+    # names.
+    for(i in nonmatching_current_entry_indices){
+      entry <- clean_current_vec[i]
+      levenshtein_distances <- adist(entry , clean_target_vec)
+      minimum_distance <- min(levenshtein_distances)
+      closest_matching_indices <- which(levenshtein_distances==minimum_distance)
+      
+      partial_name_matches <- grep(entry, clean_target_vec)
+      if(length(partial_name_matches) == 1){
+        current_vec[i] <- target_vec[partial_name_matches]
+        clean_current_vec[i] <- clean_target_vec[partial_name_matches]
+      } else if ((length(closest_matching_indices) == 1) & (minimum_distance < maxium_levenshtein_distance)) {
+        current_vec[i] <- target_vec[closest_matching_indices]
+        clean_current_vec[i] <- clean_target_vec[closest_matching_indices]
+      } 
+      
+      
+    }
+    # Indices should be unique and not NA. Check multiple columns weren't 
+    # matched to the same column. The appropriate cut off distance may need 
+    # to be tweaked overtime.
+    duplicate_column_indices <- duplicated(current_vec)
+    is_matching_indices_unique <- !any(duplicated(closest_matching_indices))
+    is_column_name_na <- any(is.na(current_vec))
+    
+  }
+ }
 
 
 
