@@ -161,14 +161,14 @@ compare_control_data_format <- function(current_df, legacy_df){
           
           
         }
-        # Indices should be unique and not NA. Check multiple columns weren't 
-        # matched to the same column. The appropriate cut off distance may need 
-        # to be tweaked overtime.
-        duplicate_column_indices <- duplicated(current_df_col_names)
-        is_matching_indices_unique <- !any(duplicated(closest_matching_indices))
-        is_column_name_na <- any(is.na(current_df_col_names))
+      # Indices should be unique and not NA. Check multiple columns weren't 
+      # matched to the same column. The appropriate cut off distance may need 
+      # to be tweaked overtime.
+      duplicate_column_indices <- duplicated(current_df_col_names)
+      is_matching_indices_unique <- !any(duplicated(closest_matching_indices))
+      is_column_name_na <- any(is.na(current_df_col_names))
         
-      }
+      
       # Update the current dataframe column names with the vector found above.
       colnames(current_df) <- current_df_col_names
      
@@ -206,7 +206,7 @@ compare_control_data_format <- function(current_df, legacy_df){
                        updated_nonmatching_column_names_str,
                        is_matching_indices_unique, 
                        is_column_name_na) 
-      
+      }
       
     },
     error=function(cond) {
@@ -530,12 +530,11 @@ check_vector_entries_match <- function(current_vec, target_vec){
   size_current_vec <- length(current_vec)
   
   # 
-  is_not_matching_column_names <- NA
+  is_not_matching_entries <- NA
   is_not_matching_column_names_updated <- NA
   updated_nonmatching_column_names_str <- NA
   is_matching_indices_unique <- NA 
   is_column_name_na <- NA   
-  updated_df <- NA
   
   # Set the maximum distance for fuzzy string matching
   maxium_levenshtein_distance <- 5
@@ -613,11 +612,37 @@ check_vector_entries_match <- function(current_vec, target_vec){
     }
     # Indices should be unique and not NA. Check multiple columns weren't 
     # matched to the same column. The appropriate cut off distance may need 
-    # to be tweaked overtime.
+    # to be tweaked overtime. For metadata report.
     duplicate_column_indices <- duplicated(current_vec)
     is_matching_indices_unique <- !any(duplicated(closest_matching_indices))
     is_column_name_na <- any(is.na(current_vec))
     
+    # find list of vector of indices which indicate the position of current columns names in the legacy format. 
+    # this will be used to indicate if at the end of the mapping and matching process, the program was able to 
+    # correctly find all required columns. This will also then be utilised to rearrange the order of the columns 
+    updated_matching_entry_indices <- sapply(clean_target_vec, function(x) match(x, clean_current_vec))
+    updated_matching_entry_indices <- updated_matching_entry_indices[!is.na(updated_matching_entry_indices)]
+    
+    # For metadata report.
+    updated_matching_entries <- current_vec[updated_matching_entry_indices]
+    updated_nonmatching_entry_indices <- 1:length(current_vec)[!updated_matching_entries]
+    updated_nonmatching_entries <- clean_current_vec[updated_nonmatching_entry_indices]
+    is_not_matching_entries_updated <- !((length(updated_matching_entries) == length(clean_current_vec)) | (length(updated_matching_entries) == length(clean_target_vec)))
+     <- paste0(updated_nonmatching_entries, collapse=', ')
+    
+    
+    
+    metadata <- data.frame(size_target_vec,
+                           size_current_vec,
+                           is_not_matching_entries, 
+                           is_not_matching_entries_updated,
+                           updated_nonmatching_entries_str,
+                           is_matching_indices_unique,
+                           is_column_name_na) 
+    
+    output <- list(current_vec, updated_matching_entry_indices, metadata)
+    
+    return(output)
   }
  }
 
