@@ -65,32 +65,25 @@ new_RHIS_data_df <- import_data(RHIS_new1, 'RHIS', RHIS_tow_sheet_index)
 
 # Format Dataframe Columns ------------------------------------------------
 
-section <- 'structure'
+section <- 'Format'
 
 # The column formatting of New data will be compared with a legacy data set that 
 # is deemed to be in the ideal target format. Any necessary changes will be made 
 # and recorded. This will be executed irrespective of data set provided.
-Updated_cull_data_format <- compare_control_data_format(new_cull_data_df, cull_legacy_df)
-Updated_manta_tow_data_format <- compare_control_data_format(new_manta_tow_data_df, manta_tow_legacy_df)
-Updated_RHIS_data_format <- compare_control_data_format(new_RHIS_data_df, RHIS_legacy_df)
-
-
-# Handle Errors & Generate Metadata Report --------------------------------
-
-# Dictate whether or not the data is in a usable format based on the error flags
-# received.
-new_cull_data_target_format_df <- heading_error_handling(Updated_cull_data_format, 'cull', section )
-new_manta_tow_data_target_format_df <- heading_error_handling(Updated_manta_tow_data_format, 'manta_tow', section)
-new_RHIS_data_target_format_df <- heading_error_handling(Updated_RHIS_data_format, 'RHIS', section)
-
-
-# Finds discrepancies in previously processed data and the new data input and handles them appropriately. 
-cull_discrepancies_output <- verify_row_entries(new_cull_data_df)
-manta_tow_discrepancies_output <- verify_row_entries(new_manta_tow_data_df)
-RHIS_discrepancies_output <- verify_row_entries(new_RHIS_data_df)
+Updated_cull_data_format <- format_control_data(new_cull_data_df, cull_legacy_df, 'cull', section)
+Updated_manta_tow_data_format <- format_control_data(new_manta_tow_data_df, manta_tow_legacy_df, 'manta_tow', section)
+Updated_RHIS_data_format <- format_control_data(new_RHIS_data_df, RHIS_legacy_df, 'RHIS', section)
 
 
 # Find Row Discrepancies --------------------------------------------------
+
+# Finds discrepancies in previously processed data and the new data input and handles them appropriately. 
+cull_discrepancies_output <- verify_row_entries(Updated_cull_data_format, cull_legacy_df, 'cull', section)
+manta_tow_discrepancies_output <- verify_row_entries(Updated_manta_tow_data_format, manta_tow_legacy_df, 'manta_tow', section)
+RHIS_discrepancies_output <- verify_row_entries(Updated_RHIS_data_format, RHIS_legacy_df, 'RHIS', section)
+
+
+
 
 # prrevious output seperated into appropriate variables
 cull_discrepancies <- cull_discrepancies_output[1]
