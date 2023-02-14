@@ -333,12 +333,6 @@ check_vector_entries_match <- function(current_vec, target_vec){
   
   out <- tryCatch(
     {
-      
-    current_vec <- updated_current_df  
-    target_vec <- legacy_df 
-    
-    current_vec <- colnames(current_vec)  
-    target_vec <- colnames(target_vec)  
     
     # clean vector entries for easy comparison. The cleaning is done in this 
     # specific order to remove characters such as '.' that appear after
