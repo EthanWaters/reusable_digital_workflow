@@ -333,6 +333,13 @@ check_vector_entries_match <- function(current_vec, target_vec){
   
   out <- tryCatch(
     {
+      
+    current_vec <- updated_current_df  
+    target_vec <- legacy_df 
+    
+    current_vec <- colnames(current_vec)  
+    target_vec <- colnames(target_vec)  
+    
     # clean vector entries for easy comparison. The cleaning is done in this 
     # specific order to remove characters such as '.' that appear after
     # removing spaces or specific character from text ina CSV. 
@@ -432,46 +439,47 @@ check_vector_entries_match <- function(current_vec, target_vec){
         
         
       }
-      # Indices should be unique and not NA. Check multiple columns weren't 
-      # matched to the same column. The appropriate cut off distance may need 
-      # to be tweaked overtime. For metadata report.
-      duplicate_column_indices <- duplicated(current_vec)
-      is_matching_indices_unique <- !any(duplicated(closest_matching_indices))
-      is_column_name_na <- any(is.na(current_vec))
-      
-      # find list of vector of indices which indicate the position of current columns names in the legacy format. 
-      # this will be used to indicate if at the end of the mapping and matching process, the program was able to 
-      # correctly find all required columns. This will also then be utilised to rearrange the order of the columns 
-      updated_matching_entry_indices <- sapply(clean_target_vec, function(x) match(x, clean_current_vec))
-      updated_matching_entry_indices <- updated_matching_entry_indices[!is.na(updated_matching_entry_indices)]
-      
-      # For metadata report.
-      updated_matching_entries <- current_vec[updated_matching_entry_indices]
-      updated_nonmatching_entry_indices <- which(!clean_current_vec %in% clean_target_vec)
-      updated_nonmatching_entries <- clean_current_vec[updated_nonmatching_entry_indices]
-      is_not_matching_entries_updated <- !((length(updated_matching_entries) == length(clean_current_vec)) || (length(updated_matching_entries) == length(clean_target_vec)))
-      updated_nonmatching_entries_str <- paste0(updated_nonmatching_entries, collapse=', ')
-      
-      
-      
-      metadata <- data.frame(size_target_vec,
-                             size_current_vec,
-                             is_not_matching_entries, 
-                             is_not_matching_entries_updated,
-                             updated_nonmatching_entries_str,
-                             is_matching_indices_unique,
-                             is_column_name_na) 
-      
-      # write any warnings and points of interest generated to the metadata report
-      warnings <- names(warnings())
-      warnings_matrix <- matrix(warnings, 1,length(warnings))
-      contribute_to_metadata_report(control_data_type, "Comparison", warnings_matrix)
-      contribute_to_metadata_report(control_data_type, "Comparison", metadata)
-      
-      output <- list(current_vec, updated_matching_entry_indices, metadata)
-      
-      return(output)
     }
+    # Indices should be unique and not NA. Check multiple columns weren't 
+    # matched to the same column. The appropriate cut off distance may need 
+    # to be tweaked overtime. For metadata report.
+    duplicate_column_indices <- duplicated(current_vec)
+    is_matching_indices_unique <- !any(duplicated(closest_matching_indices))
+    is_column_name_na <- any(is.na(current_vec))
+    
+    # find list of vector of indices which indicate the position of current columns names in the legacy format. 
+    # this will be used to indicate if at the end of the mapping and matching process, the program was able to 
+    # correctly find all required columns. This will also then be utilised to rearrange the order of the columns 
+    updated_matching_entry_indices <- sapply(clean_target_vec, function(x) match(x, clean_current_vec))
+    updated_matching_entry_indices <- updated_matching_entry_indices[!is.na(updated_matching_entry_indices)]
+    
+    # For metadata report.
+    updated_matching_entries <- current_vec[updated_matching_entry_indices]
+    updated_nonmatching_entry_indices <- which(!clean_current_vec %in% clean_target_vec)
+    updated_nonmatching_entries <- clean_current_vec[updated_nonmatching_entry_indices]
+    is_not_matching_entries_updated <- !((length(updated_matching_entries) == length(clean_current_vec)) || (length(updated_matching_entries) == length(clean_target_vec)))
+    updated_nonmatching_entries_str <- paste0(updated_nonmatching_entries, collapse=', ')
+    
+    
+    
+    metadata <- data.frame(size_target_vec,
+                           size_current_vec,
+                           is_not_matching_entries, 
+                           is_not_matching_entries_updated,
+                           updated_nonmatching_entries_str,
+                           is_matching_indices_unique,
+                           is_column_name_na) 
+    
+    # write any warnings and points of interest generated to the metadata report
+    warnings <- names(warnings())
+    warnings_matrix <- matrix(warnings, 1,length(warnings))
+    contribute_to_metadata_report(control_data_type, "Comparison", warnings_matrix)
+    contribute_to_metadata_report(control_data_type, "Comparison", metadata)
+    
+    output <- list(current_vec, updated_matching_entry_indices, metadata)
+    
+    return(output)
+  
   },
     error=function(cond) {
       contribute_to_metadata_report(control_data_type, section, comments)
