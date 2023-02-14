@@ -45,10 +45,6 @@ import_data <- function(data, control_data_type, sheet=1){
 }
 
 
-add_manta_tow_specific_formatting <- function(current_df, legacy_df){
-  
-}
-
 format_control_data <- function(current_df, legacy_df, control_data_type, section){
  
   out <- tryCatch(
@@ -85,7 +81,7 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
       
 
       #Determine initial error flags based on returned metadata
-      initial_error_flag <- rep(0, nrow(updated_current_df))
+      initial_error_flag <- rep(NA, nrow(updated_current_df))
       if (!is_not_matching_column_names & !is_not_matching_column_names_updated){
         comments <- paste0(comments,"One or more columns in legacy format were 
                            not matched and exceeded the allowable levenshtein 
@@ -226,13 +222,12 @@ verify_row_entries <- function(new_data_df, legacy_data_df, control_data_type, s
   }
   seperated_row_entries <- seperate_row_entries(new_data_df, legacy_data_df, seperation_column_name)
   
-  
-  previously_processed_row_entries_df <- seperated_row_entries[1]
-  new_row_entries_df <- seperated_row_entries[2]
+  previous_entries <- seperated_row_entries[1]
+  new_entries <- seperated_row_entries[2]
   
   if(control_data_type == "manta_tow"){
-    verified_previous_entries <- handle_previously_processed_row_entries(previously_processed_row_entries_df)
-    verified_new_entries <- handle_new_row_entries(new_row_entries_df)
+    verified_previous_entries <- handle_previously_processed_row_entries(previous_entries)
+    verified_new_entries <- handle_new_row_entries(new_entries)
   } else if (control_data_type == "cull"){
     
   } else if (control_data_type == "RHIS"){
@@ -256,12 +251,32 @@ handle_previously_processed_row_entries <- function(previously_processed_row_ent
 seperate_row_entries <- function(new_data_df, legacy_data_df, seperation_column_name){
   # check that the specified seperation column name can be found with partial 
   # string match
-   column_names <- colnames(legacy_data_df)
-   if (any(grepl(seperation_column_name, column_names))){
-     seperation_column_name <- column_names[grep(seperation_column_name, column_names)]
-   }
-    
+  column_names <- colnames(legacy_data_df)
+  if (any(grepl(seperation_column_name, column_names))){
+    seperation_column_name <- column_names[grep(seperation_column_name, column_names)]
+  }
+  most_recent_date <- max(legacy_data_df$seperation_column_name)
   
+  # Check that no new records were added to the most recent date
+  is_most_recent_date_complete <- length(new_data_df[new_data_df$seperation_column_name > most_recent_date,]) == length(legacy_data_df[legacy_data_df$seperation_column_name > most_recent_date])
+  new_entries <- new_data_df[new_data_df$seperation_column_name > most_recent_date,]
+  previous_entries <- new_data_df[new_data_df$seperation_column_name < most_recent_date,]
+  
+  # New entries should have NA if the data was previously processed. If all 
+  # entries are NA then this is the first time the dataset has been processed 
+  # with this pipeline and it will be determined when evaluating row 
+  # discrepancies whether the  entry is new. 
+  if(!is_most_recent_date_complete){
+    is_all_entries_NA <- all(is.na(new_data_df$seperation_column_name)) 
+    new_entries_most_recent_day <- previous_entries[(previous_entries$seperation_column_name == most_recent_date) && (is.na(previous_entries$seperation_column_name)),]
+    # Check that the new entries do have NA
+    if((length(new_entries_most_recent_day) > 0) && (!is_all_entries_NA)){
+      new_entries <- rbind(new_entries, new_entries_most_recent_day)
+      previous_entries <- previous_entries[-((previous_entries$seperation_column_name == most_recent_date) && (is.na(previous_entries$seperation_column_name))),]
+    }
+  }
+  output <- list(previous_entries, new_entries)
+  return(output)
 }
 
 
