@@ -64,7 +64,7 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
       legacy_col_names <- colnames(legacy_df)
       
       # compare the column names of the legacy and current format
-      matched_vector_entries <- check_vector_entries_match(current_col_names, legacy_col_names)
+      matched_vector_entries <- check_vector_entries_match(current_col_names, legacy_col_names, section)
       matched_col_names <- matched_vector_entries[[1]]
       matching_entry_indices <- matched_vector_entries[[2]]
       metadata <- matched_vector_entries[[3]]
@@ -275,6 +275,9 @@ seperate_row_entries <- function(new_data_df, legacy_data_df, seperation_column_
       previous_entries <- previous_entries[-((previous_entries$seperation_column_name == most_recent_date) && (is.na(previous_entries$seperation_column_name))),]
     }
   }
+  metadata <- data.frame(is_all_entries_NA, is_most_recent_date_complete)
+  contribute_to_metadata_report(control_data_type, "Seperate Row Entries", metadata)
+  
   output <- list(previous_entries, new_entries)
   return(output)
 }
@@ -319,7 +322,7 @@ set_data_type <- function(data_df, control_data_type){
   # all columns 
   for(i in dataTypes){
     columns <- setDataTypeList$i
-    columns <- match_vector_entries(columns, column_names)[[1]]
+    columns <- match_vector_entries(columns, column_names, "Set Data Type")[[1]]
     if(i == "Numeric"){
       apply(columns, function(x) data_df$x <- as.numeric(data_df$x))
     } else if (i == "Date") {
@@ -343,7 +346,7 @@ set_data_type <- function(data_df, control_data_type){
 } 
 
 
-check_vector_entries_match <- function(current_vec, target_vec){
+check_vector_entries_match <- function(current_vec, target_vec, section){
   # Compare any form two vectors and identify matching entries.
   
   out <- tryCatch(
@@ -482,8 +485,8 @@ check_vector_entries_match <- function(current_vec, target_vec){
     # write any warnings and points of interest generated to the metadata report
     warnings <- names(warnings())
     warnings_matrix <- matrix(warnings, 1,length(warnings))
-    contribute_to_metadata_report(control_data_type, "Comparison", warnings_matrix)
-    contribute_to_metadata_report(control_data_type, "Comparison", metadata)
+    contribute_to_metadata_report(control_data_type, section, warnings_matrix)
+    contribute_to_metadata_report(control_data_type, section, metadata)
     
     output <- list(current_vec, updated_matching_entry_indices, metadata)
     
