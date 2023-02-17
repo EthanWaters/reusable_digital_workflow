@@ -79,6 +79,10 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
       # rearrange columns
       updated_current_df <- current_df[matching_entry_indices]
       
+      # set the data type of all entries to ensure that performed operations have 
+      # expected output. 
+      legacy_data_df <- set_data_type(legacy_data_df, control_data_type) 
+      new_data_df <- set_data_type(new_data_df, control_data_type) 
 
       #Determine initial error flags based on returned metadata
       initial_error_flag <- rep(NA, nrow(updated_current_df))
@@ -104,6 +108,7 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
       if(1 %in% initial_error_flag){
         updated_current_df["error_flag"] <- initial_error_flag
       }
+      
       
       
       return(updated_current_df)
@@ -206,11 +211,19 @@ add_required_columns <- function(df, control_data_type){
   
   
 verify_row_entries <- function(new_data_df, legacy_data_df, control_data_type, section){
+  verified_data_df <- dataframe()
+  colnames(verified_data_df) <- colnames(legacy_data_df)
   
-  # set the data type of all entries to ensure that performed operations have 
-  # expected output
-  legacy_data_df <- set_data_type(legacy_data_df, control_data_type) 
-  new_data_df <- set_data_type(new_data_df, control_data_type) 
+  # remove duplicates no from same voyage -> 
+  if(!is_powerBI_export){
+    perfect_duplicates <- intersect(new_data_df, legacy_data_df)
+  }
+  
+  
+  
+  
+  
+  
   
   
   # seperate new entries and previously processed entries based on datetimes 
@@ -307,7 +320,7 @@ find_previous_process_date <- function(){
 set_data_type <- function(data_df, control_data_type){
   # sets the data_type of each column of any dataframe input based on the values
   # in a lookup table stored in a CSV. This method was chosen to increase 
-  # molecularity and flexibility. 
+  # molecularity and flexibility whilst still remaining definitive. 
   
   # create list of column name partials grouped by desired data type. The data 
   # types will be utilised as list names. 

@@ -20,11 +20,12 @@ library("xml2")
 library("rio")
 library("dplyr")
 
-main <- function(leg_path, new_cull, new_manta_tow, geospatial_sites, nearest_site_algorithm){
+main <- function(leg_path, new_cull, new_manta_tow, geospatial_sites, nearest_site_algorithm, is_powerBI_export){
 
 
 # Initialize -------------------------------------------------------------
-
+  
+assign("is_powerBI_export", is_powerBI_export, envir = .GlobalEnv) 
   
 # utilised to indicate the relevant node in XML report based on section of 
 # code executed.
