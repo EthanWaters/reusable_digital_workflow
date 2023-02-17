@@ -228,29 +228,20 @@ verify_row_entries <- function(new_data_df, legacy_data_df, control_data_type, I
     
   }
   
-  
-  if(control_data_type == "manta_tow"){
-    verified_previous_entries <- handle_previously_processed_row_entries(previous_entries)
-    verified_new_entries <- handle_new_row_entries(new_entries)
-  } else if (control_data_type == "cull"){
-    
-  } else if (control_data_type == "RHIS"){
-    
-  }
+  # Given that it is not possible to definitively know if a change / discrepancy 
+  # was intentional or not both new and change entries will pass through the 
+  # same validation checks and if passed will be accepted as usable. If failed, 
+  # the data will be flagged. Failed discrepancies will check the original 
+  # legacy entry, which if failed will be left as is. 
+  verified_new <- verify_entries(new_entries, control_data_type)
+  verified_discrepancies <- verify_entries(discrepancies_new, control_data_type)
+   
   
   
   # merge the verified dataset
-  
   return(verified_data_df)
   
 }
-
-
-handle_previously_processed_row_entries <- function(previously_processed_row_entries_df){
-  
-  
-}
-  
 
 seperate_row_entries <- function(new_data_df, legacy_data_df, seperation_column_name){
   # check that the specified seperation column name can be found with partial 
