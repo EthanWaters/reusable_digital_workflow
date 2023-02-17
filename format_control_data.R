@@ -90,24 +90,13 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
         comments <- paste0(comments,"One or more columns in legacy format were 
                            not matched and exceeded the allowable levenshtein 
                            distance to fuzzy match an avaliable column.")
-        initial_error_flag <- rep(1, nrow(updated_current_df))
       }
       if(size_legacy_df > size_curent_df){
         comments <- paste0(comments,"Insufficient number of columns to match
                            legacy formatting.")
-        initial_error_flag <- rep(1, nrow(updated_current_df))
       }
         
-      # if error flag column does not exist create it   
-      if(!"error_flag"  %in% colnames(updated_current_df)){
-        updated_current_df["error_flag"] <- initial_error_flag
-      }
-      
-      # if serious error is determined, set all error flags to TRUE as the data
-      # is unusable 
-      if(1 %in% initial_error_flag){
-        updated_current_df["error_flag"] <- initial_error_flag
-      }
+      updated_current_df["error_flag"] <- initial_error_flag
       
       
       
@@ -210,33 +199,35 @@ add_required_columns <- function(df, control_data_type){
 }
   
   
-verify_row_entries <- function(new_data_df, legacy_data_df, control_data_type, section){
+verify_row_entries <- function(new_data_df, legacy_data_df, control_data_type, ID_col, section){
   verified_data_df <- dataframe()
   colnames(verified_data_df) <- colnames(legacy_data_df)
   
-  # remove duplicates no from same voyage -> 
+  # If there is a unique ID then perfect duplicates can easily be removed.
   if(!is_powerBI_export){
-    perfect_duplicates <- intersect(new_data_df, legacy_data_df)
+    #find perfect duplicates and add to verified data df
+    perfect_duplicates <- inner_join(legacy_data_df, new_data_df)
+    verified_data_df <- rbind(verified_data_df, perfect_duplicates)
+    
+    # Determine discrepancies and store both versions of the entries
+    discrepancies_legacy <- anti_join(legacy_data_df, new_data_df)   
+    discrepancies_new_indices <- which(new_data_df$ID_col %in% discrepancies_legacy$ID_col)
+    discrepancies_new <- new_data_df[discrepancies_new_indices,]
+    
+    # find new entries based on whether the ID is present in both dataframes 
+    new_entries <- anti_join(new_data_df, legacy_data_df, by=ID_col)  
+    
+    # Check that no IDs have changed. 
+    if(length(discrepancies_new) == length(discrepancies_legacy)){
+      # This would imply entries with tempory IDs have been previously processed 
+      # and have now been updated. This will require an iterative process to 
+      # find the closest matching record. This will be required for any
+      # situation without an ID.
+      
+    }
+    
   }
   
-  
-  
-  
-  
-  
-  
-  
-  # seperate new entries and previously processed entries based on datetimes 
-  # in nominated column ("seperation_column_name").
-  if((control_data_type == "manta_tow") | (control_data_type == "RHIS")){
-    seperation_column_name <- "date"
-  } else if (control_data_type == "cull"){
-    seperation_column_name <- "Voyage Start"
-  }
-  seperated_row_entries <- seperate_row_entries(new_data_df, legacy_data_df, seperation_column_name)
-  
-  previous_entries <- seperated_row_entries[1]
-  new_entries <- seperated_row_entries[2]
   
   if(control_data_type == "manta_tow"){
     verified_previous_entries <- handle_previously_processed_row_entries(previous_entries)
