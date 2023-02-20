@@ -8,6 +8,7 @@ install.packages("xml2")
 install.packages("rio")
 install.packages('installr')
 install.packages('dplyr')
+install.packages('Hmisc')
 
 library("tools")
 library("installr")
@@ -19,6 +20,7 @@ library("methods")
 library("xml2")
 library("rio")
 library("dplyr")
+library("Hmisc")
 
 main <- function(leg_path, new_cull, new_manta_tow, geospatial_sites, nearest_site_algorithm, is_powerBI_export){
 
@@ -71,58 +73,17 @@ section <- 'Format'
 # The column formatting of New data will be compared with a legacy data set that 
 # is deemed to be in the ideal target format. Any necessary changes will be made 
 # and recorded. This will be executed irrespective of data set provided.
-Updated_cull_data_format <- format_control_data(new_cull_data_df, cull_legacy_df, 'cull', section)
-Updated_manta_tow_data_format <- format_control_data(new_manta_tow_data_df, manta_tow_legacy_df, 'manta_tow', section)
-Updated_RHIS_data_format <- format_control_data(new_RHIS_data_df, RHIS_legacy_df, 'RHIS', section)
+Updated_cull_data_format <- format_control_data(new_cull_data_df, cull_legacy_df, 'cull', section, is_new)
+Updated_manta_tow_data_format <- format_control_data(new_manta_tow_data_df, manta_tow_legacy_df, 'manta_tow', section, is_new)
+Updated_RHIS_data_format <- format_control_data(new_RHIS_data_df, RHIS_legacy_df, 'RHIS', section, is_new)
 
 
 # Find Row Discrepancies --------------------------------------------------
 
 # Finds discrepancies in previously processed data and the new data input and handles them appropriately. 
-cull_discrepancies_output <- verify_row_entries(Updated_cull_data_format, cull_legacy_df, 'cull', section)
-manta_tow_discrepancies_output <- verify_row_entries(Updated_manta_tow_data_format, manta_tow_legacy_df, 'manta_tow', section)
-RHIS_discrepancies_output <- verify_row_entries(Updated_RHIS_data_format, RHIS_legacy_df, 'RHIS', section)
-
-
-
-
-# prrevious output seperated into appropriate variables
-cull_discrepancies <- cull_discrepancies_output[1]
-manta_tow_discrepancies <- manta_tow_discrepancies_output[1]
-RHIS_discrepancies <- RHIS_discrepancies_output[1]
-
-consistent_previous_cull_data_df <- cull_discrepancies_output[2] 
-consistent_previous_manta_tow_data_df <- manta_tow_discrepancies_output[2] 
-consistent_previous_RHIS_data_df <- RHIS_discrepancies_output[2] 
-
-only_new_cull_data_df <- cull_discrepancies_output[3] 
-only_new_manta_tow_data_df <- manta_tow_discrepancies_output[3] 
-only_new_RHIS_data_df <- RHIS_discrepancies_output[3] 
-
-
-
-# Verify Row Entry Format -------------------------------------------------
-
-# Verify that the new row entries meet all data requirements before being
-# accepted for further processing. The functions are data set specific as they 
-# all have different requirements.
-verified_new_cull_data_df <- verify_new_cull_suitablility(only_new_cull_data_df)
-verified_new_manta_tow_data_df <- verify_new_manta_tow_suitablility(only_new_manta_tow_data_df)
-verified_new_RHIS_data_df <- verify_new_RHIS_suitablility(only_new_RHIS_data_df)
-
-# Verify that the row entries with highlighted discrepancies still meet all data 
-# requirements before being accepted for further processing. Determine if
-# changes are quality assurance or mistakes. The functions are data set
-# specific as they all have different requirements.
-verified_previous_cull_data_df <- handle_cull_discrepancies(cull_discrepancies)
-verified_previous_manta_tow_data_df <- handle_manta_tow_discrepancies(manta_tow_discrepancies)
-verified_previous_RHIS_data_df <- handle_RHIS_discrepancies(RHIS_discrepancies)
-
-# Combine both verified data sets to form a dataframe containing all processed 
-# data to date. 
-verified_control_data_df <- rbind(verified_previous_cull_data_df, verified_new_cull_data_df)
-verified_manta_tow_data_df <- rbind(verified_previous_manta_tow_data_df, verified_new_manta_tow_data_df)
-verified_RHIS_data_df <- rbind(verified_previous_RHIS_data_df, verified_new_RHIS_data_df)
+verified_new_cull_data_df <- verify_control_dataframe(Updated_cull_data_format, cull_legacy_df, 'cull', section)
+verified_new_manta_tow_data_df <- verify_control_dataframe(Updated_manta_tow_data_format, manta_tow_legacy_df, 'manta_tow', section)
+verified_new_RHIS_data_df <- verify_control_dataframe(Updated_RHIS_data_format, RHIS_legacy_df, 'RHIS', section)
 
 
 # Assign Nearest Sites ----------------------------------------------------

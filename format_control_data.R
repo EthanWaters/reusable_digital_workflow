@@ -64,13 +64,13 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
       legacy_col_names <- colnames(legacy_df)
       
       # compare the column names of the legacy and current format
-      matched_vector_entries <- check_vector_entries_match(current_col_names, legacy_col_names, section)
+      matched_vector_entries <- match_vector_entries(current_col_names, legacy_col_names, section)
       matched_col_names <- matched_vector_entries[[1]]
       matching_entry_indices <- matched_vector_entries[[2]]
       metadata <- matched_vector_entries[[3]]
       
       if(any(is.na(matched_col_names)) || any(is.na(matching_entry_indices))){
-        comments <- paste0(comments,"matching_entry_indices or matched_col_names has returned NA, indicating a fatal error in check_vector_entries_match")
+        comments <- paste0(comments,"matching_entry_indices or matched_col_names has returned NA, indicating a fatal error in match_vector_entries")
       }
       
       # Update the current dataframe column names with the vector found above.
@@ -199,48 +199,91 @@ add_required_columns <- function(df, control_data_type){
 }
   
   
-verify_row_entries <- function(new_data_df, legacy_data_df, control_data_type, ID_col, section){
+verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_type, ID_col, section, is_new){
   verified_data_df <- dataframe()
   colnames(verified_data_df) <- colnames(legacy_data_df)
   
-  # If there is a unique ID then perfect duplicates can easily be removed.
-  if(!is_powerBI_export){
+  # If this is the first time processing the data it will require an export 
+  # directly from the GBRMPA database to ensure that IDs are correct. This will 
+  # then need to check every single entry to ensure it meets the requirements. 
+  # Ultimately it is not possible to definitively know if a change / discrepancy 
+  # was intentional or not, therefore both new and change entries will pass
+  # through the same validation checks and if passed will be accepted as 
+  # usable. Identifying discrepancies does not alter the checking process, it 
+  # just offers the opportunity to ensure that a correct record wasn't 
+  # mistakenly changed. For first time processing any error flagged entries can 
+  # be compared to the legacy data set in an iterative process without checking 
+  # IDs to find likely matches. 
+  if(!is_new){
+    # If there is a unique ID then perfect duplicates can easily be removed.
+    if(!is_powerBI_export){
+      legacy_data_df <- update_IDs(new_data_df, legacy_data_df, control_data_type)
+      
+      # Determine discrepancies and store both versions of the entries
+      discrepancies_legacy <- anti_join(legacy_data_df, new_data_df)   
+      discrepancies_new_indices <- which(new_data_df$ID_col %in% discrepancies_legacy$ID_col)
+      discrepancies_new <- new_data_df[discrepancies_new_indices,]
+      
+      # find new entries based on whether the ID is present in both dataframes 
+      new_entries <- anti_join(new_data_df, legacy_data_df, by=ID_col)  
+      
+      # Check that no IDs have changed. 
+      if(!(length(discrepancies_new) == length(discrepancies_legacy))){
+        # This would imply entries with tempory IDs have been previously processed 
+        # and have now been updated. This will require an iterative process to 
+        # find the closest matching record. This will be required for any
+        # situation without an ID.
+      }
+        
+    } else {
+     
+      
+    }
+    
     #find perfect duplicates and add to verified data df
     perfect_duplicates <- inner_join(legacy_data_df, new_data_df)
     verified_data_df <- rbind(verified_data_df, perfect_duplicates)
     
-    # Determine discrepancies and store both versions of the entries
-    discrepancies_legacy <- anti_join(legacy_data_df, new_data_df)   
-    discrepancies_new_indices <- which(new_data_df$ID_col %in% discrepancies_legacy$ID_col)
-    discrepancies_new <- new_data_df[discrepancies_new_indices,]
+    # Given that it is not possible to definitively know if a change / discrepancy 
+    # was intentional or not both new and change entries will pass through the 
+    # same validation checks and if passed will be accepted as usable and assumed to be . If failed, 
+    # assumed to be a QA change. If failed,  the data will be flagged. Failed 
+    # discrepancies will check the original legacy entry, which if failed will 
+    # be left as is. 
+    verified_new <- verify_entries(new_entries, control_data_type)
+    verified_discrepancies <- verify_entries(discrepancies_new, control_data_type)
+    verified_discrepancies <- compare_discrepancies(discrepancies_new, discrepancies_legacy, control_data_type)
     
-    # find new entries based on whether the ID is present in both dataframes 
-    new_entries <- anti_join(new_data_df, legacy_data_df, by=ID_col)  
-    
-    # Check that no IDs have changed. 
-    if(length(discrepancies_new) == length(discrepancies_legacy)){
-      # This would imply entries with tempory IDs have been previously processed 
-      # and have now been updated. This will require an iterative process to 
-      # find the closest matching record. This will be required for any
-      # situation without an ID.
-      
-    }
+   
+  } else if (is_new & !is_powerBI_export){
+    verified_new <- verify_entries(new_data_df, control_data_type)
+    verified_data_df <- rbind(verified_data_df, verified_new)
     
   }
   
-  # Given that it is not possible to definitively know if a change / discrepancy 
-  # was intentional or not both new and change entries will pass through the 
-  # same validation checks and if passed will be accepted as usable. If failed, 
-  # the data will be flagged. Failed discrepancies will check the original 
-  # legacy entry, which if failed will be left as is. 
-  verified_new <- verify_entries(new_entries, control_data_type)
-  verified_discrepancies <- verify_entries(discrepancies_new, control_data_type)
-   
+  
   
   
   # merge the verified dataset
   return(verified_data_df)
   
+}
+
+update_IDs <- function(new_data_df, legacy_data_df, control_data_type){
+  
+  
+}
+
+find_close_matches <- function(x, y, distance){
+  
+  
+  lapply(1:nrows(y), function(z){ 
+    if(length(omit.na(match(x[i,], y[z,]))) <= distance){
+      omit.na(match(x[i,], y[z,]))
+    }
+    
+    
+    })
 }
 
 seperate_row_entries <- function(new_data_df, legacy_data_df, seperation_column_name){
@@ -277,13 +320,6 @@ seperate_row_entries <- function(new_data_df, legacy_data_df, seperation_column_
   return(output)
 }
 
-
-  
-handle_new_row_entries <- function(new_row_entries_df){
-  
-  
-}
-  
 
 find_previous_process_date <- function(){
   # finds the dates stored in the metadata report file names with REGEX. 
@@ -341,7 +377,7 @@ set_data_type <- function(data_df, control_data_type){
 } 
 
 
-check_vector_entries_match <- function(current_vec, target_vec, section){
+match_vector_entries <- function(current_vec, target_vec, section){
   # Compare any form two vectors and identify matching entries.
   
   out <- tryCatch(
