@@ -219,6 +219,10 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
     if(!is_powerBI_export){
       legacy_data_df <- update_IDs(new_data_df, legacy_data_df, control_data_type)
       
+      #find perfect duplicates and add to verified data df
+      perfect_duplicates <- inner_join(legacy_data_df, new_data_df)
+      verified_data_df <- rbind(verified_data_df, perfect_duplicates)
+      
       # Determine discrepancies and store both versions of the entries
       discrepancies_legacy <- anti_join(legacy_data_df, new_data_df)   
       discrepancies_new_indices <- which(new_data_df$ID_col %in% discrepancies_legacy$ID_col)
@@ -236,13 +240,31 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
       }
         
     } else {
-     
+      #find perfect duplicates and add to verified data df
+      perfect_duplicates <- inner_join(legacy_data_df, new_data_df)
+      verified_data_df <- rbind(verified_data_df, perfect_duplicates)
       
+      #find close matching rows based on all columns except ID. ID is not 
+      # becuase it will always be null if the data is exported from powerBI
+      close_match_rows <- find_close_matches(new_data_df[,-"ID"], legacy_data_df[,-"ID"], 2)
+      
+      discrepancies_new_indices <- c()
+      discrepancies_legacy_indices <- c()
+      
+      sapply(1:length(close_match_rows), function(x){
+        if(length(close_match_rows[[x]]) == 1){
+          discrepancies_legacy <- c(discrepancies_legacy, close_match_rows[[x]][2])
+          discrepancies_new <- c(discrepancies_new, close_match_rows[[x]][2])
+        } else {
+          
+        }
+      })
+      
+      discrepancies_legacy <- legacy_data_df[discrepancies_legacy_indices,]
+      discrepancies_new <- new_data_df[discrepancies_new_indices,]
     }
     
-    #find perfect duplicates and add to verified data df
-    perfect_duplicates <- inner_join(legacy_data_df, new_data_df)
-    verified_data_df <- rbind(verified_data_df, perfect_duplicates)
+   
     
     # Given that it is not possible to definitively know if a change / discrepancy 
     # was intentional or not both new and change entries will pass through the 
@@ -274,16 +296,23 @@ update_IDs <- function(new_data_df, legacy_data_df, control_data_type){
   
 }
 
+
 find_close_matches <- function(x, y, distance){
+  # Find list of all close matches between rows in x and y within a specified 
+  # distance. This distance is the number of non perfect column matches within
+  # a row. returns a list of lists. Each is a vector containing the indices of
+  # the rows matched and the distance from perfect
   
-  
-  lapply(1:nrows(y), function(z){ 
-    if(length(omit.na(match(x[i,], y[z,]))) <= distance){
-      omit.na(match(x[i,], y[z,]))
-    }
-    
-    
+  matches <- lapply(1:nrow(x), function(z){ 
+    sapply(1:nrow(y), function(i){ 
+      if(length(na.omit(match(x[z,], y[i,]))) >= (length(y[i,]) - distance)){
+        c(z, i,length(y[1,]) - length(na.omit(match(x[z,], y[i,]))))
+      }
     })
+  })
+  # filtered_matches <- lapply(matches, function(a) Filter(Negate(is.null), a))
+  # filtered_matches <- unlist(filtered_matches, recursive = FALSE)
+  return(filtered_matches)
 }
 
 seperate_row_entries <- function(new_data_df, legacy_data_df, seperation_column_name){
