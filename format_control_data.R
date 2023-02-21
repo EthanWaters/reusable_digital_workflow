@@ -245,13 +245,12 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
       verified_data_df <- rbind(verified_data_df, perfect_duplicates)
       
       # remove perfect duplicates before attempting to identify close matches
-      unmatched_new_data_df <- new_data_df[]
-      unmatched_legacy_data_df
+      unmatched_new_data_df <- anti_join(new_data_df, legacy_data_df)
+      unmatched_legacy_data_df <- anti_join(legacy_data_df, new_data_df)
       
-    
       # find close matching rows based on all columns except ID. ID is not 
       # because it will always be null if the data is exported from powerBI
-      close_match_rows <- find_close_matches(new_data_df[,-"ID"], legacy_data_df[,-"ID"], 2)
+      close_match_rows <- find_close_matches(unmatched_new_data_df[ , -which(names(unmatched_new_data_df) %in% c("ID"))], unmatched_legacy_data_df[ , -which(names(unmatched_legacy_data_df) %in% c("ID"))], 2)
       
       discrepancies_new_indices <- c()
       discrepancies_legacy_indices <- c()
@@ -276,8 +275,9 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
         } 
       })
       
-      discrepancies_legacy <- legacy_data_df[discrepancies_legacy_indices,]
-      discrepancies_new <- new_data_df[discrepancies_new_indices,]
+      discrepancies_legacy <- unmatched_legacy_data_df[discrepancies_legacy_indices,]
+      discrepancies_new <- unmatched_new_data_df[discrepancies_new_indices,]
+      new_entries <- unmatched_new_data_df[-discrepancies_new_indices,]
     }
     
    
