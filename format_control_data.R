@@ -325,20 +325,31 @@ update_IDs <- function(new_data_df, legacy_data_df, control_data_type){
   # utilised data from a powerBI export and therefore will have IDs of NA. This 
   # will find perfect matches (distance of zero).
   
-  missing_id_rows <- legacy_data_df[is.na(legacy_data_df$ID),]
-  missing_id_rows_without_ID_df <- missing_id_rows[ , -which(names(missing_id_rows) %in% c("ID"))]
-  
-  missing_id_row_indices <- which(is.na(legacy_data_df$ID))
+  # This is very similar code to the find_close_match function. To ensure that
+  # IDs found are appended to the correct entry with the least risk two minor 
+  # adjustments have been made that are only suitable in this scenario. 
+  # The original dataframes are iterated over to be confident the correct index
+  # is known. If the ID of a Row is not NA then it will be skipped. Comparisons 
+  # are made between the two original dataframes where the ID column is removed.
+  legacy_data_without_ID_df <- legacy_data_df[ , -which(names(missing_id_rows) %in% c("ID"))]
   new_data_without_ID_df <- new_data_df[ , -which(names(new_data_df) %in% c("ID"))]
   
-  colsToUse <- intersect(colnames(missing_id_rows_without_ID_df), colnames(new_data_without_ID_df))
-  indices <- match(do.call("paste", missing_id_rows_without_ID_df[, colsToUse]), do.call("paste", new_data_without_ID_df[, colsToUse]))
+  matches <- lapply(1:nrow(legacy_data_df), function(z){ 
+    if(is.na(legacy_data_df$ID[z])){
+      for(i in 1:nrow(new_data_df)){ 
+        if(length(na.omit(match(legacy_data_without_ID_df[z,], new_data_without_ID_df[i,]))) == length(new_data_without_ID_df[i,])){
+          c(z, i)
+        }
+      }
+    }
+  })
   
-  perfect_matches <- find_close_matches(missing_id_rows, new_data_without_ID_df, distance)
-  filtered_matches <- unlist(perfect_matches, recursive = FALSE)
-  
+  # Once matches are found, IDs can then be altered. If there are multiple 
+  # matches then they are left as is. Ultimately this means they will be treated
+  # as a new entry. 
+  filtered_matches <- unlist(matches, recursive = FALSE)
   for(x in filtered_matches){
-    discrepancies_legacy_indices <- c(discrepancies_legacy_indices, close_match_rows[[x]][[1]][2])
+    legacy_data_df[x[1],which(names(legacy_data_df) %in% c("ID"))] <- new_data_df[x[2],which(names(new_data_df) %in% c("ID"))]
   }
 }
 
