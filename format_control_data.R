@@ -348,8 +348,12 @@ update_IDs <- function(new_data_df, legacy_data_df, control_data_type){
   # matches then they are left as is. Ultimately this means they will be treated
   # as a new entry. 
   filtered_matches <- unlist(matches, recursive = FALSE)
+  legacy_IDs <- legacy_data_df$ID
   for(x in filtered_matches){
-    legacy_data_df[x[1],which(names(legacy_data_df) %in% c("ID"))] <- new_data_df[x[2],which(names(new_data_df) %in% c("ID"))]
+    new_ID <- new_data_df[x[2],which(names(new_data_df) %in% c("ID"))]
+    if(!new_ID %in% legacy_IDs){
+      legacy_data_df[x[1],which(names(legacy_data_df) %in% c("ID"))] <- new_ID
+    }
   }
   return(legacy_data_df)
 }
