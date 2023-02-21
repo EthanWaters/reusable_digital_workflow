@@ -351,6 +351,7 @@ update_IDs <- function(new_data_df, legacy_data_df, control_data_type){
   for(x in filtered_matches){
     legacy_data_df[x[1],which(names(legacy_data_df) %in% c("ID"))] <- new_data_df[x[2],which(names(new_data_df) %in% c("ID"))]
   }
+  return(legacy_data_df)
 }
 
 
