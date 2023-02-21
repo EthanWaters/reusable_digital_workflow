@@ -217,7 +217,19 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
   if(!is_new){
     # If there is a unique ID then perfect duplicates can easily be removed.
     if(!is_powerBI_export){
-      legacy_data_df <- update_IDs(new_data_df, legacy_data_df, control_data_type)
+      
+      # Update IDs that are NA from powerBI export based on perfect duplicates. 
+      # Find close matches of rows left without an ID and no perfect duplicates. 
+      # Rows with a single close match will be considered a discrepancy and then
+      # the ID checked against the all the IDs in legacy_data_df to ensure it does 
+      # not already exist.
+      if(any(is.na(legacy_data_df$ID))){
+        legacy_data_df <- update_IDs(new_data_df, legacy_data_df, control_data_type)
+        
+        close_match_rows <- find_close_matches(unmatched_new_data_df[ , -which(names(unmatched_new_data_df) %in% c("ID"))], unmatched_legacy_data_df[ , -which(names(unmatched_legacy_data_df) %in% c("ID"))], 2)
+        
+      }
+      
       
       #find perfect duplicates and add to verified data df
       perfect_duplicates <- inner_join(legacy_data_df, new_data_df)
@@ -248,16 +260,19 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
       unmatched_new_data_df <- anti_join(new_data_df, legacy_data_df)
       unmatched_legacy_data_df <- anti_join(legacy_data_df, new_data_df)
       
-      # find close matching rows based on all columns except ID. ID is not 
-      # because it will always be null if the data is exported from powerBI
-      close_match_rows <- find_close_matches(unmatched_new_data_df[ , -which(names(unmatched_new_data_df) %in% c("ID"))], unmatched_legacy_data_df[ , -which(names(unmatched_legacy_data_df) %in% c("ID"))], 2)
+      # find close matching rows (distance of two) based on all columns except ID. ID is not 
+      # because it will always be null if the data is exported from powerBI. 
+      distance <- 2
+      new_data_without_ID_df <- unmatched_new_data_df[ , -which(names(unmatched_new_data_df) %in% c("ID"))]
+      legacy_data_without_ID_df <- unmatched_legacy_data_df[ , -which(names(unmatched_legacy_data_df) %in% c("ID"))]
+      close_match_rows <- find_close_matches(new_data_without_ID_df, legacy_data_without_ID_df, distance)
       
       discrepancies_new_indices <- c()
       discrepancies_legacy_indices <- c()
       
       # Iterate through list of close_match_rows to acquire indices of
       # discrepancies
-      sapply(1:length(close_match_rows), function(x){
+      for(x in 1:length(close_match_rows)){
         # if a row only has one close_match_row, it is considered a discrepancy
         if(length(close_match_rows[[x]]) == 1){
           discrepancies_legacy_indices <- c(discrepancies_legacy_indices, close_match_rows[[x]][[1]][2])
@@ -273,15 +288,13 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
             discrepancies_new_indices <- c(discrepancies_new_indices, close_match_rows[[x]][[closest_match]][1])
           }
         } 
-      })
+      }
       
       discrepancies_legacy <- unmatched_legacy_data_df[discrepancies_legacy_indices,]
       discrepancies_new <- unmatched_new_data_df[discrepancies_new_indices,]
       new_entries <- unmatched_new_data_df[-discrepancies_new_indices,]
     }
-    
-   
-    
+
     # Given that it is not possible to definitively know if a change / discrepancy 
     # was intentional or not both new and change entries will pass through the 
     # same validation checks and if passed will be accepted as usable and assumed to be . If failed, 
@@ -308,8 +321,25 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
 }
 
 update_IDs <- function(new_data_df, legacy_data_df, control_data_type){
+  # Attempt to update the IDs of the legacy data if the previous processing 
+  # utilised data from a powerBI export and therefore will have IDs of NA. This 
+  # will find perfect matches (distance of zero).
   
+  missing_id_rows <- legacy_data_df[is.na(legacy_data_df$ID),]
+  missing_id_rows_without_ID_df <- missing_id_rows[ , -which(names(missing_id_rows) %in% c("ID"))]
   
+  missing_id_row_indices <- which(is.na(legacy_data_df$ID))
+  new_data_without_ID_df <- new_data_df[ , -which(names(new_data_df) %in% c("ID"))]
+  
+  colsToUse <- intersect(colnames(missing_id_rows_without_ID_df), colnames(new_data_without_ID_df))
+  indices <- match(do.call("paste", missing_id_rows_without_ID_df[, colsToUse]), do.call("paste", new_data_without_ID_df[, colsToUse]))
+  
+  perfect_matches <- find_close_matches(missing_id_rows, new_data_without_ID_df, distance)
+  filtered_matches <- unlist(perfect_matches, recursive = FALSE)
+  
+  for(x in filtered_matches){
+    discrepancies_legacy_indices <- c(discrepancies_legacy_indices, close_match_rows[[x]][[1]][2])
+  }
 }
 
 
@@ -320,11 +350,11 @@ find_close_matches <- function(x, y, distance){
   # the rows matched and the distance from perfect. (X_index, Y_index, Distance)
   
   matches <- lapply(1:nrow(x), function(z){ 
-    sapply(1:nrow(y), function(i){ 
+    for(i in 1:nrow(y)){ 
       if(length(na.omit(match(x[z,], y[i,]))) >= (length(y[i,]) - distance)){
         c(z, i,length(y[1,]) - length(na.omit(match(x[z,], y[i,]))))
       }
-    })
+    }
   })
   filtered_matches <- lapply(matches, function(a) Filter(Negate(is.null), a))
   
