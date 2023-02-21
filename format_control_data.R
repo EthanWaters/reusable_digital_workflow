@@ -240,24 +240,40 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
       }
         
     } else {
-      #find perfect duplicates and add to verified data df
+      # find perfect duplicates and add to verified data df
       perfect_duplicates <- inner_join(legacy_data_df, new_data_df)
       verified_data_df <- rbind(verified_data_df, perfect_duplicates)
       
-      #find close matching rows based on all columns except ID. ID is not 
-      # becuase it will always be null if the data is exported from powerBI
+      # remove perfect duplicates before attempting to identify close matches
+      unmatched_new_data_df <- new_data_df[]
+      unmatched_legacy_data_df
+      
+    
+      # find close matching rows based on all columns except ID. ID is not 
+      # because it will always be null if the data is exported from powerBI
       close_match_rows <- find_close_matches(new_data_df[,-"ID"], legacy_data_df[,-"ID"], 2)
       
       discrepancies_new_indices <- c()
       discrepancies_legacy_indices <- c()
       
+      # Iterate through list of close_match_rows to acquire indices of
+      # discrepancies
       sapply(1:length(close_match_rows), function(x){
+        # if a row only has one close_match_row, it is considered a discrepancy
         if(length(close_match_rows[[x]]) == 1){
-          discrepancies_legacy <- c(discrepancies_legacy, close_match_rows[[x]][2])
-          discrepancies_new <- c(discrepancies_new, close_match_rows[[x]][2])
-        } else {
-          
-        }
+          discrepancies_legacy_indices <- c(discrepancies_legacy_indices, close_match_rows[[x]][[1]][2])
+          discrepancies_new_indices <- c(discrepancies_new_indices, close_match_rows[[x]][[1]][1])
+        } else if (length(close_match_rows[[x]]) > 1) {
+          # if a row only has multiple close_match_rows, the one with the 
+          # closest distance is considered a discrepancy. If there are multiple 
+          # then they are disregarded and assumed to be new entries
+          match_index_matrix <- do.call(rbind, close_match_rows[[x]])
+          closest_match <- which(min(match_index_matrix[,length(close_match_rows[[x]][[1]])]) == match_index_matrix[,length(close_match_rows[[x]][[1]])])
+          if(length(closest_match) == 1){
+            discrepancies_legacy_indices <- c(discrepancies_legacy_indices, close_match_rows[[x]][[closest_match]][2])
+            discrepancies_new_indices <- c(discrepancies_new_indices, close_match_rows[[x]][[closest_match]][1])
+          }
+        } 
       })
       
       discrepancies_legacy <- legacy_data_df[discrepancies_legacy_indices,]
@@ -301,7 +317,7 @@ find_close_matches <- function(x, y, distance){
   # Find list of all close matches between rows in x and y within a specified 
   # distance. This distance is the number of non perfect column matches within
   # a row. returns a list of lists. Each is a vector containing the indices of
-  # the rows matched and the distance from perfect
+  # the rows matched and the distance from perfect. (X_index, Y_index, Distance)
   
   matches <- lapply(1:nrow(x), function(z){ 
     sapply(1:nrow(y), function(i){ 
@@ -310,7 +326,10 @@ find_close_matches <- function(x, y, distance){
       }
     })
   })
-  # filtered_matches <- lapply(matches, function(a) Filter(Negate(is.null), a))
+  filtered_matches <- lapply(matches, function(a) Filter(Negate(is.null), a))
+  
+  # Currently not necessary but it may be desirable to have a single list of 
+  # vectors rather than a list of lists
   # filtered_matches <- unlist(filtered_matches, recursive = FALSE)
   return(filtered_matches)
 }
