@@ -224,9 +224,12 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
       # the ID checked against the all the IDs in legacy_data_df to ensure it does 
       # not already exist.
       if(any(is.na(legacy_data_df$ID))){
+        
         legacy_data_df <- update_IDs(new_data_df, legacy_data_df, control_data_type)
         
-        close_match_rows <- find_close_matches(unmatched_new_data_df[ , -which(names(unmatched_new_data_df) %in% c("ID"))], unmatched_legacy_data_df[ , -which(names(unmatched_legacy_data_df) %in% c("ID"))], 2)
+        # create new dataframe without rows that have NA ID so that they can
+        # be passed through the check functions as new row entries. 
+        legacy_data_df <- legacy_data_df[is.na(legacy_data_df$ID),]
         
       }
       
@@ -263,8 +266,8 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
       # find close matching rows (distance of two) based on all columns except ID. ID is not 
       # because it will always be null if the data is exported from powerBI. 
       distance <- 2
-      new_data_without_ID_df <- unmatched_new_data_df[ , -which(names(unmatched_new_data_df) %in% c("ID"))]
-      legacy_data_without_ID_df <- unmatched_legacy_data_df[ , -which(names(unmatched_legacy_data_df) %in% c("ID"))]
+      new_data_without_ID_df <- unmatched_new_data_df[ , -which(names(unmatched_new_data_df) %in% c("ID", "error_flag"))]
+      legacy_data_without_ID_df <- unmatched_legacy_data_df[ , -which(names(unmatched_legacy_data_df) %in% c("ID", "error_flag"))]
       close_match_rows <- find_close_matches(new_data_without_ID_df, legacy_data_without_ID_df, distance)
       
       discrepancies_new_indices <- c()
@@ -312,13 +315,17 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
     
   }
   
-  
-  
-  
   # merge the verified dataset
   return(verified_data_df)
   
 }
+
+
+verify_entries <- function(){
+  
+  
+}
+
 
 update_IDs <- function(new_data_df, legacy_data_df, control_data_type){
   # Attempt to update the IDs of the legacy data if the previous processing 
@@ -331,8 +338,8 @@ update_IDs <- function(new_data_df, legacy_data_df, control_data_type){
   # The original dataframes are iterated over to be confident the correct index
   # is known. If the ID of a Row is not NA then it will be skipped. Comparisons 
   # are made between the two original dataframes where the ID column is removed.
-  legacy_data_without_ID_df <- legacy_data_df[ , -which(names(missing_id_rows) %in% c("ID"))]
-  new_data_without_ID_df <- new_data_df[ , -which(names(new_data_df) %in% c("ID"))]
+  legacy_data_without_ID_df <- legacy_data_df[ , -which(names(missing_id_rows) %in% c("ID", "error_flag"))]
+  new_data_without_ID_df <- new_data_df[ , -which(names(new_data_df) %in% c("ID", "error_flag"))]
   
   matches <- lapply(1:nrow(legacy_data_df), function(z){ 
     if(is.na(legacy_data_df$ID[z])){
@@ -347,14 +354,18 @@ update_IDs <- function(new_data_df, legacy_data_df, control_data_type){
   # Once matches are found, IDs can then be altered. If there are multiple 
   # matches then they are left as is. Ultimately this means they will be treated
   # as a new entry. 
-  filtered_matches <- unlist(matches, recursive = FALSE)
   legacy_IDs <- legacy_data_df$ID
   for(x in filtered_matches){
-    new_ID <- new_data_df[x[2],which(names(new_data_df) %in% c("ID"))]
-    if(!new_ID %in% legacy_IDs){
-      legacy_data_df[x[1],which(names(legacy_data_df) %in% c("ID"))] <- new_ID
+    if(length(x) == 1){
+      new_ID <- new_data_df[x[[1]][2],which(names(new_data_df) %in% c("ID"))]
+      if(!new_ID %in% legacy_IDs){
+        legacy_data_df[x[[1]][1],which(names(legacy_data_df) %in% c("ID"))] <- new_ID
+      }
     }
   }
+  
+  remaining_non_ID <- nrow(legacy_data_df[is.na(legacy_data_df$ID),])
+  contribute_to_metadata_report(control_data_type, "Update ID", remaining_non_ID)
   return(legacy_data_df)
 }
 
@@ -378,40 +389,6 @@ find_close_matches <- function(x, y, distance){
   # vectors rather than a list of lists
   # filtered_matches <- unlist(filtered_matches, recursive = FALSE)
   return(filtered_matches)
-}
-
-seperate_row_entries <- function(new_data_df, legacy_data_df, seperation_column_name){
-  # check that the specified seperation column name can be found with partial 
-  # string match
-  column_names <- colnames(legacy_data_df)
-  if (any(grepl(seperation_column_name, column_names))){
-    seperation_column_name <- column_names[grep(seperation_column_name, column_names)]
-  }
-  most_recent_date <- max(legacy_data_df$seperation_column_name)
-  
-  # Check that no new records were added to the most recent date
-  is_most_recent_date_complete <- length(new_data_df[new_data_df$seperation_column_name > most_recent_date,]) == length(legacy_data_df[legacy_data_df$seperation_column_name > most_recent_date])
-  new_entries <- new_data_df[new_data_df$seperation_column_name > most_recent_date,]
-  previous_entries <- new_data_df[new_data_df$seperation_column_name < most_recent_date,]
-  
-  # New entries should have NA if the data was previously processed. If all 
-  # entries are NA then this is the first time the dataset has been processed 
-  # with this pipeline and it will be determined when evaluating row 
-  # discrepancies whether the  entry is new. 
-  if(!is_most_recent_date_complete){
-    is_all_entries_NA <- all(is.na(new_data_df$seperation_column_name)) 
-    new_entries_most_recent_day <- previous_entries[(previous_entries$seperation_column_name == most_recent_date) && (is.na(previous_entries$seperation_column_name)),]
-    # Check that the new entries do have NA
-    if((length(new_entries_most_recent_day) > 0) && (!is_all_entries_NA)){
-      new_entries <- rbind(new_entries, new_entries_most_recent_day)
-      previous_entries <- previous_entries[-((previous_entries$seperation_column_name == most_recent_date) && (is.na(previous_entries$seperation_column_name))),]
-    }
-  }
-  metadata <- data.frame(is_all_entries_NA, is_most_recent_date_complete)
-  contribute_to_metadata_report(control_data_type, "Seperate Row Entries", metadata)
-  
-  output <- list(previous_entries, new_entries)
-  return(output)
 }
 
 
