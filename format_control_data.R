@@ -252,49 +252,61 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
         # and have now been updated. This will require an iterative process to 
         # find the closest matching record. This will be required for any
         # situation without an ID.
+        FAILURE <- TRUE
+        contribute_to_metadata_report(control_data_type, "Check ID Change", FAILURE)
+        
       }
         
     } else {
-      # find perfect duplicates and add to verified data df
-      perfect_duplicates <- inner_join(legacy_data_df, new_data_df)
-      verified_data_df <- rbind(verified_data_df, perfect_duplicates)
-      
-      # remove perfect duplicates before attempting to identify close matches
-      unmatched_new_data_df <- anti_join(new_data_df, legacy_data_df)
-      unmatched_legacy_data_df <- anti_join(legacy_data_df, new_data_df)
-      
+
       # find close matching rows (distance of two) based on all columns except ID. ID is not 
       # because it will always be null if the data is exported from powerBI. 
       distance <- 2
-      new_data_without_ID_df <- unmatched_new_data_df[ , -which(names(unmatched_new_data_df) %in% c("ID", "error_flag"))]
-      legacy_data_without_ID_df <- unmatched_legacy_data_df[ , -which(names(unmatched_legacy_data_df) %in% c("ID", "error_flag"))]
+      new_data_without_ID_df <- new_data_df[ , -which(names(new_data_df) %in% c("ID", "error_flag"))]
+      legacy_data_without_ID_df <- legacy_data_df[ , -which(names(legacy_data_df) %in% c("ID", "error_flag"))]
       close_match_rows <- find_close_matches(new_data_without_ID_df, legacy_data_without_ID_df, distance)
       
       discrepancies_new_indices <- c()
       discrepancies_legacy_indices <- c()
+      perfect_duplicate_new_indices <- c()
+      perfect_duplicate_legacy_indices <- c()
       
       # Iterate through list of close_match_rows to acquire indices of
       # discrepancies
       for(x in 1:length(close_match_rows)){
         # if a row only has one close_match_row, it is considered a discrepancy
+        # or a perfect match 
         if(length(close_match_rows[[x]]) == 1){
-          discrepancies_legacy_indices <- c(discrepancies_legacy_indices, close_match_rows[[x]][[1]][2])
-          discrepancies_new_indices <- c(discrepancies_new_indices, close_match_rows[[x]][[1]][1])
+          if(close_match_rows[[x]][[1]][3] == 0){
+            perfect_duplicate_legacy_indices <- c(perfect_duplicate_legacy_indices, close_match_rows[[x]][[1]][2])
+            perfect_duplicate_new_indices <- c(perfect_duplicate_new_indices, close_match_rows[[x]][[1]][1])
+          } else if(close_match_rows[[x]][[1]][3] == 1){
+            discrepancies_legacy_indices <- c(discrepancies_legacy_indices, close_match_rows[[x]][[1]][2])
+            discrepancies_new_indices <- c(discrepancies_new_indices, close_match_rows[[x]][[1]][1])
+          }
         } else if (length(close_match_rows[[x]]) > 1) {
           # if a row only has multiple close_match_rows, the one with the 
           # closest distance is considered a discrepancy. If there are multiple 
           # then they are disregarded and assumed to be new entries
           match_index_matrix <- do.call(rbind, close_match_rows[[x]])
-          closest_match <- which(min(match_index_matrix[,length(close_match_rows[[x]][[1]])]) == match_index_matrix[,length(close_match_rows[[x]][[1]])])
+          closest_match <- which(min(match_index_matrix[,3]) == match_index_matrix[,3])
           if(length(closest_match) == 1){
-            discrepancies_legacy_indices <- c(discrepancies_legacy_indices, close_match_rows[[x]][[closest_match]][2])
-            discrepancies_new_indices <- c(discrepancies_new_indices, close_match_rows[[x]][[closest_match]][1])
+            if(close_match_rows[[x]][[1]][3] == 0){
+              perfect_duplicate_legacy_indices <- c(perfect_duplicate_legacy_indices, close_match_rows[[x]][[1]][2])
+              perfect_duplicate_new_indices <- c(perfect_duplicate_new_indices, close_match_rows[[x]][[1]][1])
+            } else if(close_match_rows[[x]][[1]][3] == 1){
+              discrepancies_legacy_indices <- c(discrepancies_legacy_indices, close_match_rows[[x]][[1]][2])
+              discrepancies_new_indices <- c(discrepancies_new_indices, close_match_rows[[x]][[1]][1])
+            }
           }
         } 
       }
       
-      discrepancies_legacy <- unmatched_legacy_data_df[discrepancies_legacy_indices,]
-      discrepancies_new <- unmatched_new_data_df[discrepancies_new_indices,]
+      perfect_duplicates <- new_data_df[perfect_duplicate_new_indices,]
+      verified_data_df <- rbind(verified_data_df, perfect_duplicates)
+      
+      discrepancies_legacy <- legacy_data_df[discrepancies_legacy_indices,]
+      discrepancies_new <- new_data_df[discrepancies_new_indices,]
       new_entries <- unmatched_new_data_df[-discrepancies_new_indices,]
     }
 
@@ -307,7 +319,8 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
     verified_new <- verify_entries(new_entries, control_data_type)
     verified_discrepancies <- verify_entries(discrepancies_new, control_data_type)
     verified_discrepancies <- compare_discrepancies(discrepancies_new, discrepancies_legacy, control_data_type)
-    
+    verified_data_df <- rbind(verified_data_df, verified_discrepancies)
+    verified_data_df <- rbind(verified_data_df, verified_new)
    
   } else if (is_new & !is_powerBI_export){
     verified_new <- verify_entries(new_data_df, control_data_type)
