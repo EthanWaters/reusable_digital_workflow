@@ -1,7 +1,7 @@
 # Format the new control data into the stardard legacy format 
 
 
-import_data <- function(data, control_data_type, sheet=1){
+import_data <- function(data, control_data_type, is_powerBI_export, sheet=1){
     out <- tryCatch(
       {
         # Could assign the control_data_type as the file name. Yet to implement 
@@ -85,7 +85,7 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
       # set the data type of all entries to ensure that performed operations have 
       # expected output. 
       legacy_df <- set_data_type(legacy_df, control_data_type) 
-      current_df <- set_data_type(current_df, control_data_type) 
+      updated_current_df <- set_data_type(updated_current_df, control_data_type) 
 
       #Determine initial error flags based on returned metadata
       initial_error_flag <- rep(NA, nrow(updated_current_df))
@@ -316,7 +316,15 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
       discrepancies_new <- new_data_df[discrepancies_new_indices,]
       new_entries <- unmatched_new_data_df[-discrepancies_new_indices,]
     }
-
+    
+    # new entries should not have been assigned a site if manta tow data. 
+    # Although this test can only be used on one type of data it should never
+    # fail. In any scenario that it does, a serious code review should be 
+    # undertaken
+    if(control_data_type == "manta_tow"){
+      
+    }
+    
     # Given that it is not possible to definitively know if a change / discrepancy 
     # was intentional or not both new and change entries will pass through the 
     # same validation checks and if passed will be accepted as usable and assumed to be . If failed, 
@@ -431,11 +439,13 @@ set_data_type <- function(data_df, control_data_type){
   # in a lookup table stored in a CSV. This method was chosen to increase 
   # molecularity and flexibility whilst still remaining definitive. 
   
+  data_df <- updated_current_df
   # create list of column name partials grouped by desired data type. The data 
   # types will be utilised as list names. 
   column_names <- colnames(data_df)
   setDataType_df <- read.csv("setDataType.csv", header = TRUE)
   
+  dataTypes <- c("Integer", "Numeric", "Date", "Character")
   setDataTypeList <- lapply(dataTypes, function(x) setDataType_df$column[which(x == setDataType_df$dataType)])
   names(setDataTypeList) <- dataTypes 
   
@@ -443,30 +453,34 @@ set_data_type <- function(data_df, control_data_type){
   # in the dataframe. Check and find closest matches. sets the data types for
   # all columns 
   for(i in dataTypes){
-    columns <- setDataTypeList$i
+    columns <- setDataTypeList[i]
     columns <- match_vector_entries(columns, column_names, "Set Data Type")[[1]]
     if(i == "Numeric"){
-      apply(columns, function(x) data_df$x <- as.numeric(data_df$x))
+      apply(columns, function(x) data_df[x] <- as.numeric(data_df[x]))
     } else if (i == "Date") {
-      apply(columns, function(x) data_df$x <- as.Date(data_df$x))
+      apply(columns, function(x) data_df[x] <- as.Date(data_df[x], format='%m/%d/%Y %H:%M:%S'))
     } else if (i == "Integer") {
-      apply(columns, function(x) data_df$x <- as.integer(data_df$x))
+      apply(columns, function(x) data_df[x] <- as.integer(data_df[x]))
+    # } else if (i == "Time") {
+    #   apply(columns, function(x) data_df[x] <- as.time(data_df[x]))
     } else if (i == "Character"){
-      apply(columns, function(x) data_df$x <- as.character(data_df$x))
-    } else if (i == "Logical"){
-      apply(columns, function(x) data_df$x <- as.logical(data_df$x))
+      apply(columns, function(x) data_df[x] <- as.character(data_df[x]))
+    # } else if (i == "Logical"){
+    #   apply(columns, function(x) data_df[x] <- as.logical(data_df[x]))
     }
     
-    #create matrix of warnings so they are added to the specified XML node 
-    # in the metadata report in a vectorised mannor. 
-    warnings <- names(warnings())
-    warnings_matrix <- matrix(warnings, 1,length(warnings))
-    contribute_to_metadata_report(control_data_type, paste("Set Data Type", i), warnings_matrix)
+   
   }
   return(data_df)
   
 } 
 
+
+#create matrix of warnings so they are added to the specified XML node 
+# in the metadata report in a vectorised mannor. 
+# warnings <- names(warnings())
+# warnings_matrix <- matrix(warnings, 1,length(warnings))
+# contribute_to_metadata_report(control_data_type, paste("Set Data Type", i), warnings_matrix)
 
 match_vector_entries <- function(current_vec, target_vec, section){
   # Compare any form two vectors and identify matching entries.
@@ -603,6 +617,7 @@ match_vector_entries <- function(current_vec, target_vec, section){
                            updated_nonmatching_entries_str,
                            is_matching_indices_unique,
                            is_column_name_na) 
+    message("MADE IT TO BEFORE THE METADATA REPORT")
     
     # write any warnings and points of interest generated to the metadata report
     warnings <- names(warnings())
@@ -621,6 +636,8 @@ match_vector_entries <- function(current_vec, target_vec, section){
   }
   )
 }
+
+
 
 
 

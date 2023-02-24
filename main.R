@@ -57,14 +57,14 @@ cull_sheet_index <- 3
 manta_tow_sheet_index <- 4
 RHIS_sheet_index <- 5
 
-cull_legacy_df <- import_data(leg_path, 'cull', cull_sheet_index)
-new_cull_data_df <- import_data(cull_new1, 'cull', cull_sheet_index)
+cull_legacy_df <- import_data(leg_path, 'cull', is_powerBI_export, cull_sheet_index)
+new_cull_data_df <- import_data(cull_new1, 'cull', is_powerBI_export, cull_sheet_index)
 
-manta_tow_legacy_df <- import_data(leg_path, 'manta_tow', manta_tow_sheet_index)
-new_manta_tow_data_df <- import_data(manta_tow_new1, 'manta_tow', manta_tow_sheet_index)
+manta_tow_legacy_df <- import_data(leg_path, 'manta_tow', is_powerBI_export, manta_tow_sheet_index)
+new_manta_tow_data_df <- import_data(manta_tow_new1, 'manta_tow', is_powerBI_export, manta_tow_sheet_index)
 
-RHIS_legacy_df <- import_data(leg_path, 'RHIS', RHIS_sheet_index)
-new_RHIS_data_df <- import_data(RHIS_new1, 'RHIS', RHIS_tow_sheet_index)
+RHIS_legacy_df <- import_data(leg_path, 'RHIS', is_powerBI_export, RHIS_sheet_index)
+new_RHIS_data_df <- import_data(RHIS_new1, 'RHIS', is_powerBI_export, RHIS_tow_sheet_index)
   
 
 

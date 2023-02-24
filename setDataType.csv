@@ -2,3 +2,35 @@
 Date,Date
 Reef ID,Integer
 Lng,Numeric
+ID,Integer
+Tow date,Date
+Tow Time,Time
+Vessel,Character
+Voyage,Character
+Reef,Character
+Start Lat,Numeric
+Start Lng,Numeric
+End Lat,Numeric
+End Lng,Numeric
+Distance (metres),Numeric
+Average Speed (km/h),Numeric
+COTS Observed,Integer
+Feeding Scars,Character
+Hard Coral,Character
+Soft Coral,Character
+Recently Dead Coral,
+Nearest Site,Character
+Capture ID,Integer
+Site Name,Character
+Reef Name,Character
+Voyage Start,Date
+Voyage End,Date
+Survey Date,Date
+Depth (meters),Numeric
+Bottomtime,Integer
+Cohort 1 (<15cm),Integer
+Cohort2 (15-25cm),Integer
+Cohort3 (25-40cm),Integer
+Cohort4 (>40cm),Integer
+Longitude,Numeric
+Latitude,Numeric
