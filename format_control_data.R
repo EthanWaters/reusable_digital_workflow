@@ -67,7 +67,7 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
       legacy_col_names <- colnames(legacy_df)
       
       # compare the column names of the legacy and current format
-      matched_vector_entries <- match_vector_entries(current_col_names, legacy_col_names, section)
+      matched_vector_entries <- match_vector_entries(current_col_names, legacy_col_names, section, correct_order = FALSE, check_mapped = TRUE)
       matched_col_names <- matched_vector_entries[[1]]
       matching_entry_indices <- matched_vector_entries[[2]]
       metadata <- matched_vector_entries[[3]]
@@ -440,13 +440,28 @@ set_data_type <- function(data_df, control_data_type){
   # molecularity and flexibility whilst still remaining definitive. 
   
   data_df <- updated_current_df
-  # create list of column name partials grouped by desired data type. The data 
-  # types will be utilised as list names. 
+  
+  # acquire the column names of the control data passed as an argument of this 
+  # function and make sure they match the control data column names in the 
+  # lookup table that specifies which datatype every column should be. 
   column_names <- colnames(data_df)
   setDataType_df <- read.csv("setDataType.csv", header = TRUE)
   
+  columns <- setDataType_df$column
+  columns <- match_vector_entries(columns, column_names, "Set Data Type")[[1]] # This returns the matching column names in the original order
+  
+  # check that both sets of column names are still the same length after the 
+  # matching
+  if(length(columns) != length(column_names)){
+    # TODO contribute to meta data report. This is not necessarily a fatal error 
+    # if the data is saved or parsed as the correct type. 
+    
+  }
+  
+  # create list of column name partials grouped by desired data type. The data 
+  # types will be utilised as list names. 
   dataTypes <- c("Integer", "Numeric", "Date", "Character")
-  setDataTypeList <- lapply(dataTypes, function(x) setDataType_df$column[which(x == setDataType_df$dataType)])
+  setDataTypeList <- lapply(dataTypes, function(x) columns[which(x == setDataType_df$dataType)])
   names(setDataTypeList) <- dataTypes 
   
   # compare column names retrieved from lookup table to column names in the 
@@ -454,7 +469,7 @@ set_data_type <- function(data_df, control_data_type){
   # all columns 
   for(i in dataTypes){
     columns <- setDataTypeList[i]
-    columns <- match_vector_entries(columns, column_names, "Set Data Type")[[1]]
+    
     if(i == "Numeric"){
       apply(columns, function(x) data_df[x] <- as.numeric(data_df[x]))
     } else if (i == "Date") {
@@ -482,11 +497,14 @@ set_data_type <- function(data_df, control_data_type){
 # warnings_matrix <- matrix(warnings, 1,length(warnings))
 # contribute_to_metadata_report(control_data_type, paste("Set Data Type", i), warnings_matrix)
 
-match_vector_entries <- function(current_vec, target_vec, section){
+match_vector_entries <- function(current_vec, target_vec, section, check_mapped = FALSE, correct_order = FALSE){
   # Compare any form two vectors and identify matching entries.
   
   out <- tryCatch(
     {
+      
+      current_vec <- columns
+      target_vec <- column_names
     
     # clean vector entries for easy comparison. The cleaning is done in this 
     # specific order to remove characters such as '.' that appear after
@@ -541,32 +559,33 @@ match_vector_entries <- function(current_vec, target_vec, section){
       nonmatching_current_entry_indices <- nonmatching_current_entry_indices[-matching_current_entries_indexes]
       nonmatching_entries <- clean_current_vec[nonmatching_current_entry_indices]
       
-      # check if there is a pre-defined mapping to a non-matching column name.
-      mapped_output <- map_column_names(nonmatching_entries)
-      mapped_name_indices <- which(!is.na(mapped_output))
-      
-      #control statements below utilised to prevent errors
-      if(is.list(mapped_output)){
-        mapped_output <- unlist(mapped_output)
-      } 
-      
-      # include pre-defined mappings found and remove them from non-matching 
-      # vector
-      if (length(na.omit(mapped_name_indices)) > 0){
-        for(x in mapped_name_indices){ 
-          mapped_index <- nonmatching_current_entry_indices[x]
-          current_vec[mapped_index] <- mapped_output[x]
-          clean_mapped_name <- gsub('[[:punct:] ]+',' ', mapped_output[x])
-          clean_mapped_name <- gsub(' ', '', clean_mapped_name)
-          clean_mapped_name <- gsub('\\.', '', clean_mapped_name)
-          clean_mapped_name <- gsub('[)(/&]', '', clean_mapped_name)
-          clean_mapped_name <- tolower(clean_mapped_name)
-          clean_current_vec[mapped_index] <- clean_mapped_name
+      if(check_mapped){
+        # check if there is a pre-defined mapping to a non-matching column name.
+        mapped_output <- map_column_names(nonmatching_entries)
+        mapped_name_indices <- which(!is.na(mapped_output))
+        
+        #control statements below utilised to prevent errors
+        if(is.list(mapped_output)){
+          mapped_output <- unlist(mapped_output)
+        } 
+        
+        # include pre-defined mappings found and remove them from non-matching 
+        # vector
+        if (length(na.omit(mapped_name_indices)) > 0){
+          for(x in mapped_name_indices){ 
+            mapped_index <- nonmatching_current_entry_indices[x]
+            current_vec[mapped_index] <- mapped_output[x]
+            clean_mapped_name <- gsub('[[:punct:] ]+',' ', mapped_output[x])
+            clean_mapped_name <- gsub(' ', '', clean_mapped_name)
+            clean_mapped_name <- gsub('\\.', '', clean_mapped_name)
+            clean_mapped_name <- gsub('[)(/&]', '', clean_mapped_name)
+            clean_mapped_name <- tolower(clean_mapped_name)
+            clean_current_vec[mapped_index] <- clean_mapped_name
+          }
+          nonmatching_entries <- nonmatching_entries[-mapped_name_indices]
+          nonmatching_current_entry_indices <- nonmatching_current_entry_indices[-mapped_name_indices]
         }
-        nonmatching_entries <- nonmatching_entries[-mapped_name_indices]
-        nonmatching_current_entry_indices <- nonmatching_current_entry_indices[-mapped_name_indices]
       }
-      
       # find closest match within a specified distance with levenshtein
       # distances or matching partial strings contained within column 
       # names.
@@ -601,6 +620,19 @@ match_vector_entries <- function(current_vec, target_vec, section){
     updated_matching_entry_indices <- sapply(clean_target_vec, function(x) match(x, clean_current_vec))
     updated_matching_entry_indices <- updated_matching_entry_indices[!is.na(updated_matching_entry_indices)]
     
+    # This means the vector of strings can be returned in the original order if 
+    # it only important that the strings themselves match. Alternatively, the
+    # vector of strings can also be returned in the same order. A vector of 
+    # indices will be returned indicating the correct order of the input vector 
+    # if needed at a later date. 
+    if(correct_order){
+      current_vec <- current_vec[updated_matching_entry_indices]
+    } else {
+      indices_to_keep <- intersect(clean_current_vec, clean_target_vec)
+      current_vec <- current_vec[indices_to_keep]
+    }
+    
+    
     # For metadata report.
     updated_matching_entries <- current_vec[updated_matching_entry_indices]
     updated_nonmatching_entry_indices <- which(!clean_current_vec %in% clean_target_vec)
@@ -617,7 +649,8 @@ match_vector_entries <- function(current_vec, target_vec, section){
                            updated_nonmatching_entries_str,
                            is_matching_indices_unique,
                            is_column_name_na) 
-    message("MADE IT TO BEFORE THE METADATA REPORT")
+    
+   
     
     # write any warnings and points of interest generated to the metadata report
     warnings <- names(warnings())
@@ -626,8 +659,7 @@ match_vector_entries <- function(current_vec, target_vec, section){
     contribute_to_metadata_report(control_data_type, section, metadata)
     
     output <- list(current_vec, updated_matching_entry_indices, metadata)
-    
-    return(output)
+    return(current_vec)
   
   },
     error=function(cond) {
