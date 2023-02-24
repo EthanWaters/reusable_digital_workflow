@@ -21,8 +21,8 @@ library("methods")
 library("xml2")
 library("rio")
 library("dplyr")
-library("fuzzyjoin")
-library("tidyverse")
+# library("fuzzyjoin")
+# library("tidyverse")
 
 main <- function(leg_path, new_cull, new_manta_tow, geospatial_sites, nearest_site_algorithm, is_powerBI_export){
 
@@ -45,7 +45,8 @@ while ((class(report_attempt)[[1]]=='try-error')&(trywait<=(10))){
   trywait <- trywait+1 
   report_attempt <- try(create_metadata_report(file_count))
 }
-if (trywait>(10)) print(paste('Cannot create metadata report'))
+if (trywait>(10)) print(paste('Cannot create metadata report'))  
+trywait <- 0
 
 # The following code returns a dataframe after recieving the path 
 # to a CSV, XLSX or TXT file. This can be adapted to use an explorer to choose 
@@ -75,17 +76,17 @@ section <- 'Format'
 # The column formatting of New data will be compared with a legacy data set that 
 # is deemed to be in the ideal target format. Any necessary changes will be made 
 # and recorded. This will be executed irrespective of data set provided.
-Updated_cull_data_format <- format_control_data(new_cull_data_df, cull_legacy_df, 'cull', section, is_new)
-Updated_manta_tow_data_format <- format_control_data(new_manta_tow_data_df, manta_tow_legacy_df, 'manta_tow', section, is_new)
-Updated_RHIS_data_format <- format_control_data(new_RHIS_data_df, RHIS_legacy_df, 'RHIS', section, is_new)
+Updated_cull_data_format <- format_control_data(new_cull_data_df, cull_legacy_df, 'cull', section)
+Updated_manta_tow_data_format <- format_control_data(new_manta_tow_data_df, manta_tow_legacy_df, 'manta_tow', section)
+Updated_RHIS_data_format <- format_control_data(new_RHIS_data_df, RHIS_legacy_df, 'RHIS', section)
 
 
 # Find Row Discrepancies --------------------------------------------------
 
 # Finds discrepancies in previously processed data and the new data input and handles them appropriately. 
-verified_new_cull_data_df <- verify_control_dataframe(Updated_cull_data_format, cull_legacy_df, 'cull', section)
-verified_new_manta_tow_data_df <- verify_control_dataframe(Updated_manta_tow_data_format, manta_tow_legacy_df, 'manta_tow', section)
-verified_new_RHIS_data_df <- verify_control_dataframe(Updated_RHIS_data_format, RHIS_legacy_df, 'RHIS', section)
+verified_new_cull_data_df <- verify_control_dataframe(Updated_cull_data_format, cull_legacy_df, 'cull', section, is_new)
+verified_new_manta_tow_data_df <- verify_control_dataframe(Updated_manta_tow_data_format, manta_tow_legacy_df, 'manta_tow', section, is_new)
+verified_new_RHIS_data_df <- verify_control_dataframe(Updated_RHIS_data_format, RHIS_legacy_df, 'RHIS', section, is_new)
 
 
 # Assign Nearest Sites ----------------------------------------------------

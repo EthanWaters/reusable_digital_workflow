@@ -1,2 +1,2 @@
-﻿addition,type
-Nearest Site,manta_tow
+﻿addition,type,is_mandatory
+Nearest Site,manta_tow,1

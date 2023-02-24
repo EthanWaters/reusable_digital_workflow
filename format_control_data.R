@@ -30,7 +30,7 @@ import_data <- function(data, control_data_type, sheet=1){
         # to expand upon this to vary depending on where the input data was 
         # acquired from as PowerBI export and direct database querys have 
         # different requirements
-        data_df <- add_required_columns(data_df, control_data_type)
+        data_df <- add_required_columns(data_df, control_data_type, is_powerBI_export)
         
         return(data_df)
       },
@@ -55,6 +55,9 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
       # Error handling is setup so that the error will be captured and recorded. 
       # However, this will interrupt the workflow as this indicates the information  
       # provided is insufficient is required to be correct to proceed. 
+      
+      legacy_df <- cull_legacy_df
+      currednt_df <- new_cull_data_df
       
       # create comments variable to store points of interest.
       comments <- ""
@@ -81,8 +84,8 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
       
       # set the data type of all entries to ensure that performed operations have 
       # expected output. 
-      legacy_data_df <- set_data_type(legacy_data_df, control_data_type) 
-      new_data_df <- set_data_type(new_data_df, control_data_type) 
+      legacy_df <- set_data_type(legacy_df, control_data_type) 
+      current_df <- set_data_type(current_df, control_data_type) 
 
       #Determine initial error flags based on returned metadata
       initial_error_flag <- rep(NA, nrow(updated_current_df))
@@ -191,9 +194,13 @@ map_column_names <- function(column_names){
   return(mapped_names)
 }
   
-add_required_columns <- function(df, control_data_type){
+add_required_columns <- function(df, control_data_type, is_powerBI_export){
   lookup <- read.csv("additionalColumns.csv", header = TRUE)
-  new_columns <- lookup[lookup$type == control_data_type, 1]
+  if(is_powerBI_export == 1){
+    new_columns <- lookup[lookup$type == control_data_type, 1]
+  } else {
+    new_columns <- lookup[((lookup$type == control_data_typ) & (lookup$is_mandatory == 1)), 1]
+  }
   df[new_columns] <- NA
   return(df)
 }
