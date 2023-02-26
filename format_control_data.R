@@ -503,9 +503,6 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
   out <- tryCatch(
     {
       
-      current_vec <- columns
-      target_vec <- column_names
-    
     # clean vector entries for easy comparison. The cleaning is done in this 
     # specific order to remove characters such as '.' that appear after
     # removing spaces or specific character from text ina CSV. 
@@ -628,7 +625,7 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
     if(correct_order){
       current_vec <- current_vec[updated_matching_entry_indices]
     } else {
-      indices_to_keep <- intersect(clean_current_vec, clean_target_vec)
+      indices_to_keep <- which(clean_current_vec %in% clean_target_vec)
       current_vec <- current_vec[indices_to_keep]
     }
     
@@ -655,11 +652,11 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
     # write any warnings and points of interest generated to the metadata report
     warnings <- names(warnings())
     warnings_matrix <- matrix(warnings, 1,length(warnings))
-    contribute_to_metadata_report(control_data_type, section, warnings_matrix)
-    contribute_to_metadata_report(control_data_type, section, metadata)
+    # contribute_to_metadata_report(control_data_type, section, warnings_matrix)
+    # contribute_to_metadata_report(control_data_type, section, metadata)
     
     output <- list(current_vec, updated_matching_entry_indices, metadata)
-    return(current_vec)
+    return(output)
   
   },
     error=function(cond) {
