@@ -505,8 +505,8 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
   out <- tryCatch(
     {
     
-    current_vec <- columns   
-    target_vec <- column_names
+    # current_vec <- columns   
+    # target_vec <- column_names
     
     # clean vector entries for easy comparison. The cleaning is done in this 
     # specific order to remove characters such as '.' that appear after
@@ -607,9 +607,13 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
     
     # find list of vector of indices which indicate the position of current columns names in the legacy format. 
     # this will be used to indicate if at the end of the mapping and matching process, the program was able to 
-    # correctly find all required columns. This will also then be utilised to rearrange the order of the columns 
+    # correctly find all required columns. This will also then be utilised to rearrange the order of the columns
     correct_order_indices <- sapply(clean_target_vec, function(x) match(x, clean_current_vec))
     correct_order_indices <- correct_order_indices[!is.na(correct_order_indices)]
+    
+    
+    original_order_indices <- sapply(clean_current_vec, function(x) match(x, clean_target_vec))
+    original_order_indices <- original_order_indices[!is.na(original_order_indices)]
     
     # This means the vector of strings can be returned in the original order if 
     # it only important that the strings themselves match. Alternatively, the
@@ -617,9 +621,8 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
     # indices will be returned indicating the correct order of the input vector 
     # if needed at a later date. 
     if(correct_order){
-      current_vec <- target_vec[correct_order_indices]
+      current_vec <- target_vec
     } else {
-      original_order_indices <- which(clean_current_vec %in% clean_target_vec)
       current_vec <- target_vec[original_order_indices]
     }
     
