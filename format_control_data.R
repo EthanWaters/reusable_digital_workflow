@@ -439,8 +439,6 @@ set_data_type <- function(data_df, control_data_type){
   # in a lookup table stored in a CSV. This method was chosen to increase 
   # molecularity and flexibility whilst still remaining definitive. 
   
-  data_df <- updated_current_df
-  
   # acquire the column names of the control data passed as an argument of this 
   # function and make sure they match the control data column names in the 
   # lookup table that specifies which datatype every column should be. 
@@ -463,26 +461,27 @@ set_data_type <- function(data_df, control_data_type){
   
   # create list of column name partials grouped by desired data type. The data 
   # types will be utilised as list names. 
+  matched_data_types <- setDataType_df$dataType[matched_column_original_order]
   dataTypes <- c("Integer", "Numeric", "Date", "Character")
-  setDataTypeList <- lapply(dataTypes, function(x) matched_column_names[which(x == setDataType_df$dataType)])
+  setDataTypeList <- lapply(dataTypes, function(x) matched_column_names[which(x == matched_data_types)])
   names(setDataTypeList) <- dataTypes 
   
   # compare column names retrieved from lookup table to column names in the 
   # in the dataframe. Check and find closest matches. sets the data types for
   # all columns 
   for(i in dataTypes){
-    columns <- setDataTypeList[i]
+    columns <- setDataTypeList[[i]]
     
     if(i == "Numeric"){
-      apply(columns, function(x) data_df[x] <- as.numeric(data_df[x]))
+      sapply(columns, function(x) data_df[x] <- as.numeric(data_df[x]))
     } else if (i == "Date") {
-      apply(columns, function(x) data_df[x] <- as.Date(data_df[x], format='%m/%d/%Y %H:%M:%S'))
+      sapply(columns, function(x) data_df[x] <- as.Date(data_df[x], format='%m/%d/%Y %H:%M:%S'))
     } else if (i == "Integer") {
-      apply(columns, function(x) data_df[x] <- as.integer(data_df[x]))
+      sapply(columns, function(x) data_df[x] <- as.integer(data_df[x]))
     # } else if (i == "Time") {
     #   apply(columns, function(x) data_df[x] <- as.time(data_df[x]))
     } else if (i == "Character"){
-      apply(columns, function(x) data_df[x] <- as.character(data_df[x]))
+      sapply(columns, function(x) data_df[x] <- as.character(data_df[x]))
     # } else if (i == "Logical"){
     #   apply(columns, function(x) data_df[x] <- as.logical(data_df[x]))
     }
@@ -577,7 +576,6 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
         if (length(na.omit(mapped_name_indices)) > 0){
           for(x in mapped_name_indices){ 
             mapped_index <- nonmatching_current_entry_indices[x]
-            current_vec[mapped_index] <- mapped_output[x]
             clean_mapped_name <- gsub('[[:punct:] ]+',' ', mapped_output[x])
             clean_mapped_name <- gsub(' ', '', clean_mapped_name)
             clean_mapped_name <- gsub('\\.', '', clean_mapped_name)
@@ -600,22 +598,12 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
         
         partial_name_matches <- grep(entry, clean_target_vec)
         if(length(partial_name_matches) == 1){
-          current_vec[i] <- target_vec[partial_name_matches]
           clean_current_vec[i] <- clean_target_vec[partial_name_matches]
         } else if ((length(closest_matching_indices) == 1) & (minimum_distance < maxium_levenshtein_distance)) {
-          current_vec[i] <- target_vec[closest_matching_indices]
           clean_current_vec[i] <- clean_target_vec[closest_matching_indices]
         } 
-        
-        
       }
-    }
-    # Indices should be unique and not NA. Check multiple columns weren't 
-    # matched to the same column. The appropriate cut off distance may need 
-    # to be tweaked overtime. For metadata report.
-    duplicate_column_indices <- duplicated(current_vec)
-    is_matching_indices_unique <- !any(duplicated(closest_matching_indices))
-    is_column_name_na <- any(is.na(current_vec))
+    } 
     
     # find list of vector of indices which indicate the position of current columns names in the legacy format. 
     # this will be used to indicate if at the end of the mapping and matching process, the program was able to 
@@ -629,12 +617,18 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
     # indices will be returned indicating the correct order of the input vector 
     # if needed at a later date. 
     if(correct_order){
-      current_vec <- current_vec[correct_order_indices]
+      current_vec <- target_vec[correct_order_indices]
     } else {
       original_order_indices <- which(clean_current_vec %in% clean_target_vec)
-      current_vec <- current_vec[original_order_indices]
+      current_vec <- target_vec[original_order_indices]
     }
     
+    # Indices should be unique and not NA. Check multiple columns weren't 
+    # matched to the same column. The appropriate cut off distance may need 
+    # to be tweaked overtime. For metadata report.
+    duplicate_column_indices <- duplicated(current_vec)
+    is_matching_indices_unique <- !any(duplicated(closest_matching_indices))
+    is_column_name_na <- any(is.na(current_vec))
     
     # For metadata report.
     updated_matching_entries <- current_vec[correct_order_indices]
