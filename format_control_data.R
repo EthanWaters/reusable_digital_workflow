@@ -448,7 +448,10 @@ set_data_type <- function(data_df, control_data_type){
   setDataType_df <- read.csv("setDataType.csv", header = TRUE)
   
   columns <- setDataType_df$column
-  columns <- match_vector_entries(columns, column_names, "Set Data Type")[[1]] # This returns the matching column names in the original order
+  matched_output <- match_vector_entries(columns, column_names, "Set Data Type") # This returns the matching column names in the original order
+  
+  matched_column_names <- matched_output[[1]]
+  matched_column_original_order <- matched_output[[3]]
   
   # check that both sets of column names are still the same length after the 
   # matching
@@ -461,7 +464,7 @@ set_data_type <- function(data_df, control_data_type){
   # create list of column name partials grouped by desired data type. The data 
   # types will be utilised as list names. 
   dataTypes <- c("Integer", "Numeric", "Date", "Character")
-  setDataTypeList <- lapply(dataTypes, function(x) columns[which(x == setDataType_df$dataType)])
+  setDataTypeList <- lapply(dataTypes, function(x) matched_column_names[which(x == setDataType_df$dataType)])
   names(setDataTypeList) <- dataTypes 
   
   # compare column names retrieved from lookup table to column names in the 
@@ -502,7 +505,10 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
   
   out <- tryCatch(
     {
-      
+    
+    current_vec <- columns   
+    target_vec <- column_names
+    
     # clean vector entries for easy comparison. The cleaning is done in this 
     # specific order to remove characters such as '.' that appear after
     # removing spaces or specific character from text ina CSV. 
@@ -614,8 +620,8 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
     # find list of vector of indices which indicate the position of current columns names in the legacy format. 
     # this will be used to indicate if at the end of the mapping and matching process, the program was able to 
     # correctly find all required columns. This will also then be utilised to rearrange the order of the columns 
-    updated_matching_entry_indices <- sapply(clean_target_vec, function(x) match(x, clean_current_vec))
-    updated_matching_entry_indices <- updated_matching_entry_indices[!is.na(updated_matching_entry_indices)]
+    correct_order_indices <- sapply(clean_target_vec, function(x) match(x, clean_current_vec))
+    correct_order_indices <- correct_order_indices[!is.na(correct_order_indices)]
     
     # This means the vector of strings can be returned in the original order if 
     # it only important that the strings themselves match. Alternatively, the
@@ -623,15 +629,15 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
     # indices will be returned indicating the correct order of the input vector 
     # if needed at a later date. 
     if(correct_order){
-      current_vec <- current_vec[updated_matching_entry_indices]
+      current_vec <- current_vec[correct_order_indices]
     } else {
-      indices_to_keep <- which(clean_current_vec %in% clean_target_vec)
-      current_vec <- current_vec[indices_to_keep]
+      original_order_indices <- which(clean_current_vec %in% clean_target_vec)
+      current_vec <- current_vec[original_order_indices]
     }
     
     
     # For metadata report.
-    updated_matching_entries <- current_vec[updated_matching_entry_indices]
+    updated_matching_entries <- current_vec[correct_order_indices]
     updated_nonmatching_entry_indices <- which(!clean_current_vec %in% clean_target_vec)
     updated_nonmatching_entries <- clean_current_vec[updated_nonmatching_entry_indices]
     is_not_matching_entries_updated <- !((length(updated_matching_entries) == length(clean_current_vec)) || (length(updated_matching_entries) == length(clean_target_vec)))
@@ -655,7 +661,7 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
     # contribute_to_metadata_report(control_data_type, section, warnings_matrix)
     # contribute_to_metadata_report(control_data_type, section, metadata)
     
-    output <- list(current_vec, updated_matching_entry_indices, metadata)
+    output <- list(current_vec, correct_order_indices, original_order_indices, metadata)
     return(output)
   
   },
