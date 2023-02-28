@@ -1,6 +1,6 @@
 ﻿column,dataType
 Date,Date
-Reef ID,Integer
+Reef ID,Character
 Lng,Numeric
 ID,Integer
 Tow date,Date

@@ -475,14 +475,12 @@ set_data_type <- function(data_df, control_data_type){
   # all columns 
   for(i in dataTypes){
     columns <- setDataTypeList[[i]]
-    print(columns)
-    print(i)
     if(i == "Numeric"){
       for(x in columns){data_df[[x]] <- as.numeric(data_df[[x]])}
     } else if (i == "Date") {
-      for(x in columns){data_df[[x]] <- as.Date(data_df[[x]], format='%m/%d/%Y %H:%M:%S')}
+      for(x in columns){data_df[[x]] <- as.Date(data_df[[x]], format='%d/%m/%Y')}
     } else if (i == "Integer") {
-      for(x in columns){print(x); data_df[[x]] <-as.integer(data_df[[x]])}
+      for(x in columns){data_df[[x]] <-as.integer(data_df[[x]])}
     } else if (i == "Character"){
       for(x in columns){data_df[[x]] <- as.character(data_df[[x]])}
     }
@@ -496,7 +494,7 @@ set_data_type <- function(data_df, control_data_type){
 
 
 #create matrix of warnings so they are added to the specified XML node 
-# in the metadata report in a vectorised mannor. 
+# in the metadata report in a vectorised manor. 
 # warnings <- names(warnings())
 # warnings_matrix <- matrix(warnings, 1,length(warnings))
 # contribute_to_metadata_report(control_data_type, paste("Set Data Type", i), warnings_matrix)
