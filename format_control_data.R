@@ -14,16 +14,16 @@ import_data <- function(data, control_data_type, is_powerBI_export, sheet=1){
         file_extension <- file_ext(data)
         if (file_extension == 'xlsx'){
           data_df <- read_xlsx(data, sheet = sheet)
-          column_names <- colnames(data_df)
-          column_names <- gsub("\\.", " ", column_names)
-          column_names <- gsub("\\s+", " ", column_names)
-          colnames(data_df) <- column_names
         } else if (file_extension == 'csv'){
           data_df <- read.csv(data, header = TRUE)
         } else {
           data_df <- read.table(file=data, header=TRUE)
         }
         
+        column_names <- colnames(data_df)
+        column_names <- gsub("\\.", " ", column_names)
+        column_names <- gsub("\\s+", " ", column_names)
+        colnames(data_df) <- column_names
         # create matrix of warnings so they are added to the specified XML node 
         # in the metadata report in a vectorised mannor. 
         warnings <- names(warnings())
