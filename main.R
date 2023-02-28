@@ -8,8 +8,7 @@ install.packages("xml2")
 install.packages("rio")
 install.packages('installr')
 install.packages('dplyr')
-install.packages('tidyverse')
-install.packages('fuzzyjoin')
+install.packages('stringr')
 
 library("tools")
 library("installr")
@@ -21,8 +20,6 @@ library("methods")
 library("xml2")
 library("rio")
 library("dplyr")
-# library("fuzzyjoin")
-# library("tidyverse")
 
 main <- function(leg_path, new_cull, new_manta_tow, geospatial_sites, nearest_site_algorithm, is_powerBI_export){
 

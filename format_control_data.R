@@ -9,24 +9,28 @@ import_data <- function(data, control_data_type, is_powerBI_export, sheet=1){
         file_name <- tools::file_path_sans_ext(basename(data))
         
   
-        #Opens file and stores information into dataframe. Different file types
-        #require different functions to read data
+        # Opens file and stores information into dataframe. Different file types
+        # require different functions to read data
         file_extension <- file_ext(data)
         if (file_extension == 'xlsx'){
           data_df <- read_xlsx(data, sheet = sheet)
+          column_names <- colnames(data_df)
+          column_names <- gsub("\\.", " ", column_names)
+          column_names <- gsub("\\s+", " ", column_names)
+          colnames(data_df) <- column_names
         } else if (file_extension == 'csv'){
           data_df <- read.csv(data, header = TRUE)
         } else {
           data_df <- read.table(file=data, header=TRUE)
         }
         
-        #create matrix of warnings so they are added to the specified XML node 
+        # create matrix of warnings so they are added to the specified XML node 
         # in the metadata report in a vectorised mannor. 
         warnings <- names(warnings())
         warnings_matrix <- matrix(warnings, 1,length(warnings))
         contribute_to_metadata_report(control_data_type, "Import", warnings_matrix)
         
-        #add any additional columns no longer in the current dataset. # may wish
+        # add any additional columns no longer in the current dataset. # may wish
         # to expand upon this to vary depending on where the input data was 
         # acquired from as PowerBI export and direct database querys have 
         # different requirements
@@ -504,13 +508,10 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
   
   out <- tryCatch(
     {
-    
-    # current_vec <- columns   
-    # target_vec <- column_names
-    
+
     # clean vector entries for easy comparison. The cleaning is done in this 
     # specific order to remove characters such as '.' that appear after
-    # removing spaces or specific character from text ina CSV. 
+    # removing spaces or specific character from text in a CSV. 
     clean_current_vec <- gsub('[[:punct:] ]+',' ',current_vec)
     clean_target_vec <- gsub('[[:punct:] ]+',' ',target_vec)
     clean_current_vec <- gsub(' ', '',clean_current_vec)
@@ -582,6 +583,7 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
             clean_mapped_name <- gsub('[)(/&]', '', clean_mapped_name)
             clean_mapped_name <- tolower(clean_mapped_name)
             clean_current_vec[mapped_index] <- clean_mapped_name
+            current_vec[mapped_index] <- mapped_output[x]
           }
           nonmatching_entries <- nonmatching_entries[-mapped_name_indices]
           nonmatching_current_entry_indices <- nonmatching_current_entry_indices[-mapped_name_indices]
@@ -599,8 +601,10 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
         partial_name_matches <- grep(entry, clean_target_vec)
         if(length(partial_name_matches) == 1){
           clean_current_vec[i] <- clean_target_vec[partial_name_matches]
+          current_vec[i] <- target_vec[partial_name_matches]
         } else if ((length(closest_matching_indices) == 1) & (minimum_distance < maxium_levenshtein_distance)) {
           clean_current_vec[i] <- clean_target_vec[closest_matching_indices]
+          current_vec[i] <- target_vec[closest_matching_indices]
         } 
       }
     } 
@@ -619,12 +623,17 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
     # it only important that the strings themselves match. Alternatively, the
     # vector of strings can also be returned in the same order. A vector of 
     # indices will be returned indicating the correct order of the input vector 
-    # if needed at a later date. 
-    if(correct_order){
+    # if needed at a later date. This also accounts for all perfect matches of 
+    # the cleaned strings but not the actual string.
+    
+    if(correct_order & !is_not_matching_entries){
       current_vec <- target_vec
-    } else {
+    } else if(!correct_order & !is_not_matching_entries) {
       current_vec <- target_vec[original_order_indices]
-    }
+    } else if (correct_order & is_not_matching_entries){
+      current_vec <- current_vec[correct_order_indices]
+    } 
+    
     
     # Indices should be unique and not NA. Check multiple columns weren't 
     # matched to the same column. The appropriate cut off distance may need 
