@@ -20,6 +20,7 @@ library("methods")
 library("xml2")
 library("rio")
 library("dplyr")
+library("stringr")
 
 main <- function(leg_path, new_cull, new_manta_tow, geospatial_sites, nearest_site_algorithm, is_powerBI_export){
 

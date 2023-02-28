@@ -6,7 +6,7 @@ ID,Integer
 Tow date,Date
 Tow Time,Time
 Vessel,Character
-Voyage,Character
+Voyage,Integer
 Reef,Character
 Start Lat,Numeric
 Start Lng,Numeric

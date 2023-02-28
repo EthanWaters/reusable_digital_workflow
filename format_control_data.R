@@ -450,10 +450,10 @@ set_data_type <- function(data_df, control_data_type){
   setDataType_df <- read.csv("setDataType.csv", header = TRUE)
   
   columns <- setDataType_df$column
-  matched_output <- match_vector_entries(columns, column_names, "Set Data Type") # This returns the matching column names in the original order
+  matched_output <- match_vector_entries(columns, column_names, "Set Data Type", correct_order = TRUE) # This returns the matching column names in the original order
   
   matched_column_names <- matched_output[[1]]
-  matched_column_original_order <- matched_output[[3]]
+  matched_column_indices<- matched_output[[2]]
   
   # check that both sets of column names are still the same length after the 
   # matching
@@ -465,7 +465,7 @@ set_data_type <- function(data_df, control_data_type){
   
   # create list of column name partials grouped by desired data type. The data 
   # types will be utilised as list names. 
-  matched_data_types <- setDataType_df$dataType[matched_column_original_order]
+  matched_data_types <- setDataType_df$dataType[matched_column_indices]
   dataTypes <- c("Integer", "Numeric", "Date", "Character")
   setDataTypeList <- lapply(dataTypes, function(x) matched_column_names[which(x == matched_data_types)])
   names(setDataTypeList) <- dataTypes 
@@ -475,25 +475,23 @@ set_data_type <- function(data_df, control_data_type){
   # all columns 
   for(i in dataTypes){
     columns <- setDataTypeList[[i]]
-    
+    print(columns)
+    print(i)
     if(i == "Numeric"){
-      sapply(columns, function(x) data_df[x] <- as.numeric(data_df[x]))
+      for(x in columns){data_df[[x]] <- as.numeric(data_df[[x]])}
     } else if (i == "Date") {
-      sapply(columns, function(x) data_df[x] <- as.Date(data_df[x], format='%m/%d/%Y %H:%M:%S'))
+      for(x in columns){data_df[[x]] <- as.Date(data_df[[x]], format='%m/%d/%Y %H:%M:%S')}
     } else if (i == "Integer") {
-      sapply(columns, function(x) data_df[x] <- as.integer(data_df[x]))
-    # } else if (i == "Time") {
-    #   apply(columns, function(x) data_df[x] <- as.time(data_df[x]))
+      for(x in columns){print(x); data_df[[x]] <-as.integer(data_df[[x]])}
     } else if (i == "Character"){
-      sapply(columns, function(x) data_df[x] <- as.character(data_df[x]))
-    # } else if (i == "Logical"){
-    #   apply(columns, function(x) data_df[x] <- as.logical(data_df[x]))
+      for(x in columns){data_df[[x]] <- as.character(data_df[[x]])}
     }
-    
-   
   }
   return(data_df)
-  
+  # } else if (i == "Logical"){
+  #   apply(columns, function(x) data_df[x] <- as.logical(data_df[x]))
+  # } else if (i == "Time") {
+  #   apply(columns, function(x) data_df[x] <- as.time(data_df[x]))
 } 
 
 
