@@ -450,7 +450,9 @@ set_data_type <- function(data_df, control_data_type){
   
   # acquire the column names of the control data passed as an argument of this 
   # function and make sure they match the control data column names in the 
-  # lookup table that specifies which datatype every column should be. 
+  # lookup table that specifies which datatype every column should be.
+  
+  data_df <- new_cull_data_df
   column_names <- colnames(data_df)
   setDataType_df <- read.csv("setDataType.csv", header = TRUE)
   
@@ -483,7 +485,8 @@ set_data_type <- function(data_df, control_data_type){
     if(i == "Numeric"){
       for(x in columns){data_df[[x]] <- as.numeric(data_df[[x]])}
     } else if (i == "Date") {
-      for(x in columns){data_df[[x]] <- as.Date(data_df[[x]], format='%d/%m/%Y')}
+      fmts <- c("%d-%b-%y", "%d-%m-%Y", "%d-%m-%y", "%d/%m/%y", "%m/%d/%Y", "%d/%m/%Y", "%Y/%m/%d", "%Y-%m-%d", "%y/%m/%d", "%y-%m-%d")
+      for(x in columns){data_df[[x]] <- as.Date(as.numeric(apply(outer(data_df[[x]], fmts, as.Date), 1, na.omit)), "1970-01-01")}
     } else if (i == "Integer") {
       for(x in columns){data_df[[x]] <-as.integer(data_df[[x]])}
     } else if (i == "Character"){
@@ -510,177 +513,175 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
   out <- tryCatch(
     {
       
-      current_vec <- colnames(new_cull_data_df)
-      target_vec <- colnames(cull_legacy_df)
-
-    # clean vector entries for easy comparison. The cleaning is done in this 
-    # specific order to remove characters such as '.' that appear after
-    # removing spaces or specific character from text in a CSV. 
-    clean_current_vec <- gsub('[[:punct:] ]+',' ',current_vec)
-    clean_target_vec <- gsub('[[:punct:] ]+',' ',target_vec)
-    clean_current_vec <- gsub(' ', '',clean_current_vec)
-    clean_target_vec <- gsub(' ', '',clean_target_vec)
-    clean_current_vec <- gsub('\\.', '', clean_current_vec)
-    clean_target_vec <- gsub('\\.', '', clean_target_vec)
-    clean_current_vec <- gsub('[)(/&]', '', clean_current_vec)
-    clean_target_vec <- gsub('[)(/&]', '', clean_target_vec)
-    clean_current_vec <- tolower(clean_current_vec)
-    clean_target_vec <- tolower(clean_target_vec)
-    
-    # Collect information for metadata report and define variables 
-    size_target_vec <- length(target_vec)
-    size_current_vec <- length(current_vec)
-    
-    # initialise for metadata report
-    is_not_matching_entries <- NA
-    is_not_matching_column_names_updated <- NA
-    updated_nonmatching_column_names_str <- NA
-    is_matching_indices_unique <- NA 
-    is_column_name_na <- NA   
-    
-    # Set the maximum distance for fuzzy string matching
-    maxium_levenshtein_distance <- 5
-    
-    # determine the current column names and indices that match a column name 
-    # in the legacy format. Count how many match. 
-    matching_entries <- intersect(clean_current_vec, clean_target_vec)
-    matching_entries_length <- length(matching_entries)
-    matching_target_entries_indices <- which(clean_target_vec %in% matching_entries)
-    matching_current_entries_indexes <- which(clean_current_vec %in% matching_entries)
-    
-    # conditional statements to be passed to error handling so a more detailed 
-    # description of any failure mode can be provided. 
-    is_not_matching_entries <- !((matching_entries_length == length(clean_current_vec)) || (matching_entries_length == length(clean_target_vec)))
-                                 
-    # Map legacy column names to current column names that are not a perfect
-    # match. This occurs by matching partial strings contained within column 
-    # names, check lookup table for pre-defined column name mapppings or find 
-    # closest match within a specified distance with levenshtein distances.
-    # Comparisons will be performed with vector of cleaned column names but 
-    # the original vector of column names with uncleaned text will be utilsied 
-    # to store the column names
-    if(is_not_matching_entries){
-      closest_matching_indices <- c()
+      # clean vector entries for easy comparison. The cleaning is done in this 
+      # specific order to remove characters such as '.' that appear after
+      # removing spaces or specific character from text in a CSV. 
+      clean_current_vec <- gsub('[[:punct:] ]+',' ',current_vec)
+      clean_target_vec <- gsub('[[:punct:] ]+',' ',target_vec)
+      clean_current_vec <- gsub(' ', '',clean_current_vec)
+      clean_target_vec <- gsub(' ', '',clean_target_vec)
+      clean_current_vec <- gsub('\\.', '', clean_current_vec)
+      clean_target_vec <- gsub('\\.', '', clean_target_vec)
+      clean_current_vec <- gsub('[)(/&]', '', clean_current_vec)
+      clean_target_vec <- gsub('[)(/&]', '', clean_target_vec)
+      clean_current_vec <- tolower(clean_current_vec)
+      clean_target_vec <- tolower(clean_target_vec)
       
-      nonmatching_current_entry_indices <- 1:length(current_vec)
-      nonmatching_current_entry_indices <- nonmatching_current_entry_indices[-matching_current_entries_indexes]
-      nonmatching_entries <- clean_current_vec[nonmatching_current_entry_indices]
+      # Collect information for metadata report and define variables 
+      size_target_vec <- length(target_vec)
+      size_current_vec <- length(current_vec)
       
-      if(check_mapped){
-        # check if there is a pre-defined mapping to a non-matching column name.
-        mapped_output <- map_column_names(nonmatching_entries)
-        mapped_name_indices <- which(!is.na(mapped_output))
+      # initialise for metadata report
+      is_not_matching_entries <- NA
+      is_not_matching_column_names_updated <- NA
+      updated_nonmatching_column_names_str <- NA
+      is_matching_indices_unique <- NA 
+      is_column_name_na <- NA   
+      
+      # Set the maximum distance for fuzzy string matching
+      maxium_levenshtein_distance <- 5
+      
+      # determine the current column names and indices that match a column name 
+      # in the legacy format. Count how many match. 
+      matching_entries <- intersect(clean_current_vec, clean_target_vec)
+      matching_entries_length <- length(matching_entries)
+      matching_target_entries_indices <- which(clean_target_vec %in% matching_entries)
+      matching_current_entries_indexes <- which(clean_current_vec %in% matching_entries)
+      
+      # conditional statements to be passed to error handling so a more detailed 
+      # description of any failure mode can be provided. 
+      is_not_matching_entries <- !((matching_entries_length == length(clean_current_vec)) || (matching_entries_length == length(clean_target_vec)))
+      
+      # Map legacy column names to current column names that are not a perfect
+      # match. This occurs by matching partial strings contained within column 
+      # names, check lookup table for pre-defined column name mapppings or find 
+      # closest match within a specified distance with levenshtein distances.
+      # Comparisons will be performed with vector of cleaned column names but 
+      # the original vector of column names with uncleaned text will be utilsied 
+      # to store the column names
+      if(is_not_matching_entries){
+        closest_matching_indices <- c()
         
-        #control statements below utilised to prevent errors
-        if(is.list(mapped_output)){
-          mapped_output <- unlist(mapped_output)
-        } 
+        nonmatching_current_entry_indices <- 1:length(current_vec)
+        nonmatching_current_entry_indices <- nonmatching_current_entry_indices[-matching_current_entries_indexes]
+        nonmatching_entries <- clean_current_vec[nonmatching_current_entry_indices]
         
-        # include pre-defined mappings found and remove them from non-matching 
-        # vector
-        if (length(na.omit(mapped_name_indices)) > 0){
-          for(x in mapped_name_indices){ 
-            mapped_index <- nonmatching_current_entry_indices[x]
-            clean_mapped_name <- gsub('[[:punct:] ]+',' ', mapped_output[x])
-            clean_mapped_name <- gsub(' ', '', clean_mapped_name)
-            clean_mapped_name <- gsub('\\.', '', clean_mapped_name)
-            clean_mapped_name <- gsub('[)(/&]', '', clean_mapped_name)
-            clean_mapped_name <- tolower(clean_mapped_name)
-            clean_current_vec[mapped_index] <- clean_mapped_name
-            current_vec[mapped_index] <- mapped_output[x]
+        if(check_mapped){
+          # check if there is a pre-defined mapping to a non-matching column name.
+          mapped_output <- map_column_names(nonmatching_entries)
+          mapped_name_indices <- which(!is.na(mapped_output))
+          
+          #control statements below utilised to prevent errors
+          if(is.list(mapped_output)){
+            mapped_output <- unlist(mapped_output)
+          } 
+          
+          # include pre-defined mappings found and remove them from non-matching 
+          # vector
+          if (length(na.omit(mapped_name_indices)) > 0){
+            for(x in mapped_name_indices){ 
+              mapped_index <- nonmatching_current_entry_indices[x]
+              clean_mapped_name <- gsub('[[:punct:] ]+',' ', mapped_output[x])
+              clean_mapped_name <- gsub(' ', '', clean_mapped_name)
+              clean_mapped_name <- gsub('\\.', '', clean_mapped_name)
+              clean_mapped_name <- gsub('[)(/&]', '', clean_mapped_name)
+              clean_mapped_name <- tolower(clean_mapped_name)
+              clean_current_vec[mapped_index] <- clean_mapped_name
+              current_vec[mapped_index] <- mapped_output[x]
+            }
+            nonmatching_entries <- nonmatching_entries[-mapped_name_indices]
+            nonmatching_current_entry_indices <- nonmatching_current_entry_indices[-mapped_name_indices]
           }
-          nonmatching_entries <- nonmatching_entries[-mapped_name_indices]
-          nonmatching_current_entry_indices <- nonmatching_current_entry_indices[-mapped_name_indices]
         }
-      }
-      # find closest match within a specified distance with levenshtein
-      # distances or matching partial strings contained within column 
-      # names.
-      for(i in nonmatching_current_entry_indices){
-        entry <- clean_current_vec[i]
-        levenshtein_distances <- adist(entry , clean_target_vec)
-        minimum_distance <- min(levenshtein_distances)
-        closest_matching_indices <- which(levenshtein_distances==minimum_distance)
-        
-        partial_name_matches <- grep(entry, clean_target_vec)
-        if(length(partial_name_matches) == 1){
-          clean_current_vec[i] <- clean_target_vec[partial_name_matches]
-          current_vec[i] <- target_vec[partial_name_matches]
-        } else if ((length(closest_matching_indices) == 1) & (minimum_distance < maxium_levenshtein_distance)) {
-          clean_current_vec[i] <- clean_target_vec[closest_matching_indices]
-          current_vec[i] <- target_vec[closest_matching_indices]
-        } 
-      }
-    } 
-    
-    # find list of vector of indices which indicate the position of current columns names in the legacy format. 
-    # this will be used to indicate if at the end of the mapping and matching process, the program was able to 
-    # correctly find all required columns. This will also then be utilised to rearrange the order of the columns
-    correct_order_indices <- sapply(clean_target_vec, function(x) match(x, clean_current_vec))
-    correct_order_indices <- correct_order_indices[!is.na(correct_order_indices)]
-    
-    
-    original_order_indices <- sapply(clean_current_vec, function(x) match(x, clean_target_vec))
-    original_order_indices <- original_order_indices[!is.na(original_order_indices)]
-    
-    # This means the vector of strings can be returned in the original order if 
-    # it only important that the strings themselves match. Alternatively, the
-    # vector of strings can also be returned in the same order. A vector of 
-    # indices will be returned indicating the correct order of the input vector 
-    # if needed at a later date. This also accounts for all perfect matches of 
-    # the cleaned strings but not the actual string.
-    
-    if(correct_order & !is_not_matching_entries){
-      current_vec <- target_vec
-    } else if(!correct_order & !is_not_matching_entries) {
-      current_vec <- target_vec[original_order_indices]
-    } else if (correct_order & is_not_matching_entries){
-      current_vec <- current_vec[correct_order_indices]
-    } 
-    
-    
-    # Indices should be unique and not NA. Check multiple columns weren't 
-    # matched to the same column. The appropriate cut off distance may need 
-    # to be tweaked overtime. For metadata report.
-    duplicate_column_indices <- duplicated(current_vec)
-    is_matching_indices_unique <- !any(duplicated(closest_matching_indices))
-    is_column_name_na <- any(is.na(current_vec))
-    
-    # For metadata report.
-    updated_matching_entries <- current_vec[correct_order_indices]
-    updated_nonmatching_entry_indices <- which(!clean_current_vec %in% clean_target_vec)
-    updated_nonmatching_entries <- clean_current_vec[updated_nonmatching_entry_indices]
-    is_not_matching_entries_updated <- !((length(updated_matching_entries) == length(clean_current_vec)) || (length(updated_matching_entries) == length(clean_target_vec)))
-    updated_nonmatching_entries_str <- paste0(updated_nonmatching_entries, collapse=', ')
-    
-    
-    
-    metadata <- data.frame(size_target_vec,
-                           size_current_vec,
-                           is_not_matching_entries, 
-                           is_not_matching_entries_updated,
-                           updated_nonmatching_entries_str,
-                           is_matching_indices_unique,
-                           is_column_name_na) 
-    
-   
-    
-    # write any warnings and points of interest generated to the metadata report
-    warnings <- names(warnings())
-    warnings_matrix <- matrix(warnings, 1,length(warnings))
-    # contribute_to_metadata_report(control_data_type, section, warnings_matrix)
-    # contribute_to_metadata_report(control_data_type, section, metadata)
-    
-    output <- list(current_vec, correct_order_indices, original_order_indices, metadata)
-    return(output)
-  
-  },
+        # find closest match within a specified distance with levenshtein
+        # distances or matching partial strings contained within column 
+        # names.
+        for(i in nonmatching_current_entry_indices){
+          entry <- clean_current_vec[i]
+          levenshtein_distances <- adist(entry , clean_target_vec)
+          minimum_distance <- min(levenshtein_distances)
+          closest_matching_indices <- which(levenshtein_distances==minimum_distance)
+          
+          partial_name_matches <- grep(entry, clean_target_vec)
+          if(length(partial_name_matches) == 1){
+            clean_current_vec[i] <- clean_target_vec[partial_name_matches]
+            current_vec[i] <- target_vec[partial_name_matches]
+          } else if ((length(closest_matching_indices) == 1) & (minimum_distance < maxium_levenshtein_distance)) {
+            clean_current_vec[i] <- clean_target_vec[closest_matching_indices]
+            current_vec[i] <- target_vec[closest_matching_indices]
+          } 
+        }
+      } 
+      
+      # find list of vector of indices which indicate the position of current columns names in the legacy format. 
+      # this will be used to indicate if at the end of the mapping and matching process, the program was able to 
+      # correctly find all required columns. This will also then be utilised to rearrange the order of the columns
+      correct_order_indices <- sapply(clean_target_vec, function(x) match(x, clean_current_vec))
+      correct_order_indices <- correct_order_indices[!is.na(correct_order_indices)]
+      
+      
+      original_order_indices <- sapply(clean_current_vec, function(x) match(x, clean_target_vec))
+      original_order_indices <- original_order_indices[!is.na(original_order_indices)]
+      
+      # This means the vector of strings can be returned in the original order if 
+      # it only important that the strings themselves match. Alternatively, the
+      # vector of strings can also be returned in the same order. A vector of 
+      # indices will be returned indicating the correct order of the input vector 
+      # if needed at a later date. This also accounts for all perfect matches of 
+      # the cleaned strings but not the actual string.
+      
+      if(correct_order & !is_not_matching_entries){
+        current_vec <- target_vec
+      } else if(!correct_order & !is_not_matching_entries) {
+        current_vec <- target_vec[original_order_indices]
+      } else if (correct_order & is_not_matching_entries){
+        current_vec <- current_vec[correct_order_indices]
+      } 
+      
+      
+      # Indices should be unique and not NA. Check multiple columns weren't 
+      # matched to the same column. The appropriate cut off distance may need 
+      # to be tweaked overtime. For metadata report.
+      duplicate_column_indices <- duplicated(current_vec)
+      is_matching_indices_unique <- !any(duplicated(closest_matching_indices))
+      is_column_name_na <- any(is.na(current_vec))
+      
+      # For metadata report.
+      updated_matching_entries <- current_vec[correct_order_indices]
+      updated_nonmatching_entry_indices <- which(!clean_current_vec %in% clean_target_vec)
+      updated_nonmatching_entries <- clean_current_vec[updated_nonmatching_entry_indices]
+      is_not_matching_entries_updated <- !((length(updated_matching_entries) == length(clean_current_vec)) || (length(updated_matching_entries) == length(clean_target_vec)))
+      updated_nonmatching_entries_str <- paste0(updated_nonmatching_entries, collapse=', ')
+      
+      
+      
+      metadata <- data.frame(size_target_vec,
+                             size_current_vec,
+                             is_not_matching_entries, 
+                             is_not_matching_entries_updated,
+                             updated_nonmatching_entries_str,
+                             is_matching_indices_unique,
+                             is_column_name_na) 
+      
+      
+      
+      # write any warnings and points of interest generated to the metadata report
+      warnings <- names(warnings())
+      warnings_matrix <- matrix(warnings, 1,length(warnings))
+      # contribute_to_metadata_report(control_data_type, section, warnings_matrix)
+      # contribute_to_metadata_report(control_data_type, section, metadata)
+      
+      output <- list(current_vec, correct_order_indices, original_order_indices, metadata)
+      return(output)
+      
+    },
     error=function(cond) {
       contribute_to_metadata_report(control_data_type, section, comments)
       
-  }
+    }
   )
 }
+
 
 
 
