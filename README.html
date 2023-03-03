@@ -358,8 +358,8 @@ pre code {
 </div>
 
 
-<div id="reusable_digital_workflow" class="section level1">
-<h1>reusable_digital_workflow</h1>
+<div id="control-data-reusable-workflow" class="section level1">
+<h1>Control Data Reusable Workflow</h1>
 <p><img src="data:image/svg+xml;charset=utf-8;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTM4IiBoZWlnaHQ9IjIwIiByb2xlPSJpbWciIGFyaWEtbGFiZWw9ImxpZmVjeWNsZTogZXhwZXJpbWVudGFsIj48dGl0bGU+bGlmZWN5Y2xlOiBleHBlcmltZW50YWw8L3RpdGxlPjxsaW5lYXJHcmFkaWVudCBpZD0icyIgeDI9IjAiIHkyPSIxMDAlIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNiYmIiIHN0b3Atb3BhY2l0eT0iLjEiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3Atb3BhY2l0eT0iLjEiLz48L2xpbmVhckdyYWRpZW50PjxjbGlwUGF0aCBpZD0iciI+PHJlY3Qgd2lkdGg9IjEzOCIgaGVpZ2h0PSIyMCIgcng9IjMiIGZpbGw9IiNmZmYiLz48L2NsaXBQYXRoPjxnIGNsaXAtcGF0aD0idXJsKCNyKSI+PHJlY3Qgd2lkdGg9IjU1IiBoZWlnaHQ9IjIwIiBmaWxsPSIjNTU1Ii8+PHJlY3QgeD0iNTUiIHdpZHRoPSI4MyIgaGVpZ2h0PSIyMCIgZmlsbD0iI2ZlN2QzNyIvPjxyZWN0IHdpZHRoPSIxMzgiIGhlaWdodD0iMjAiIGZpbGw9InVybCgjcykiLz48L2c+PGcgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IlZlcmRhbmEsR2VuZXZhLERlamFWdSBTYW5zLHNhbnMtc2VyaWYiIHRleHQtcmVuZGVyaW5nPSJnZW9tZXRyaWNQcmVjaXNpb24iIGZvbnQtc2l6ZT0iMTEwIj48dGV4dCBhcmlhLWhpZGRlbj0idHJ1ZSIgeD0iMjg1IiB5PSIxNTAiIGZpbGw9IiMwMTAxMDEiIGZpbGwtb3BhY2l0eT0iLjMiIHRyYW5zZm9ybT0ic2NhbGUoLjEpIiB0ZXh0TGVuZ3RoPSI0NTAiPmxpZmVjeWNsZTwvdGV4dD48dGV4dCB4PSIyODUiIHk9IjE0MCIgdHJhbnNmb3JtPSJzY2FsZSguMSkiIGZpbGw9IiNmZmYiIHRleHRMZW5ndGg9IjQ1MCI+bGlmZWN5Y2xlPC90ZXh0Pjx0ZXh0IGFyaWEtaGlkZGVuPSJ0cnVlIiB4PSI5NTUiIHk9IjE1MCIgZmlsbD0iIzAxMDEwMSIgZmlsbC1vcGFjaXR5PSIuMyIgdHJhbnNmb3JtPSJzY2FsZSguMSkiIHRleHRMZW5ndGg9IjczMCI+ZXhwZXJpbWVudGFsPC90ZXh0Pjx0ZXh0IHg9Ijk1NSIgeT0iMTQwIiB0cmFuc2Zvcm09InNjYWxlKC4xKSIgZmlsbD0iI2ZmZiIgdGV4dExlbmd0aD0iNzMwIj5leHBlcmltZW50YWw8L3RleHQ+PC9nPjwvc3ZnPg==" alt="Lifecycle: experimental" data-canonical-src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" style="max-width: 100%;"></p>
 <p>The overall purpose of this workflow is to clean and wrangle control
 program data from GBRMPA so that it takes a standardised form to be
@@ -370,9 +370,13 @@ entry point of the pipeline. It takes as input the paths to the legacy
 and new data files, the geospatial site data, algorithm to assign
 nearest sites, and a flag indicating whether the data was exported from
 PowerBI or not.</p>
-<p>The four major steps in this process are as follows: - Acquire
-control data - Convert data to standard legacy format - Assign nearest
-site to manta tow data - Perform required mathematical operation</p>
+<p>The four major steps in this process are as follows:</p>
+<ul>
+<li>Acquire control data</li>
+<li>Convert data to standard legacy format</li>
+<li>Assign nearest site to manta tow data</li>
+<li>Perform required mathematical operation</li>
+</ul>
 <p>For further information see Reusable Digital Workflows Systems
 Diagrams and Reusable Digital Workflows Psudo Code Systems Diagrams</p>
 <div id="function-mainleg_path-new_cull-new_manta_tow-geospatial_sites-nearest_site_algorithm-is_powerbi_export" class="section level4">
@@ -692,7 +696,8 @@ order</li>
 <ul>
 <li>A list containing:
 <ul>
-<li><code>current_vec</code> - the updated <code>current_vec</code></li>
+<li><code>current_vec</code> - The vector of strings that has been
+updated to include matches from the input <code>target_vec</code></li>
 <li><code>correct_order_indices</code> - a vector indicating the correct
 order of the input vector if needed at a later date</li>
 <li><code>original_order_indices</code> - a vector indicating the
@@ -704,8 +709,10 @@ metadata report<br />
 </ul></li>
 <li><strong>Description:</strong>
 <ul>
-<li>This function compares any form two vectors and identifies matching
-entries.</li>
+<li>This function compares any two vectors and identifies matching
+entries. This utilizes a number of common NLP techniques to match
+elements that are intended to be identical but not exhibit slight
+differences. R</li>
 </ul></li>
 </ul>
 </div>
