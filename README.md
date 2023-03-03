@@ -28,7 +28,7 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
 - **Output:**
     - None
 - **Description:**
-    - This function is the main function that runs the data processing pipeline. It takes in several input parameters and uses them to call other functions to import, format, and verify data. It also creates a metadata report to document the data processing pipeline.\
+    - This function is the main function that runs the data processing pipeline. It takes in several input parameters and uses them to call other functions to import, format, and verify data. It also creates a metadata report to document the data processing pipeline.
 
 #### Function: `import_data(data, control_data_type, is_powerBI_export, sheet)`
 
@@ -40,7 +40,7 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
 - **Output:**
     - dataframe containing imported data
 - **Description:**
-    - This function reads data from a file and returns a dataframe. It determines the file type and reads the file using the appropriate method. It also formats column names to remove special characters and adds any required columns to the dataframe.\
+    - This function reads data from a file and returns a dataframe. It determines the file type and reads the file using the appropriate method. It also formats column names to remove special characters and adds any required columns to the dataframe.
 
 #### Function: `format_control_data(current_df, legacy_df, control_data_type, section)`
 
@@ -52,7 +52,7 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
 - **Output:**
     - updated dataframe
 - **Description:**
-    - This function formats column names, order and type of a dataframe to match a legacy dataframe. It generates comments and returns an updated dataframe.\
+    - This function formats column names, order and type of a dataframe to match a legacy dataframe. It generates comments and returns an updated dataframe.
 
 #### Function: `create_metadata_report(count)`
 
@@ -73,7 +73,7 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
 - **Output:**
     - None
 - **Description:**
-    - This function adds a section to the metadata report from the information obtained in the previously executed function to the desired control data node.\
+    - This function adds a section to the metadata report from the information obtained in the previously executed function to the desired control data node.
 
 #### Function: `outersect(x, y)`
 
@@ -83,7 +83,7 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
 - **Output:**
     - elements of both vectors that are not in both of them
 - **Description:**
-    - This function returns the elements of two vectors that are not in both of them.\
+    - This function returns the elements of two vectors that are not in both of them.
 
 #### Function: `map_column_names(column_names)`
 
@@ -92,7 +92,7 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
 - **Output:**
     - a vector of mapped column names
 - **Description:**
-    - This function maps column names from one format to another. It uses a lookup table to map the column names.\
+    - This function maps column names from one format to another. It uses a lookup table to map the column names.
 
 #### Function: `add_required_columns(df, control_data_type, is_powerBI_export)`
 
@@ -103,7 +103,7 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
 - **Output:**
     - dataframe with added columns
 - **Description:**
-    - This function adds any required columns to a dataframe. It uses input parameters to add any required columns to the dataframe.\
+    - This function adds any required columns to a dataframe. It uses input parameters to add any required columns to the dataframe.
 
 #### Function: `verify_control_dataframe(new_data_df, legacy_data_df, control_data_type, ID_col, section, is_new)`
 
@@ -117,7 +117,7 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
 - **Output:**
     - verified dataframe
 - **Description:**
-    - This function finds discrepancies between new data and legacy data and handles them appropriately. It returns a verified dataframe.\
+    - This function finds discrepancies between new data and legacy data and handles them appropriately. It returns a verified dataframe.
 
 
 #### Function: `set_data_type()`
@@ -127,7 +127,7 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
 - **Outputs:**
   - `data_df`: The updated data frame.
 - **Description:**
-    - This function sets the data type of each column of a data frame based on a lookup table stored in a CSV file. It returns the updated data frame.\
+    - This function sets the data type of each column of a data frame based on a lookup table stored in a CSV file. It returns the updated data frame.
     
 #### Function: `update_IDs()`
 - **Inputs:**
@@ -137,7 +137,7 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
 - **Outputs:**
   - Updated `legacy_data_df` with updated IDs
 - **Description:**
-  - This function attempts to update the IDs of the legacy data where the previous processing utilised data from a PowerBI export and therefore will have IDs of NA. This will find perfect matches (distance of zero) between the legacy data and new data, and alter the IDs accordingly. Once matches are found, IDs can then be altered. If there are multiple matches then they are left as is. Ultimately this means they will be treated as a new entry.\
+  - This function attempts to update the IDs of the legacy data where the previous processing utilised data from a PowerBI export and therefore will have IDs of NA. This will find perfect matches (distance of zero) between the legacy data and new data, and alter the IDs accordingly. Once matches are found, IDs can then be altered. If there are multiple matches then they are left as is. Ultimately this means they will be treated as a new entry.
 
 #### Function: `find_close_matches()`
 - **Inputs:**
@@ -166,5 +166,5 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
       - `original_order_indices` - a vector indicating the original order of the input vector
       - `metadata` - data frame containing information for the metadata report  
 - **Description:**
-  - This function compares any two vectors and identifies matching entries. This utilizes a number of common NLP techniques to match elements that are intended to be identical but not exhibit slight differences. R 
+  - This function compares any two vectors and identifies matching entries. This utilizes a number of common NLP techniques to match elements that are intended to be identical but not exhibit slight differences.
  
