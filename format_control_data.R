@@ -13,7 +13,8 @@ import_data <- function(data, control_data_type, is_powerBI_export, sheet=1){
         # require different functions to read data
         file_extension <- file_ext(data)
         if (file_extension == 'xlsx'){
-          data_df <- read.xlsx(data, sheet = sheet)
+          data_tibble <- read_xlsx(data, sheet = sheet)
+          data_df <- data.frame(data_tibble)
         } else if (file_extension == 'csv'){
           data_df <- read.csv(data, header = TRUE)
         } else {

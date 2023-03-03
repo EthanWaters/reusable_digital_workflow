@@ -12,7 +12,6 @@ install.packages('stringr')
 
 library("tools")
 library("installr")
-library("xlsx")
 library("readxl")
 library("sets")
 library("XML")
