@@ -13,7 +13,7 @@ import_data <- function(data, control_data_type, is_powerBI_export, sheet=1){
         # require different functions to read data
         file_extension <- file_ext(data)
         if (file_extension == 'xlsx'){
-          data_df <- read_xlsx(data, sheet = sheet)
+          data_df <- read.xlsx(data, sheet = sheet)
         } else if (file_extension == 'csv'){
           data_df <- read.csv(data, header = TRUE)
         } else {
@@ -61,9 +61,6 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
       # However, this will interrupt the workflow as this indicates the information  
       # provided is insufficient is required to be correct to proceed. 
       
-      legacy_df <- cull_legacy_df
-      currednt_df <- new_cull_data_df
-      
       # create comments variable to store points of interest.
       comments <- ""
       
@@ -75,21 +72,22 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
       matched_vector_entries <- match_vector_entries(current_col_names, legacy_col_names, section, correct_order = FALSE, check_mapped = TRUE)
       matched_col_names <- matched_vector_entries[[1]]
       matching_entry_indices <- matched_vector_entries[[2]]
-      metadata <- matched_vector_entries[[3]]
+      metadata <- matched_vector_entries[[4]]
       
       if(any(is.na(matched_col_names)) || any(is.na(matching_entry_indices))){
         comments <- paste0(comments,"matching_entry_indices or matched_col_names has returned NA, indicating a fatal error in match_vector_entries")
       }
       
-      # Update the current dataframe column names with the vector found above.
-      colnames(current_df) <- matched_col_names
-      
       # rearrange columns
       updated_current_df <- current_df[matching_entry_indices]
       
+      # Update the current dataframe column names with the vector found above.
+      colnames(updated_current_df) <- matched_col_names
+      
+      
+      
       # set the data type of all entries to ensure that performed operations have 
       # expected output. 
-      legacy_df <- set_data_type(legacy_df, control_data_type) 
       updated_current_df <- set_data_type(updated_current_df, control_data_type) 
 
       #Determine initial error flags based on returned metadata
@@ -106,14 +104,15 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
         
       updated_current_df["error_flag"] <- initial_error_flag
       
+      # contribute_to_metadata_report(control_data_type, section, comments)
       
       
       return(updated_current_df)
     },
     error=function(cond) {
-      contribute_to_metadata_report(control_data_type, section, comments)
+      contribute_to_metadata_report(control_data_type, section, cond)
      
-    },
+    }
   ) 
   
 }
@@ -131,8 +130,7 @@ create_metadata_report <- function(count){
     #generate template
     template <- xml_new_root("session") 
     control_data <- xml_find_all(template, "//session")
-    xml_add_child(control_data, "timestamp", timestamp)  
-    xml_add_child(control_data, "info", sessionInfo()[-c(13,12,11,9,8)])  
+    xml_add_child(control_data, "timestamp", timestamp) 
     xml_add_child(control_data, "control_data")
     control_data <- xml_find_all(template, "//control_data")
     xml_add_child(control_data, "manta_tow")  
@@ -212,9 +210,14 @@ add_required_columns <- function(df, control_data_type, is_powerBI_export){
   
   
 verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_type, ID_col, section, is_new){
-  verified_data_df <- dataframe()
-  colnames(verified_data_df) <- colnames(legacy_data_df)
   
+  new_data_df <- Updated_cull_data_format
+  legacy_data_df <- cull_legacy_df
+  
+  column_names <- colnames(legacy_data_df)
+  verified_data_df <- data.frame(matrix(ncol = length(column_names), nrow = 0))
+  colnames(verified_data_df) <- column_names 
+
   # If this is the first time processing the data it will require an export 
   # directly from the GBRMPA database to ensure that IDs are correct. This will 
   # then need to check every single entry to ensure it meets the requirements. 
@@ -235,13 +238,13 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
       # Rows with a single close match will be considered a discrepancy and then
       # the ID checked against the all the IDs in legacy_data_df to ensure it does 
       # not already exist.
-      if(any(is.na(legacy_data_df$ID))){
+      if(any(is.na(legacy_data_df[ID_col]))){
         
         legacy_data_df <- update_IDs(new_data_df, legacy_data_df, control_data_type)
         
         # create new dataframe without rows that have NA ID so that they can
         # be passed through the check functions as new row entries. 
-        legacy_data_df <- legacy_data_df[is.na(legacy_data_df$ID),]
+        legacy_data_df <- legacy_data_df[is.na(legacy_data_df[ID_col]),]
         
       }
       
@@ -252,7 +255,7 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
       
       # Determine discrepancies and store both versions of the entries
       discrepancies_legacy <- anti_join(legacy_data_df, new_data_df)   
-      discrepancies_new_indices <- which(new_data_df$ID_col %in% discrepancies_legacy$ID_col)
+      discrepancies_new_indices <- which(new_data_df$ID_col %in% discrepancies_legacy[ID_col])
       discrepancies_new <- new_data_df[discrepancies_new_indices,]
       
       # find new entries based on whether the ID is present in both dataframes 
@@ -336,15 +339,15 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
     # assumed to be a QA change. If failed,  the data will be flagged. Failed 
     # discrepancies will check the original legacy entry, which if failed will 
     # be left as is. 
-    verified_new <- verify_entries(new_entries, control_data_type)
-    verified_discrepancies <- verify_entries(discrepancies_new, control_data_type)
-    verified_discrepancies <- compare_discrepancies(discrepancies_new, discrepancies_legacy, control_data_type)
-    verified_data_df <- rbind(verified_data_df, verified_discrepancies)
-    verified_data_df <- rbind(verified_data_df, verified_new)
+    # verified_new <- verify_entries(new_entries, control_data_type)
+    # verified_discrepancies <- verify_entries(discrepancies_new, control_data_type)
+    # verified_discrepancies <- compare_discrepancies(discrepancies_new, discrepancies_legacy, control_data_type)
+    # verified_data_df <- rbind(verified_data_df, verified_discrepancies)
+    # verified_data_df <- rbind(verified_data_df, verified_new)
    
   } else if (is_new & !is_powerBI_export){
-    verified_new <- verify_entries(new_data_df, control_data_type)
-    verified_data_df <- rbind(verified_data_df, verified_new)
+    # verified_new <- verify_entries(new_data_df, control_data_type)
+    # verified_data_df <- rbind(verified_data_df, verified_new)
     
   }
   
@@ -505,6 +508,9 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
   
   out <- tryCatch(
     {
+      
+      current_vec <- colnames(new_cull_data_df)
+      target_vec <- colnames(cull_legacy_df)
 
     # clean vector entries for easy comparison. The cleaning is done in this 
     # specific order to remove characters such as '.' that appear after
