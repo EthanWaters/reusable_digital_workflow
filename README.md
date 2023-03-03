@@ -166,5 +166,5 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
       - `original_order_indices` - a vector indicating the original order of the input vector
       - `metadata` - data frame containing information for the metadata report  
 - **Description:**
-  - This function compares any two vectors and identifies matching entries. This utilizes a number of common NLP techniques to match elements that are intended to be identical but not exhibit slight differences.
+  - This function compares any two vectors and identifies matching entries. This utilizes a number of common NLP techniques to match elements that are intended to be identical but exhibit slight differences.
  

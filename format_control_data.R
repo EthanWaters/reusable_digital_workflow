@@ -6,9 +6,9 @@ import_data <- function(data, control_data_type, is_powerBI_export, sheet=1){
       {
         # Could assign the control_data_type as the file name. Yet to implement 
         # this effectively
-        file_name <- tools::file_path_sans_ext(basename(data))
         
-  
+        file_name <- tools::file_path_sans_ext(basename(data))
+       
         # Opens file and stores information into dataframe. Different file types
         # require different functions to read data
         file_extension <- file_ext(data)
@@ -19,13 +19,14 @@ import_data <- function(data, control_data_type, is_powerBI_export, sheet=1){
         } else {
           data_df <- read.table(file=data, header=TRUE)
         }
-        
+      
         column_names <- colnames(data_df)
         column_names <- gsub("\\.", " ", column_names)
         column_names <- gsub("\\s+", " ", column_names)
         colnames(data_df) <- column_names
         # create matrix of warnings so they are added to the specified XML node 
         # in the metadata report in a vectorised mannor. 
+       
         warnings <- names(warnings())
         warnings_matrix <- matrix(warnings, 1,length(warnings))
         contribute_to_metadata_report(control_data_type, "Import", warnings_matrix)
@@ -203,7 +204,7 @@ add_required_columns <- function(df, control_data_type, is_powerBI_export){
   if(is_powerBI_export == 1){
     new_columns <- lookup[lookup$type == control_data_type, 1]
   } else {
-    new_columns <- lookup[((lookup$type == control_data_typ) & (lookup$is_mandatory == 1)), 1]
+    new_columns <- lookup[((lookup$type == control_data_type) & (lookup$is_mandatory == 1)), 1]
   }
   df[new_columns] <- NA
   return(df)
