@@ -58,7 +58,6 @@ RHIS_sheet_index <- 5
 cull_legacy_df <- import_data(leg_path, 'cull', is_powerBI_export, cull_sheet_index)
 new_cull_data_df <- import_data(cull_new1, 'cull', is_powerBI_export, cull_sheet_index)
 cull_legacy_df <- set_data_type(cull_legacy_df, control_data_type) 
-new_cull_data_df <- set_data_type(new_cull_data_df, control_data_type) 
 
 manta_tow_legacy_df <- import_data(leg_path, 'manta_tow', is_powerBI_export, manta_tow_sheet_index)
 new_manta_tow_data_df <- import_data(manta_tow_new1, 'manta_tow', is_powerBI_export, manta_tow_sheet_index)

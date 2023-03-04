@@ -455,7 +455,7 @@ set_data_type <- function(data_df, control_data_type){
   # acquire the column names of the control data passed as an argument of this 
   # function and make sure they match the control data column names in the 
   # lookup table that specifies which datatype every column should be.
-  data_df <- cull_legacy_df
+  
   column_names <- colnames(data_df)
   setDataType_df <- read.csv("setDataType.csv", header = TRUE)
   
@@ -568,7 +568,6 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
       # Comparisons will be performed with vector of cleaned column names but 
       # the original vector of column names with uncleaned text will be utilsied 
       # to store the column names
-      message(is_not_matching_entries)
       if(is_not_matching_entries){
         closest_matching_indices <- c()
         
@@ -642,7 +641,6 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
       if(correct_order & !is_not_matching_entries){
         current_vec <- c()
         clean_current_vec_filtered <- clean_current_vec[correct_order_indices]
-        print(clean_current_vec_filtered)
         for(i in clean_current_vec_filtered){
           matches <- match(i, clean_target_vec)
           matches <- matches[!is.na(matches)]
