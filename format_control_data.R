@@ -22,17 +22,34 @@ import_data <- function(data, control_data_type, is_powerBI_export, sheet=1){
         } else {
           data_df <- read.table(file=data, header=TRUE)
         }
-      
+        
         column_names <- colnames(data_df)
         column_names <- gsub("\\.", " ", column_names)
         column_names <- gsub("\\s+", " ", column_names)
         colnames(data_df) <- column_names
+        
+        # Remove rows where the majority of fields are NA
+        
+        # has.na <- c()
+        # for(x in 1:length(data_df)){
+        #   if(any(is.na(data_df[x,]))){
+        #     index <- sapply(data_df[x,], function(i){is.na(i)})
+        #     if(length(x[index]) >= length(x)/2){
+        #       has.na <- c(has.na, x)
+        #     }
+        #   }
+        # }
+        # data_df <- data_df[-has.na,]
+        
+        # this is temporary until a more sophisticated method is produced
+        data_df <- na.omit(data_df)
+        
         # create matrix of warnings so they are added to the specified XML node 
         # in the metadata report in a vectorised mannor. 
        
-        warnings <- names(warnings())
-        warnings_matrix <- matrix(warnings, 1,length(warnings))
-        contribute_to_metadata_report(control_data_type, "Import", warnings_matrix)
+        # warnings <- names(warnings())
+        # warnings_matrix <- matrix(warnings, 1,length(warnings))
+        # contribute_to_metadata_report(control_data_type, "Import", warnings_matrix)
         
         # add any additional columns no longer in the current dataset. # may wish
         # to expand upon this to vary depending on where the input data was 
