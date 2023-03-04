@@ -14,9 +14,11 @@ import_data <- function(data, control_data_type, is_powerBI_export, sheet=1){
         file_extension <- file_ext(data)
         if (file_extension == 'xlsx'){
           data_tibble <- read_xlsx(data, sheet = sheet)
+          data_tibble_colnames <- colnames(data_tibble)
           data_df <- data.frame(data_tibble)
+          colnames(data_df) <- data_tibble_colnames
         } else if (file_extension == 'csv'){
-          data_df <- read.csv(data, header = TRUE)
+          data_df <- read.csv(data, header = TRUE,  encoding="UTF-8", check.names=FALSE)
         } else {
           data_df <- read.table(file=data, header=TRUE)
         }
@@ -488,7 +490,7 @@ set_data_type <- function(data_df, control_data_type){
       fmts <- c("%d-%b-%y", "%d-%m-%Y", "%d-%m-%y", "%d/%m/%y", "%m/%d/%Y", "%d/%m/%Y", "%Y/%m/%d", "%Y-%m-%d", "%y/%m/%d", "%y-%m-%d")
       for(x in columns){data_df[[x]] <- as.Date(as.numeric(apply(outer(data_df[[x]], fmts, as.Date), 1, na.omit)), "1970-01-01")}
     } else if (i == "Integer") {
-      for(x in columns){data_df[[x]] <-as.integer(data_df[[x]])}
+      for(x in columns){data_df[[x]] <- as.integer(data_df[[x]])}
     } else if (i == "Character"){
       for(x in columns){data_df[[x]] <- as.character(data_df[[x]])}
     }
@@ -512,7 +514,6 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
   
   out <- tryCatch(
     {
-      
       # clean vector entries for easy comparison. The cleaning is done in this 
       # specific order to remove characters such as '.' that appear after
       # removing spaces or specific character from text in a CSV. 
@@ -539,7 +540,7 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
       is_column_name_na <- NA   
       
       # Set the maximum distance for fuzzy string matching
-      maxium_levenshtein_distance <- 5
+      maxium_levenshtein_distance <- 4
       
       # determine the current column names and indices that match a column name 
       # in the legacy format. Count how many match. 
