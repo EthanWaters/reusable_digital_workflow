@@ -64,6 +64,8 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
       # However, this will interrupt the workflow as this indicates the information  
       # provided is insufficient is required to be correct to proceed. 
       
+      # current_df <- new_cull_data_df
+      # legacy_df <- cull_legacy_df
       # create comments variable to store points of interest.
       comments <- ""
       
@@ -454,7 +456,6 @@ set_data_type <- function(data_df, control_data_type){
   # function and make sure they match the control data column names in the 
   # lookup table that specifies which datatype every column should be.
   
-  data_df <- new_cull_data_df
   column_names <- colnames(data_df)
   setDataType_df <- read.csv("setDataType.csv", header = TRUE)
   
@@ -487,8 +488,7 @@ set_data_type <- function(data_df, control_data_type){
     if(i == "Numeric"){
       for(x in columns){data_df[[x]] <- as.numeric(data_df[[x]])}
     } else if (i == "Date") {
-      fmts <- c("%d-%b-%y", "%d-%m-%Y", "%d-%m-%y", "%d/%m/%y", "%m/%d/%Y", "%d/%m/%Y", "%Y/%m/%d", "%Y-%m-%d", "%y/%m/%d", "%y-%m-%d")
-      for(x in columns){data_df[[x]] <- as.Date(as.numeric(apply(outer(data_df[[x]], fmts, as.Date), 1, na.omit)), "1970-01-01")}
+      for(x in columns){data_df[[x]] <- parse_date_time(data_df[[x]], orders = c('dmy', 'ymd'))}
     } else if (i == "Integer") {
       for(x in columns){data_df[[x]] <- as.integer(data_df[[x]])}
     } else if (i == "Character"){
@@ -632,7 +632,13 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
       # the cleaned strings but not the actual string.
       
       if(correct_order & !is_not_matching_entries){
-        current_vec <- target_vec
+        for(i in clean_current_vec){
+          matches <- match(x, clean_target_vec)
+          matches <- matches[!is.na(matches)]
+          if(length(matches) == 1){
+            current_vec <- target_vec[matches]
+          }
+        }
       } else if(!correct_order & !is_not_matching_entries) {
         current_vec <- target_vec[original_order_indices]
       } else if (correct_order & is_not_matching_entries){
