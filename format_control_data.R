@@ -455,7 +455,7 @@ set_data_type <- function(data_df, control_data_type){
   # acquire the column names of the control data passed as an argument of this 
   # function and make sure they match the control data column names in the 
   # lookup table that specifies which datatype every column should be.
-  
+  data_df <- cull_legacy_df
   column_names <- colnames(data_df)
   setDataType_df <- read.csv("setDataType.csv", header = TRUE)
   
@@ -488,7 +488,11 @@ set_data_type <- function(data_df, control_data_type){
     if(i == "Numeric"){
       for(x in columns){data_df[[x]] <- as.numeric(data_df[[x]])}
     } else if (i == "Date") {
-      for(x in columns){data_df[[x]] <- parse_date_time(data_df[[x]], orders = c('dmy', 'ymd'))}
+      for(x in columns){
+        if(is.character(data_df[[x]][1])){
+          data_df[[x]] <- parse_date_time(data_df[[x]], orders = c('dmy', 'ymd'))
+        }
+      }
     } else if (i == "Integer") {
       for(x in columns){data_df[[x]] <- as.integer(data_df[[x]])}
     } else if (i == "Character"){
@@ -514,6 +518,7 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
   
   out <- tryCatch(
     {
+      
       # clean vector entries for easy comparison. The cleaning is done in this 
       # specific order to remove characters such as '.' that appear after
       # removing spaces or specific character from text in a CSV. 
@@ -546,12 +551,15 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
       # in the legacy format. Count how many match. 
       matching_entries <- intersect(clean_current_vec, clean_target_vec)
       matching_entries_length <- length(matching_entries)
+      perfect_matching_entries <- intersect(current_vec, target_vec)
+      perfect_matching_entries_length <- length(perfect_matching_entries)
       matching_target_entries_indices <- which(clean_target_vec %in% matching_entries)
       matching_current_entries_indexes <- which(clean_current_vec %in% matching_entries)
       
       # conditional statements to be passed to error handling so a more detailed 
       # description of any failure mode can be provided. 
       is_not_matching_entries <- !((matching_entries_length == length(clean_current_vec)) || (matching_entries_length == length(clean_target_vec)))
+      is_not_perfect_match <- !((perfect_matching_entries_length == length(current_vec)) || (perfect_matching_entries_length == length(target_vec)))
       
       # Map legacy column names to current column names that are not a perfect
       # match. This occurs by matching partial strings contained within column 
@@ -560,6 +568,7 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
       # Comparisons will be performed with vector of cleaned column names but 
       # the original vector of column names with uncleaned text will be utilsied 
       # to store the column names
+      message(is_not_matching_entries)
       if(is_not_matching_entries){
         closest_matching_indices <- c()
         
@@ -620,10 +629,9 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
       correct_order_indices <- sapply(clean_target_vec, function(x) match(x, clean_current_vec))
       correct_order_indices <- correct_order_indices[!is.na(correct_order_indices)]
       
-      
       original_order_indices <- sapply(clean_current_vec, function(x) match(x, clean_target_vec))
       original_order_indices <- original_order_indices[!is.na(original_order_indices)]
-      
+     
       # This means the vector of strings can be returned in the original order if 
       # it only important that the strings themselves match. Alternatively, the
       # vector of strings can also be returned in the same order. A vector of 
@@ -632,11 +640,14 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
       # the cleaned strings but not the actual string.
       
       if(correct_order & !is_not_matching_entries){
-        for(i in clean_current_vec){
-          matches <- match(x, clean_target_vec)
+        current_vec <- c()
+        clean_current_vec_filtered <- clean_current_vec[correct_order_indices]
+        print(clean_current_vec_filtered)
+        for(i in clean_current_vec_filtered){
+          matches <- match(i, clean_target_vec)
           matches <- matches[!is.na(matches)]
           if(length(matches) == 1){
-            current_vec <- target_vec[matches]
+            current_vec[matches] <- target_vec[matches]
           }
         }
       } else if(!correct_order & !is_not_matching_entries) {
@@ -644,7 +655,6 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
       } else if (correct_order & is_not_matching_entries){
         current_vec <- current_vec[correct_order_indices]
       } 
-      
       
       # Indices should be unique and not NA. Check multiple columns weren't 
       # matched to the same column. The appropriate cut off distance may need 
