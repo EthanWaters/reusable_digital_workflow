@@ -277,7 +277,7 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
       
       # Determine discrepancies and store both versions of the entries
       discrepancies_legacy <- anti_join(legacy_data_df, new_data_df)   
-      discrepancies_new_indices <- which(new_data_df$ID_col %in% discrepancies_legacy[ID_col])
+      discrepancies_new_indices <- which(new_data_df[[ID_col]] %in% discrepancies_legacy[[ID_col]])
       discrepancies_new <- new_data_df[discrepancies_new_indices,]
       
       # find new entries based on whether the ID is present in both dataframes 
@@ -299,8 +299,8 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
       # find close matching rows (distance of two) based on all columns except ID. ID is not 
       # because it will always be null if the data is exported from powerBI. 
       distance <- 2
-      new_data_without_ID_df <- new_data_df[ , -which(names(new_data_df) %in% c("ID", "error_flag"))]
-      legacy_data_without_ID_df <- legacy_data_df[ , -which(names(legacy_data_df) %in% c("ID", "error_flag"))]
+      new_data_without_ID_df <- new_data_df[ , -which(names(new_data_df) %in% c(ID_col, "error_flag"))]
+      legacy_data_without_ID_df <- legacy_data_df[ , -which(names(legacy_data_df) %in% c(ID_col, "error_flag"))]
       close_match_rows <- find_close_matches(new_data_without_ID_df, legacy_data_without_ID_df, distance)
       
       discrepancies_new_indices <- c()
@@ -428,19 +428,23 @@ update_IDs <- function(new_data_df, legacy_data_df, control_data_type){
 }
 
 
+x <- new_data_without_ID_df
+y <- legacy_data_without_ID_df
+
 find_close_matches <- function(x, y, distance){
   # Find list of all close matches between rows in x and y within a specified 
   # distance. This distance is the number of non perfect column matches within
   # a row. returns a list of lists. Each is a vector containing the indices of
   # the rows matched and the distance from perfect. (X_index, Y_index, Distance)
-  
-  matches <- lapply(1:nrow(x), function(z){ 
+  matches <- list()
+  for(z in 1:nrow(x)){ 
     for(i in 1:nrow(y)){ 
       if(length(na.omit(match(x[z,], y[i,]))) >= (length(y[i,]) - distance)){
-        c(z, i,length(y[1,]) - length(na.omit(match(x[z,], y[i,]))))
+        match <- c(z, i,length(y[1,]) - length(na.omit(match(x[z,], y[i,]))))
+        matches[[z]] <- match
       }
     }
-  })
+  }
   filtered_matches <- lapply(matches, function(a) Filter(Negate(is.null), a))
   
   # Currently not necessary but it may be desirable to have a single list of 
