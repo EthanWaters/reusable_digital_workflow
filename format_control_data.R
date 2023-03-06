@@ -314,10 +314,10 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
         # if a row only has one close_match_row, it is considered a discrepancy
         # or a perfect match 
         if(length(close_match_rows[[x]]) == 1){
-          if(close_match_rows[[x]][[1]][3] == 0){
+          if(close_match_rows[[x]][3] == 0){
             perfect_duplicate_legacy_indices <- c(perfect_duplicate_legacy_indices, close_match_rows[[x]][[1]][2])
             perfect_duplicate_new_indices <- c(perfect_duplicate_new_indices, close_match_rows[[x]][[1]][1])
-          } else if(close_match_rows[[x]][[1]][3] == 1){
+          } else if(close_match_rows[[x]][3] == 1){
             discrepancies_legacy_indices <- c(discrepancies_legacy_indices, close_match_rows[[x]][[1]][2])
             discrepancies_new_indices <- c(discrepancies_new_indices, close_match_rows[[x]][[1]][1])
           }
@@ -436,21 +436,26 @@ find_close_matches <- function(x, y, distance){
   # distance. This distance is the number of non perfect column matches within
   # a row. returns a list of lists. Each is a vector containing the indices of
   # the rows matched and the distance from perfect. (X_index, Y_index, Distance)
-  matches <- list()
+  all_matches <- list()
+  row_length <- length(y[i,])
   for(z in 1:nrow(x)){ 
-    for(i in 1:nrow(y)){ 
-      if(length(na.omit(match(x[z,], y[i,]))) >= (length(y[i,]) - distance)){
-        match <- c(z, i,length(y[1,]) - length(na.omit(match(x[z,], y[i,]))))
-        matches[[z]] <- match
+    matches <- list()
+    for(i in 1:nrow(y)){
+      match_length <- length(na.omit(match(x[z,], y[i,])))
+      if(match_length >= (row_length - distance)){
+        match <- c(z, i,length(y[1,]) - match_length)
+        matches[[i]] <- match
       }
+      filtered_matches <- lapply(matches, function(a) Filter(Negate(is.null), a))
+      all_matches[[z]] <- filtered_matches
     }
   }
-  filtered_matches <- lapply(matches, function(a) Filter(Negate(is.null), a))
+ 
   
   # Currently not necessary but it may be desirable to have a single list of 
   # vectors rather than a list of lists
   # filtered_matches <- unlist(filtered_matches, recursive = FALSE)
-  return(filtered_matches)
+  return(all_matches)
 }
 
 
