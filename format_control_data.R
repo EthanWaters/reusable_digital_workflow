@@ -486,7 +486,7 @@ find_close_matches_matrix <- function(x, y, distance){
   # a row. returns a the indices of the rows matched and the distance from
   # perfect. (X_index, Y_index, Distance). Pre-allocates memory for the matrix
   # assuming worst case scenario or maximum allocation possible. The operations 
-  # would not be possible if this fails and is still much faster than 
+  # would not be possible if this fails and is still faster than 
   # dynamically updating an object. 
 
   num_rows <- try(nrow(x)*nrow(y))
@@ -510,21 +510,7 @@ find_close_matches_matrix <- function(x, y, distance){
   return(matches)
 }
 
-find_close_matches_matrix <- function(x, y, distance){
-  matches <- matrix(data=NA, nrow=0, ncol=3)
-  row_length <- length(y[i,])
-  for(z in 1:nrow(x)){ 
-    for(i in 1:nrow(y)){
-      match_length <- length(na.omit(match(x[z,], y[i,])))
-      if(match_length >= (row_length - distance)){
-        match <- c(z, i,length(y[1,]) - match_length)
-        matches <- rbind(matches, match)
-        
-      }
-    }
-  }
-  matches <- na.exclude(matches)
-}
+
 find_previous_process_date <- function(){
   # finds the dates stored in the metadata report file names with REGEX. 
   # reports_location is a global variable defined when creating the meta data 
