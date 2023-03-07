@@ -301,7 +301,7 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
       distance <- 2
       new_data_without_ID_df <- new_data_df[ , -which(names(new_data_df) %in% c(ID_col, "error_flag"))]
       legacy_data_without_ID_df <- legacy_data_df[ , -which(names(legacy_data_df) %in% c(ID_col, "error_flag"))]
-      close_match_rows <- find_close_matches(new_data_without_ID_df, legacy_data_without_ID_df, distance)
+      close_match_rows <- find_close_matches(legacy_data_without_ID_df, new_data_without_ID_df, distance)
       
       discrepancies_new_indices <- c()
       discrepancies_legacy_indices <- c()
@@ -314,10 +314,10 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
         # if a row only has one close_match_row, it is considered a discrepancy
         # or a perfect match 
         if(length(close_match_rows[[x]]) == 1){
-          if(close_match_rows[[x]][3] == 0){
+          if(close_match_rows[[x]][[1]][3] == 0){
             perfect_duplicate_legacy_indices <- c(perfect_duplicate_legacy_indices, close_match_rows[[x]][[1]][2])
             perfect_duplicate_new_indices <- c(perfect_duplicate_new_indices, close_match_rows[[x]][[1]][1])
-          } else if(close_match_rows[[x]][3] == 1){
+          } else if(close_match_rows[[x]][[1]][3] == 1){
             discrepancies_legacy_indices <- c(discrepancies_legacy_indices, close_match_rows[[x]][[1]][2])
             discrepancies_new_indices <- c(discrepancies_new_indices, close_match_rows[[x]][[1]][1])
           }
@@ -328,10 +328,10 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
           match_index_matrix <- do.call(rbind, close_match_rows[[x]])
           closest_match <- which(min(match_index_matrix[,3]) == match_index_matrix[,3])
           if(length(closest_match) == 1){
-            if(close_match_rows[[x]][[1]][3] == 0){
+            if(close_match_rows[[x]][[closest_match]][3] == 0){
               perfect_duplicate_legacy_indices <- c(perfect_duplicate_legacy_indices, close_match_rows[[x]][[1]][2])
               perfect_duplicate_new_indices <- c(perfect_duplicate_new_indices, close_match_rows[[x]][[1]][1])
-            } else if(close_match_rows[[x]][[1]][3] == 1){
+            } else if(close_match_rows[[x]][[closest_match]][3] > 0){
               discrepancies_legacy_indices <- c(discrepancies_legacy_indices, close_match_rows[[x]][[1]][2])
               discrepancies_new_indices <- c(discrepancies_new_indices, close_match_rows[[x]][[1]][1])
             }
