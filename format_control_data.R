@@ -427,9 +427,9 @@ update_IDs <- function(new_data_df, legacy_data_df, control_data_type){
   return(legacy_data_df)
 }
 
-
-x <- new_data_without_ID_df
-y <- legacy_data_without_ID_df
+# 
+# x <- new_data_without_ID_df
+# y <- legacy_data_without_ID_df
 
 find_close_matches <- function(x, y, distance){
   # Find list of all close matches between rows in x and y within a specified 
@@ -444,13 +444,16 @@ find_close_matches <- function(x, y, distance){
       match_length <- length(na.omit(match(x[z,], y[i,])))
       if(match_length >= (row_length - distance)){
         match <- c(z, i,length(y[1,]) - match_length)
-        matches[[i]] <- match
+        matches[[length(matches)+1]] <- match
       }
+    }
+    if(length(matches) > 0){
       filtered_matches <- lapply(matches, function(a) Filter(Negate(is.null), a))
       all_matches[[z]] <- filtered_matches
     }
+    
   }
- 
+  filtered_matches <- lapply(all_matches, function(a) Filter(Negate(is.null), a))
   
   # Currently not necessary but it may be desirable to have a single list of 
   # vectors rather than a list of lists
