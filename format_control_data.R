@@ -327,15 +327,15 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
     # assumed to be a QA change. If failed,  the data will be flagged. Failed 
     # discrepancies will check the original legacy entry, which if failed will 
     # be left as is. 
-    # verified_new <- verify_entries(new_entries, control_data_type)
-    # verified_discrepancies <- verify_entries(discrepancies_new, control_data_type)
-    # verified_discrepancies <- compare_discrepancies(discrepancies_new, discrepancies_legacy, control_data_type)
-    # verified_data_df <- rbind(verified_data_df, verified_discrepancies)
-    # verified_data_df <- rbind(verified_data_df, verified_new)
+    verified_new <- verify_entries(new_entries, control_data_type)
+    verified_discrepancies <- verify_entries(discrepancies_new, control_data_type)
+    verified_discrepancies <- compare_discrepancies(discrepancies_new, discrepancies_legacy, control_data_type)
+    verified_data_df <- rbind(verified_data_df, verified_discrepancies)
+    verified_data_df <- rbind(verified_data_df, verified_new)
    
   } else if (is_new & !is_powerBI_export){
-    # verified_new <- verify_entries(new_data_df, control_data_type)
-    # verified_data_df <- rbind(verified_data_df, verified_new)
+    verified_new <- verify_entries(new_data_df, control_data_type)
+    verified_data_df <- rbind(verified_data_df, verified_new)
     
   }
   
@@ -394,7 +394,16 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   discrepancies_legacy_indices <- c()
   perfect_duplicate_new_indices <- c()
   perfect_duplicate_legacy_indices <- c()
+  
   test[!(duplicated(test)|duplicated(test, fromLast=TRUE))]
+  
+  x_indices <- close_match_rows[,1]
+  y_indices <- close_match_rows[,2]
+  
+  x_dup_indices <- (duplicated(x_indices)|duplicated(x_indices, fromLast=TRUE))
+  y_dup_indices <- (duplicated(y_indices)|duplicated(y_indices, fromLast=TRUE))
+  dup_indices <- y_dup_indices|x_dup_indices
+  
   
 }
 
@@ -446,9 +455,6 @@ update_IDs <- function(new_data_df, legacy_data_df, control_data_type){
   return(legacy_data_df)
 }
 
-# 
-# x <- new_data_without_ID_df
-# y <- legacy_data_without_ID_df
 
 find_close_matches <- function(x, y, distance){
   # Find list of all close matches between rows in x and y within a specified 
@@ -507,6 +513,22 @@ find_close_matches_matrix <- function(x, y, distance){
     }
   }
   matches <- na.exclude(matches)
+  return(matches)
+}
+
+
+find_close_matches_matrix <- function(x, y, distance){
+  # Find list of all close matches between rows in x and y within a specified 
+  # distance. This distance is the number of non perfect column matches within
+  # a row. returns a the indices of the rows matched and the distance from
+  # perfect. (X_index, Y_index, Distance). Pre-allocates memory for the matrix
+  # assuming worst case scenario or maximum allocation possible. The operations 
+  # would not be possible if this fails and is still faster than 
+  # dynamically updating an object. 
+  
+  for(z in 1:nrow(x)){ 
+  
+  }
   return(matches)
 }
 
