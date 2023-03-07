@@ -303,41 +303,7 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
       legacy_data_without_ID_df <- legacy_data_df[ , -which(names(legacy_data_df) %in% c(ID_col, "error_flag"))]
       close_match_rows <- find_close_matches(legacy_data_without_ID_df, new_data_without_ID_df, distance)
       
-      discrepancies_new_indices <- c()
-      discrepancies_legacy_indices <- c()
-      perfect_duplicate_new_indices <- c()
-      perfect_duplicate_legacy_indices <- c()
-      
-      # Iterate through list of close_match_rows to acquire indices of
-      # discrepancies
-      for(x in 1:length(close_match_rows)){
-        # if a row only has one close_match_row, it is considered a discrepancy
-        # or a perfect match 
-        if(length(close_match_rows[[x]]) == 1){
-          if(close_match_rows[[x]][[1]][3] == 0){
-            perfect_duplicate_legacy_indices <- c(perfect_duplicate_legacy_indices, close_match_rows[[x]][[1]][2])
-            perfect_duplicate_new_indices <- c(perfect_duplicate_new_indices, close_match_rows[[x]][[1]][1])
-          } else if(close_match_rows[[x]][[1]][3] == 1){
-            discrepancies_legacy_indices <- c(discrepancies_legacy_indices, close_match_rows[[x]][[1]][2])
-            discrepancies_new_indices <- c(discrepancies_new_indices, close_match_rows[[x]][[1]][1])
-          }
-        } else if (length(close_match_rows[[x]]) > 1) {
-          # if a row only has multiple close_match_rows, the one with the 
-          # closest distance is considered a discrepancy. If there are multiple 
-          # then they are disregarded and assumed to be new entries
-          match_index_matrix <- do.call(rbind, close_match_rows[[x]])
-          closest_match <- which(min(match_index_matrix[,3]) == match_index_matrix[,3])
-          if(length(closest_match) == 1){
-            if(close_match_rows[[x]][[closest_match]][3] == 0){
-              perfect_duplicate_legacy_indices <- c(perfect_duplicate_legacy_indices, close_match_rows[[x]][[1]][2])
-              perfect_duplicate_new_indices <- c(perfect_duplicate_new_indices, close_match_rows[[x]][[1]][1])
-            } else if(close_match_rows[[x]][[closest_match]][3] > 0){
-              discrepancies_legacy_indices <- c(discrepancies_legacy_indices, close_match_rows[[x]][[1]][2])
-              discrepancies_new_indices <- c(discrepancies_new_indices, close_match_rows[[x]][[1]][1])
-            }
-          }
-        } 
-      }
+      seperated_close_matches <- separate_close_matches(close_match_rows)
       
       perfect_duplicates <- new_data_df[perfect_duplicate_new_indices,]
       verified_data_df <- rbind(verified_data_df, perfect_duplicates)
@@ -378,6 +344,59 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
   
 }
 
+separate_close_matches <- function(close_match_rows){
+  # Separate the close matching rows with an iterative process
+  
+  discrepancies_new_indices <- c()
+  discrepancies_legacy_indices <- c()
+  perfect_duplicate_new_indices <- c()
+  perfect_duplicate_legacy_indices <- c()
+  # Iterate through list of close_match_rows to acquire indices of
+  # discrepancies
+  for(x in 1:length(close_match_rows)){
+    # if a row only has one close_match_row, it is considered a discrepancy
+    # or a perfect match 
+    if(length(close_match_rows[[x]]) == 1){
+      if(close_match_rows[[x]][[1]][3] == 0){
+        perfect_duplicate_legacy_indices <- c(perfect_duplicate_legacy_indices, close_match_rows[[x]][[1]][2])
+        perfect_duplicate_new_indices <- c(perfect_duplicate_new_indices, close_match_rows[[x]][[1]][1])
+      } else if(close_match_rows[[x]][[1]][3] == 1){
+        discrepancies_legacy_indices <- c(discrepancies_legacy_indices, close_match_rows[[x]][[1]][2])
+        discrepancies_new_indices <- c(discrepancies_new_indices, close_match_rows[[x]][[1]][1])
+      }
+    } else if (length(close_match_rows[[x]]) > 1) {
+      # if a row only has multiple close_match_rows, the one with the 
+      # closest distance is considered a discrepancy. If there are multiple 
+      # then they are disregarded and assumed to be new entries
+      match_index_matrix <- do.call(rbind, close_match_rows[[x]])
+      closest_match <- which(min(match_index_matrix[,3]) == match_index_matrix[,3])
+      if(length(closest_match) == 1){
+        if(close_match_rows[[x]][[closest_match]][3] == 0){
+          perfect_duplicate_legacy_indices <- c(perfect_duplicate_legacy_indices, close_match_rows[[x]][[1]][2])
+          perfect_duplicate_new_indices <- c(perfect_duplicate_new_indices, close_match_rows[[x]][[1]][1])
+        } else if(close_match_rows[[x]][[closest_match]][3] > 0){
+          discrepancies_legacy_indices <- c(discrepancies_legacy_indices, close_match_rows[[x]][[1]][2])
+          discrepancies_new_indices <- c(discrepancies_new_indices, close_match_rows[[x]][[1]][1])
+        }
+      } else {
+        
+        
+      }
+    } 
+  }
+  return(list(discrepancies_new_indices, discrepancies_legacy_indices, perfect_duplicate_new_indices, perfect_duplicate_legacy_indices))
+}
+
+vectorised_seperate_close_matches <- function(close_match_rows){
+  # Separate the close matching rows with a vectorized process
+  
+  discrepancies_new_indices <- c()
+  discrepancies_legacy_indices <- c()
+  perfect_duplicate_new_indices <- c()
+  perfect_duplicate_legacy_indices <- c()
+  
+  
+}
 
 verify_entries <- function(){
   
