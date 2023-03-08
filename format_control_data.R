@@ -416,6 +416,12 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   perfect_duplicate_legacy_indices <- close_match_rows[non_dup_indices & close_match_rows[,3] == 0, 2]
   discrepancies_new_indices <- close_match_rows[non_dup_indices & close_match_rows[,3] > 0, 1]
   discrepancies_legacy_indices <- close_match_rows[non_dup_indices & close_match_rows[,3] > 0, 2]
+  
+  # Handle multiple close matches
+  multiple_close_matches <- close_match_rows[dup_indices,]
+  
+  
+  
 }
 
 verify_entries <- function(){
@@ -528,7 +534,7 @@ find_close_matches_matrix <- function(x, y, distance){
 }
 
 
-find_close_matches_matrix <- function(x, y, distance){
+matrix_close_matches_vectorised <- function(x, y, distance){
   # Find list of all close matches between rows in x and y within a specified 
   # distance. This distance is the number of non perfect column matches within
   # a row. returns a the indices of the rows matched and the distance from
@@ -537,9 +543,30 @@ find_close_matches_matrix <- function(x, y, distance){
   # would not be possible if this fails and is still faster than 
   # dynamically updating an object. 
   
-  for(z in 1:nrow(x)){ 
+  x_rows <- nrow(x)
+  x_cols <- ncol(x)
+  y_rows <- nrow(y)
+  cut_off <- x_cols - distance
   
+  num_rows <- try(y_rows*x_rows)
+  if(class(num_rows)[[1]]=='try-error'){
+    num_rows <- 1000000
   }
+  index <- 1
+  match_indices <- matrix(data=NA, nrow=num_rows, ncol=3)
+  
+  # 3D matrix 
+  matches <- array(NA, dim=c(y_rows, x_cols, x_rows))
+  for(z in 1:x_rows){ 
+    for(i in 1:x_cols){
+      matches[,i,z] <- x[z,i] == y[,i]
+    }
+    num_matches <- rowSums(matches[,,z], dims = 1)
+    ifelse(num_matches >= cut_off, num_matches, NA)
+  }
+  # for(z in 1:length(matches[1,1,])){
+  #   
+  # }
   return(matches)
 }
 
