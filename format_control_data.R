@@ -390,6 +390,7 @@ separate_close_matches <- function(close_match_rows){
 vectorised_seperate_close_matches <- function(close_match_rows){
   # Separate the close matching rows with a vectorized process
   
+  # initialise variables to store indices of rows after seperation
   discrepancies_new_indices <- c()
   discrepancies_legacy_indices <- c()
   perfect_duplicate_new_indices <- c()
@@ -397,14 +398,24 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   
   test[!(duplicated(test)|duplicated(test, fromLast=TRUE))]
   
+  # extracts a vector of row indices pertaining too the two dataframes 
   x_indices <- close_match_rows[,1]
   y_indices <- close_match_rows[,2]
   
+  # determine if there are duplicates of the row indices. Duplicates indicate
+  # that there were multiple close matches within the specified distance to the 
+  # row entry and therefore need to be handled differently to unique row indexs.
+  # Utilises bitwise operations for speed.
   x_dup_indices <- (duplicated(x_indices)|duplicated(x_indices, fromLast=TRUE))
   y_dup_indices <- (duplicated(y_indices)|duplicated(y_indices, fromLast=TRUE))
   dup_indices <- y_dup_indices|x_dup_indices
+  non_dup_indices <- !dup_indices
   
-  
+  # These operations seperate rows that only have one close match
+  perfect_duplicate_new_indices <- close_match_rows[non_dup_indices & close_match_rows[,3] == 0, 1]
+  perfect_duplicate_legacy_indices <- close_match_rows[non_dup_indices & close_match_rows[,3] == 0, 2]
+  discrepancies_new_indices <- close_match_rows[non_dup_indices & close_match_rows[,3] > 0, 1]
+  discrepancies_legacy_indices <- close_match_rows[non_dup_indices & close_match_rows[,3] > 0, 2]
 }
 
 verify_entries <- function(){
