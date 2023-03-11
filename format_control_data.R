@@ -552,8 +552,8 @@ matrix_close_matches_vectorised <- function(x, y, distance){
   if(class(num_rows)[[1]]=='try-error'){
     num_rows <- 1000000
   }
-  index <- 1
   match_indices <- matrix(data=NA, nrow=num_rows, ncol=3)
+  index <- 1
   
   # 3D matrix 
   matches <- array(NA, dim=c(y_rows, x_cols, x_rows))
@@ -562,14 +562,22 @@ matrix_close_matches_vectorised <- function(x, y, distance){
       matches[,i,z] <- x[z,i] == y[,i]
     }
     num_matches <- rowSums(matches[,,z], dims = 1)
-    ifelse(num_matches >= cut_off, num_matches, NA)
+    num_matches <- ifelse(num_matches >= cut_off, num_matches, NA)
+    nonNA <- which(!is.na(num_matches))
+    nonNAvalues <- num_matches[nonNA]
+    match <- store_index_vec(nonNAvalues, nonNA, z)
+    match <- t(match)
+    match_indices[index:(index+nrow(match)-1),] <- match
+    index <- index + nrow(match)
   }
-  # for(z in 1:length(matches[1,1,])){
-  #   
-  # }
   return(matches)
 }
 
+store_index_vec <- base::Vectorize(store_index)
+store_index <- function(nonNAvalues, nonNA, z){
+  match_indices <- c(z, nonNA, nonNAvalues)
+  return(match_indices)
+}
 
 find_previous_process_date <- function(){
   # finds the dates stored in the metadata report file names with REGEX. 
