@@ -503,37 +503,6 @@ find_close_matches <- function(x, y, distance){
   return(all_matches)
 }
 
-find_close_matches_matrix <- function(x, y, distance){
-  # Find list of all close matches between rows in x and y within a specified 
-  # distance. This distance is the number of non perfect column matches within
-  # a row. returns a the indices of the rows matched and the distance from
-  # perfect. (X_index, Y_index, Distance). Pre-allocates memory for the matrix
-  # assuming worst case scenario or maximum allocation possible. The operations 
-  # would not be possible if this fails and is still faster than 
-  # dynamically updating an object. 
-
-  num_rows <- try(nrow(x)*nrow(y))
-  if(class(num_rows)[[1]]=='try-error'){
-    num_rows <- 1000000
-  }
-  index <- 1
-  matches <- matrix(data=NA, nrow=num_rows, ncol=3)
-  row_length <- length(y[i,])
-  for(z in 1:nrow(x)){ 
-    for(i in 1:nrow(y)){
-      match_length <- length(na.omit(match(x[z,], y[i,])))
-      if(match_length >= (row_length - distance)){
-        match <- c(z, i,length(y[1,]) - match_length)
-        matches[index,] <- match
-        index <- index + 1  
-      }
-    }
-  }
-  matches <- na.exclude(matches)
-  return(matches)
-}
-
-
 matrix_close_matches_vectorised <- function(x, y, distance){
   # Find list of all close matches between rows in x and y within a specified 
   # distance. This distance is the number of non perfect column matches within
