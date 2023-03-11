@@ -301,7 +301,7 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
       distance <- 2
       new_data_without_ID_df <- new_data_df[ , -which(names(new_data_df) %in% c(ID_col, "error_flag"))]
       legacy_data_without_ID_df <- legacy_data_df[ , -which(names(legacy_data_df) %in% c(ID_col, "error_flag"))]
-      close_match_rows <- find_close_matches(legacy_data_without_ID_df, new_data_without_ID_df, distance)
+      close_match_rows <- matrix_close_matches_vectorised(legacy_data_without_ID_df, new_data_without_ID_df, distance)
       
       seperated_close_matches <- separate_close_matches(close_match_rows)
       
@@ -512,10 +512,10 @@ matrix_close_matches_vectorised <- function(x, y, distance){
   # would not be possible if this fails and is still faster than 
   # dynamically updating an object. 
   
+  #Pre-allocate variables and memory
   x_rows <- nrow(x)
   x_cols <- ncol(x)
   y_rows <- nrow(y)
-  cut_off <- x_cols - distance
   
   num_rows <- try(y_rows*x_rows)
   if(class(num_rows)[[1]]=='try-error'){
@@ -524,22 +524,33 @@ matrix_close_matches_vectorised <- function(x, y, distance){
   match_indices <- matrix(data=NA, nrow=num_rows, ncol=3)
   index <- 1
   
-  # 3D matrix 
-  matches <- array(NA, dim=c(y_rows, x_cols, x_rows))
+  # Iterate through each row in matrix/dataframe x and evaluate for each value 
+  # in the row whether it matches the column of y. This vector of logical values
+  # are then appeneded to the `matches` matrix. After Iterating over every 
+  # column there will be a matrix of size (y_rows, x_cols). A perfect matching 
+  # row in y will have a corresponding row in `matches` exclusively containing 
+  # TRUE. Given TRUE = 1, a row sum can be utilised to determine the distance 
+  # from a perfect match. Can then use a customised vectorised function to 
+  # append matches to match_indices. 
+  matches <- matrix(data=NA, nrow=y_rows, ncol=x_cols)
   for(z in 1:x_rows){ 
     for(i in 1:x_cols){
-      matches[,i,z] <- x[z,i] == y[,i]
+      matches[,i] <- x[z,i] == y[,i]
     }
-    num_matches <- rowSums(matches[,,z], dims = 1)
-    num_matches <- ifelse(num_matches >= cut_off, num_matches, NA)
+    matches <- !(matches)
+    num_matches <- rowSums(matches, dims = 1)
+    num_matches <- ifelse(num_matches <= distance, num_matches, NA)
     nonNA <- which(!is.na(num_matches))
     nonNAvalues <- num_matches[nonNA]
-    match <- store_index_vec(nonNAvalues, nonNA, z)
-    match <- t(match)
-    match_indices[index:(index+nrow(match)-1),] <- match
-    index <- index + nrow(match)
+    if(length(match) > 1){
+      match <- store_index_vec(nonNAvalues, nonNA, z)
+      match <- t(match)
+      match_indices[index:(index+nrow(match)-1),] <- match
+      index <- index + nrow(match)
+    }
   }
-  return(matches)
+  match_indices <- na.omit(match_indices)
+  return(match_indices)
 }
 
 store_index_vec <- base::Vectorize(store_index)
