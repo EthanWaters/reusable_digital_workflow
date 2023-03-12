@@ -261,9 +261,7 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
       # the ID checked against the all the IDs in legacy_data_df to ensure it does 
       # not already exist.
       if(any(is.na(legacy_data_df[ID_col]))){
-        
         legacy_data_df <- update_IDs(new_data_df, legacy_data_df, control_data_type)
-        
         # create new dataframe without rows that have NA ID so that they can
         # be passed through the check functions as new row entries. 
         legacy_data_df <- legacy_data_df[is.na(legacy_data_df[ID_col]),]
@@ -417,9 +415,13 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   discrepancies_new_indices <- close_match_rows[non_dup_indices & close_match_rows[,3] > 0, 1]
   discrepancies_legacy_indices <- close_match_rows[non_dup_indices & close_match_rows[,3] > 0, 2]
   
+  # remove rows that have already been handled to prevent double handling 
+  close_match_rows_updated <- close_match_rows[non_dup_indices,]
+  
   # Handle multiple close matches
   multiple_close_matches <- close_match_rows[dup_indices,]
   
+  # 
   
   
 }
@@ -517,11 +519,15 @@ matrix_close_matches_vectorised <- function(x, y, distance){
   x_cols <- ncol(x)
   y_rows <- nrow(y)
   
-  num_rows <- try(y_rows*x_rows)
-  if(class(num_rows)[[1]]=='try-error'){
-    num_rows <- 1000000
+  num_rows <- y_rows*x_rows
+  if(num_rows > 1000000000){
+    num_rows <- 1000000000 
   }
-  match_indices <- matrix(data=NA, nrow=num_rows, ncol=3)
+  match_indices <- try(matrix(data=NA, nrow=num_rows, ncol=3))
+  if(class(num_rows)[[1]]=='try-error'){
+    num_rows <- 10000000
+    match_indices <- matrix(data=NA, nrow=num_rows, ncol=3)
+  }
   index <- 1
   
   # Iterate through each row in matrix/dataframe x and evaluate for each value 
