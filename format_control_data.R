@@ -389,12 +389,10 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   # Separate the close matching rows with a vectorized process
   
   # initialise variables to store indices of rows after seperation
-  discrepancies_new_indices <- c()
-  discrepancies_legacy_indices <- c()
-  perfect_duplicate_new_indices <- c()
-  perfect_duplicate_legacy_indices <- c()
-  
-  test[!(duplicated(test)|duplicated(test, fromLast=TRUE))]
+  discrepancies_new_indices <- matrix(,ncol=3, nrow =0)
+  discrepancies_legacy_indices <- matrix(,ncol=3, nrow =0)
+  perfect_duplicate_new_indices <- matrix(,ncol=3, nrow =0)
+  perfect_duplicate_legacy_indices <- matrix(,ncol=3, nrow =0)
   
   # extracts a vector of row indices pertaining too the two dataframes 
   x_indices <- close_match_rows[,1]
@@ -410,15 +408,34 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   non_dup_indices <- !dup_indices
   
   # These operations seperate rows that only have one close match
-  perfect_duplicate_new_indices <- close_match_rows[non_dup_indices & close_match_rows[,3] == 0, 1]
-  perfect_duplicate_legacy_indices <- close_match_rows[non_dup_indices & close_match_rows[,3] == 0, 2]
-  discrepancies_new_indices <- close_match_rows[non_dup_indices & close_match_rows[,3] > 0, 1]
-  discrepancies_legacy_indices <- close_match_rows[non_dup_indices & close_match_rows[,3] > 0, 2]
+  perfect_duplicate_new_indices <- c(perfect_duplicate_new_indices, close_match_rows[non_dup_indices & close_match_rows[,3] == 0,])
+  perfect_duplicate_legacy_indices <- c(perfect_duplicate_legacy_indices, close_match_rows[non_dup_indices & close_match_rows[,3] == 0,])
+  discrepancies_new_indices <- c(discrepancies_new_indices, close_match_rows[non_dup_indices & close_match_rows[,3] > 0,])
+  discrepancies_legacy_indices <- c(discrepancies_new_indices, close_match_rows[non_dup_indices & close_match_rows[,3] > 0,])
   
   # remove rows that have already been handled to prevent double handling 
-  close_match_rows_updated <- close_match_rows[non_dup_indices,]
+  close_match_rows_updated <- close_match_rows[dup_indices,]
   
-  # Handle multiple close matches
+  # Handle rows with a one to many relationship first to ensure no mismatch and
+  # rows do not end up with no viable match. This will be an iterative process
+  # with a Do-While type control structure.
+  repeat{
+    x_updated_dup_indices <- (duplicated(close_match_rows_updated[,1])|duplicated(close_match_rows_updated[,1], fromLast=TRUE))
+    y_updated_dup_indices <- (duplicated(close_match_rows_updated[,2])|duplicated(close_match_rows_updated[,2], fromLast=TRUE))
+    updated_dup_indices <- y_dup_indices & x_dup_indices
+    if(sum(updated_dup_indices) == 0){
+      break
+    }
+    updated_non_dup_indices <- !updated_dup_indices
+    perfect_duplicate_new_indices <- c(perfect_duplicate_new_indices, close_match_rows_updated[updated_non_dup_indices & close_match_rows_updated[,3] == 0,])
+    perfect_duplicate_legacy_indices <- c(perfect_duplicate_legacy_indices, close_match_rows_updated[updated_non_dup_indices & close_match_rows_updated[,3] == 0,])
+    discrepancies_new_indices <- c(discrepancies_new_indices, close_match_rows_updated[updated_non_dup_indices & close_match_rows_updated[,3] > 0,])
+    discrepancies_legacy_indices <- c(discrepancies_new_indices, close_match_rows_updated[updated_non_dup_indices & close_match_rows_updated[,3] > 0,])
+  }
+  
+  
+ 
+  
   multiple_close_matches <- close_match_rows[dup_indices,]
   
   # 
