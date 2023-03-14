@@ -349,6 +349,7 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   discrepancies_indices <- matrix(,ncol=3, nrow =0)
   perfect_duplicate_indices <- matrix(,ncol=3, nrow =0)
   error_indices <- matrix(,ncol=3, nrow =0)
+  check_indices <- matrix(,ncol=3, nrow =0)
   
   # extracts a vector of row indices pertaining too the two dataframes 
   x_indices <- close_match_rows[,1]
@@ -376,31 +377,42 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   # a row has been changed enough that it no longer matches with its previous 
   # version (If non-database export and inherently no ID) but does match with 
   # another row. This chance of error will be minimized by iteratively finding 
-  # matches by the smallest distance moving towards larger.
- 
+  # matches by the smallest distance moving towards larger. 
+  
   x_updated_dup_indices <- (duplicated(close_match_rows_updated[,1])|duplicated(close_match_rows_updated[,1], fromLast=TRUE))
   y_updated_dup_indices <- (duplicated(close_match_rows_updated[,2])|duplicated(close_match_rows_updated[,2], fromLast=TRUE))
   
   # condition finds rows in `close_match_rows_updated` where only one column is a duplicate
-  perfect_one_to_many <- !(y_dup_indices & x_dup_indices) & (y_dup_indices | x_dup_indices) & (close_match_rows_updated[,3] == 0)
-  perfect_duplicate_indices <- c(perfect_duplicate_legacy_indices, close_match_rows_updated[perfect_one_to_many,])
-  close_match_rows_updated <- close_match_rows_updated[!perfect_one_to_many,]
+  perfect_one_to_many <- !(y_updated_dup_indices & x_updated_dup_indices) & (y_updated_dup_indices | x_updated_dup_indices) & (close_match_rows_updated[,3] == 0)
   
+  # Only select one match for a row
+  perfect_one_to_many_matches <- close_match_rows_updated[perfect_one_to_many,]
+  x_indices <- perfect_one_to_many_matches[,1]
+  y_indices <- perfect_one_to_many_matches[,2]
+  x_dup_indices <- (duplicated(x_indices)|duplicated(x_indices, fromLast=TRUE))
+  y_dup_indices <- (duplicated(y_indices)|duplicated(y_indices, fromLast=TRUE))
+  perfect_duplicate_indices <- rbind(perfect_duplicate_indices, perfect_one_to_many_matches[!(y_updated_dup_indices | x_updated_dup_indices),])
+  check_indices <- rbind(check_indices, perfect_one_to_many_matches[(y_updated_dup_indices | x_updated_dup_indices),])
   
-  x_updated_dup_indices <- (duplicated(close_match_rows_updated[,1])|duplicated(close_match_rows_updated[,1], fromLast=TRUE))
-  y_updated_dup_indices <- (duplicated(close_match_rows_updated[,2])|duplicated(close_match_rows_updated[,2], fromLast=TRUE))
-  
+  # remove checked rows
+  close_match_rows_updated <- close_match_rows_updated[!(x_indices %fin% close_match_rows_updated[,1]) & !(y_indices %fin% close_match_rows_updated[,2]),]
+
   # condition finds rows in `close_match_rows_updated` where only one column is a duplicate
   for(i in 1:distance){
-    one_to_many <- !(y_dup_indices & x_dup_indices) & (y_dup_indices | x_dup_indices)
-    discrepancies_indices <- c(discrepancies_new_indices, close_match_rows_updated[one_to_many & close_match_rows_updated[,3] == i,])
-    close_match_rows_updated <- close_match_rows_updated[!one_to_many,]
+    one_to_many <- !(y_dup_indices & x_dup_indices) & (y_dup_indices | x_dup_indices) & close_match_rows_updated[,3] == i
+    nonperfect_one_to_many_matches <- close_match_rows_updated[one_to_many,]
+    
+    # Check that the same row is not being matched to multiple. If they are 
+    # them and they will be handled at the end by being treated as new rows
+    x_indices <- close_match_rows_updated[one_to_many,1]
+    y_indices <- close_match_rows_updated[one_to_many,2]
+    discrepancies_indices <- rbind(discrepancies_indices, perfect_one_to_many_matches[!(y_updated_dup_indices | x_updated_dup_indices),])
+    check_indices <- rbind(check_indices, perfect_one_to_many_matches[(y_updated_dup_indices | x_updated_dup_indices),])
+    
+    # remove checked rows and any that have already been matched. 
+    close_match_rows_updated <- close_match_rows_updated[!(x_indices %fin% close_match_rows_updated[,1]) & !(y_indices %fin% close_match_rows_updated[,2]),]
+
   }
-  
-  
-  
-  
-  
   
   # Handle rows with a many to many relationship.
   # First find many to many relationships where there exists a perfect match. 
@@ -675,6 +687,23 @@ set_data_type <- function(data_df, control_data_type){
   # } else if (i == "Time") {
   #   apply(columns, function(x) data_df[x] <- as.time(data_df[x]))
 } 
+
+
+# Custom Boolean Or function written in C for speed. Works exactly the same as 
+# base R operator | however NA is considered TRUE.
+or4 <- cfunction(c(x="logical", y="logical"), "
+    int nx = LENGTH(x), ny = LENGTH(y), n = nx > ny ? nx : ny;
+    SEXP ans = PROTECT(allocVector(LGLSXP, n));
+    int *xp = LOGICAL(x), *yp = LOGICAL(y), *ansp = LOGICAL(ans);
+    for (int i = 0, ix = 0, iy = 0; i < n; ++i)
+    {
+        *ansp++ = xp[ix] || yp[iy];
+        ix = (++ix == nx) ? 0 : ix;
+        iy = (++iy == ny) ? 0 : iy;
+    }
+    UNPROTECT(1);
+    return ans;
+")
 
 
 #create matrix of warnings so they are added to the specified XML node 
