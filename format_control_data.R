@@ -372,45 +372,57 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   
   # Handle rows with a one to many relationship first to ensure no mismatch and
   # rows do not end up with no viable match. This will be an iterative process
-  # with a Do-While type control structure.
-  repeat{
-    x_updated_dup_indices <- (duplicated(close_match_rows_updated[,1])|duplicated(close_match_rows_updated[,1], fromLast=TRUE))
-    y_updated_dup_indices <- (duplicated(close_match_rows_updated[,2])|duplicated(close_match_rows_updated[,2], fromLast=TRUE))
-    updated_dup_indices <- y_dup_indices & x_dup_indices
-    if(sum(updated_dup_indices) == 0){
-      break
-    }
-    updated_non_dup_indices <- !updated_dup_indices
-    perfect_duplicate_indices <- c(perfect_duplicate_legacy_indices, close_match_rows_updated[updated_non_dup_indices & close_match_rows_updated[,3] == 0,])
-    discrepancies_indices <- c(discrepancies_new_indices, close_match_rows_updated[updated_non_dup_indices & close_match_rows_updated[,3] > 0,])
-    close_match_rows_updated <- close_match_rows_updated[updated_dup_indices,]
+  # with a Do-While type control structure. This process can make a mistake if 
+  # a row has been changed enough that it no longer matches with its previous 
+  # version (If non-database export and inherently no ID) but does match with 
+  # another row. This chance of error will be minimized by iteratively finding 
+  # matches by the smallest distance moving towards larger.
+ 
+  x_updated_dup_indices <- (duplicated(close_match_rows_updated[,1])|duplicated(close_match_rows_updated[,1], fromLast=TRUE))
+  y_updated_dup_indices <- (duplicated(close_match_rows_updated[,2])|duplicated(close_match_rows_updated[,2], fromLast=TRUE))
+  
+  # condition finds rows in `close_match_rows_updated` where only one column is a duplicate
+  perfect_one_to_many <- !(y_dup_indices & x_dup_indices) & (y_dup_indices | x_dup_indices) & (close_match_rows_updated[,3] == 0)
+  perfect_duplicate_indices <- c(perfect_duplicate_legacy_indices, close_match_rows_updated[perfect_one_to_many,])
+  close_match_rows_updated <- close_match_rows_updated[!perfect_one_to_many,]
+  
+  
+  x_updated_dup_indices <- (duplicated(close_match_rows_updated[,1])|duplicated(close_match_rows_updated[,1], fromLast=TRUE))
+  y_updated_dup_indices <- (duplicated(close_match_rows_updated[,2])|duplicated(close_match_rows_updated[,2], fromLast=TRUE))
+  
+  # condition finds rows in `close_match_rows_updated` where only one column is a duplicate
+  for(i in 1:distance){
+    one_to_many <- !(y_dup_indices & x_dup_indices) & (y_dup_indices | x_dup_indices)
+    discrepancies_indices <- c(discrepancies_new_indices, close_match_rows_updated[one_to_many & close_match_rows_updated[,3] == i,])
+    close_match_rows_updated <- close_match_rows_updated[!one_to_many,]
   }
+  
+  
+  
+  
+  
   
   # Handle rows with a many to many relationship.
   # First find many to many relationships where there exists a perfect match. 
+  # There should no long be any one to many relationships that exist
   
   is_perfect_match <- close_match_rows_updated[,3] == 0
   x_updated_dup_indices <- (duplicated(close_match_rows_updated[,1])|duplicated(close_match_rows_updated[,1], fromLast=TRUE))
   y_updated_dup_indices <- (duplicated(close_match_rows_updated[,2])|duplicated(close_match_rows_updated[,2], fromLast=TRUE))
-  non_dup_indices <- !(y_updated_dup_indices|x_updated_dup_indices) & is_perfect_match
-  dup_indices <- (y_updated_dup_indices|x_updated_dup_indices) & is_perfect_match
-  perfect_matches <- close_match_rows_updated[non_dup_indices,]
-  perfect_duplicate_indices <- rbind(perfect_duplicate_indices, perfect_matches)
-  
-  # Remove close matche rows that have found a perfect match
-  close_match_rows_updated <- close_match_rows_updated[!(perfect_matches[,1] %fin% close_match_rows_updated[,1]) & !(perfect_matches[,2] %fin% close_match_rows_updated[,2]),]
+  many_to_many <- (y_updated_dup_indices & x_updated_dup_indices) 
+  perfect_many_to_many <- many_to_many & is_perfect_match
   
   # given that these are perfect duplicates it is they are either genuine 
   # unique entries with the same values or accidental duplicates. It has been 
   # determined that 2 duplicates will be treated as genuine, more than 2 are 
   # mistakes 
-  if(any(isTrue(dup_indices))){
+  if(any(isTrue(perfect_many_to_many))){
     # this table will provide the frequency of indices in `close_match_rows_updated`
     # which can then be filtered by the number of times an index is present. 
     # duplicates of two can be added to the perfect duplicate matrix, any more 
     # and they will be added to error flag matrix.
-    perfect_x_match_counts <- data.frame(table(close_match_rows_updated[dup_indices, 1]))
-    perfect_y_match_counts <- data.frame(table(close_match_rows_updated[dup_indices, 2]))
+    perfect_x_match_counts <- data.frame(table(close_match_rows_updated[perfect_many_to_many, 1]))
+    perfect_y_match_counts <- data.frame(table(close_match_rows_updated[perfect_many_to_many, 2]))
     
     perfect_y_mistake_matches <- perfect_y_match_counts[perfect_y_match_counts[,1] > 2,2]
     perfect_x_mistake_matches <- perfect_x_match_counts[perfect_x_match_counts[,1] > 2,2]
@@ -427,10 +439,8 @@ vectorised_seperate_close_matches <- function(close_match_rows){
     
   }
   
-  # now it is required that many to many perfect matches are handled. Removing a
-  # number of perfect duplicates that have multiple matches may have caused 
-  # several entries left to only have one remaining match and therefore we need 
-  # to double check the one-to-many matching again. 
+  # Only many-to-many non perfect matches are left and need to be handled. 
+  
   repeat{
     x_updated_dup_indices <- (duplicated(close_match_rows_updated[,1])|duplicated(close_match_rows_updated[,1], fromLast=TRUE))
     y_updated_dup_indices <- (duplicated(close_match_rows_updated[,2])|duplicated(close_match_rows_updated[,2], fromLast=TRUE))
@@ -444,7 +454,8 @@ vectorised_seperate_close_matches <- function(close_match_rows){
     close_match_rows_updated <- close_match_rows_updated[updated_dup_indices,]
   }
   
-  # Only many-to-many non perfect matches are left and need to be handled. 
+ 
+  
   
 }
 
