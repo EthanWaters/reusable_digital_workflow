@@ -466,8 +466,33 @@ vectorised_seperate_close_matches <- function(close_match_rows){
     close_match_rows_updated <- close_match_rows_updated[updated_dup_indices,]
   }
   
- 
+  # check for mistakes 
+  is_mistake_present <- check_for_mistake()
   
+  #INCLUDE METHOD TO FIX PROBLEM HERE 
+  if(is_mistake_present){
+    
+  }
+  
+  output <- list(discrepancies_indices, perfect_duplicate_indices, error_indices, check_indices)
+  return(output)
+}
+
+check_for_mistake <- function(discrepancies_indices, perfect_duplicate_indices, error_indices, check_indices){
+  duplicated_vec <- base::Vectorize(duplicated)
+  
+  # Check that there are no duplicates between data frames
+  x_indices_intersecting <- Reduce(intersect, list(discrepancies_indices[,1], perfect_duplicate_indices[,1], error_indices[,1], check_indices[,1]))
+  y_indices_intersecting <- Reduce(intersect, list(discrepancies_indices[,2], perfect_duplicate_indices[,2], error_indices[,2], check_indices[,2]))
+  
+  # Check each column contains no duplicates 
+  discrepancies_indices_dup <- (duplicated_vec(t(discrepancies_indices))|duplicated_vec(t(discrepancies_indices), fromLast=TRUE))
+  perfect_duplicate_indices_dup <- (duplicated_vec(t(perfect_duplicate_indices))|duplicated_vec(t(perfect_duplicate_indices), fromLast=TRUE))
+  error_indices_dup <- (duplicated_vec(t(error_indices))|duplicated_vec(t(error_indices), fromLast=TRUE))
+  check_indices_dup <- (duplicated_vec(t(check_indices))|duplicated_vec(t(check_indices), fromLast=TRUE))
+  
+  is_intersecting_dups <- (length(y_indices_intersecting) == 0) & (length(x_indices_intersecting == 0))
+  return(is_intersecting_dups | discrepancies_indices_dup | perfect_duplicate_indices_dup | error_indices_dup | check_indices_dup)
   
 }
 
