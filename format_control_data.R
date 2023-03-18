@@ -344,7 +344,7 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
 
 vectorised_seperate_close_matches <- function(close_match_rows){
   # Separate the close matching rows with a vectorized process
-  close_match_rows <- my_matrix 
+  close_match_rows <- test_df 
   
   distance <- max(close_match_rows[,3])
   
@@ -382,7 +382,7 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   # another row. This chance of error will be minimized by iteratively finding 
   # matches by the smallest distance moving towards larger. 
   
-  close_match_rows_updated <- (duplicated(close_match_rows_updated[,1])|duplicated(close_match_rows_updated[,1], fromLast=TRUE))
+  x_updated_dup_indices <- (duplicated(close_match_rows_updated[,1])|duplicated(close_match_rows_updated[,1], fromLast=TRUE))
   y_updated_dup_indices <- (duplicated(close_match_rows_updated[,2])|duplicated(close_match_rows_updated[,2], fromLast=TRUE))
   
   # condition finds rows in `close_match_rows_updated` where only one column is a duplicate
@@ -401,7 +401,7 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   check_indices <- rbind(check_indices, perfect_one_to_many_matches[dup_indices,])
   
   # remove checked rows
-  close_match_rows_updated <- close_match_rows_updated[!which(close_match_rows_updated[,1] %fin% x_indices) & !which(close_match_rows_updated[,2] %fin% y_indices),]
+  close_match_rows_updated <- close_match_rows_updated[-unique(c(which(close_match_rows_updated[,1] %fin% x_indices), which(close_match_rows_updated[,2] %fin% y_indices))),]
 
   # condition finds rows in `close_match_rows_updated` where only one column is a duplicate
   for(i in 1:distance){
@@ -416,7 +416,7 @@ vectorised_seperate_close_matches <- function(close_match_rows){
     check_indices <- rbind(check_indices, perfect_one_to_many_matches[(y_updated_dup_indices | x_updated_dup_indices),])
     
     # remove checked rows and any that have already been matched. 
-    close_match_rows_updated <- close_match_rows_updated[!which(close_match_rows_updated[,1] %fin% x_indices) & !which(close_match_rows_updated[,2] %fin% y_indices),]
+    close_match_rows_updated <- close_match_rows_updated[-unique(c(which(close_match_rows_updated[,1] %fin% x_indices), which(close_match_rows_updated[,2] %fin% y_indices))),]
     
   }
   # close_match_rows_updated[!which(x_indices %fin% close_match_rows_updated[,1]) & !which(y_indices %fin% close_match_rows_updated[,2]),]
@@ -448,8 +448,8 @@ vectorised_seperate_close_matches <- function(close_match_rows){
     perfect_y_matches <- perfect_y_match_counts[perfect_y_match_counts[,1] == 2,2]
     perfect_x_matches <- perfect_x_match_counts[perfect_x_match_counts[,1] == 2,2]
     
-    mistake_duplicates <- which(close_match_rows_updated[,2] %fin% perfect_y_mistake_matches) | which(close_match_rows_updated[,1] %fin% perfect_x_mistake_matches)
-    true_duplicate_entries <- which(close_match_rows_updated[,2] %fin% perfect_y_matches) | which(close_match_rows_updated[,1] %fin% perfect_x_matches)
+    mistake_duplicates <- unique(c(which(close_match_rows_updated[,2] %fin% perfect_y_mistake_matches), which(close_match_rows_updated[,1] %fin% perfect_x_mistake_matches)))
+    true_duplicate_entries <- unique(c(which(close_match_rows_updated[,2] %fin% perfect_y_matches), which(close_match_rows_updated[,1] %fin% perfect_x_matches)))
     perfect_duplicate_indices <- c(perfect_duplicate_indices, close_match_rows_updated[true_duplicate_entries,])
     error_indices <- rbind(error_indices, close_match_rows_updated[mistake_duplicates,])
     
