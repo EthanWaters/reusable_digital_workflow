@@ -501,6 +501,50 @@ vectorised_seperate_close_matches <- function(close_match_rows){
     close_match_rows_updated <- close_match_rows_updated[-unique(c(correct_match, multiple_matches)),]
   }
   
+  # Handling one to many relationship or many to many with discrepancies may  
+  # have left a number of one to one or one to many rows. This will be iterative 
+  # until none remain or the 5th iteration. Anything left will be assigned to  
+  # new entry to ensure that it is process correctly.
+  for(i in 1:5){
+    if(nrow(close_match_rows_updated) == 0){
+      break
+    }
+    x_dup_indices <- (duplicated(x_indices)|duplicated(x_indices, fromLast=TRUE))
+    y_dup_indices <- (duplicated(y_indices)|duplicated(y_indices, fromLast=TRUE))
+    dup_indices <- y_dup_indices|x_dup_indices
+    non_dup_indices <- !dup_indices
+    
+    # These operations seperate rows that only have one close match
+    discrepancies_indices <- rbind(discrepancies_indices, close_match_rows_updated[non_dup_indices & close_match_rows[,3] > 0,])
+    
+    # remove rows that have already been handled to prevent double handling 
+    close_match_rows_updated <- close_match_rows_updated[dup_indices,]
+    
+    
+    # condition finds rows in `close_match_rows_updated` where only one column is a duplicate
+    for(i in 1:distance){
+      if(nrow(close_match_rows_updated) == 0){
+        break
+      }
+      x_dup_indices <- (duplicated(close_match_rows_updated[,1])|duplicated(close_match_rows_updated[,1], fromLast=TRUE))
+      y_dup_indices <- (duplicated(close_match_rows_updated[,2])|duplicated(close_match_rows_updated[,2], fromLast=TRUE))
+      one_to_many <- !(y_dup_indices & x_dup_indices) & (y_dup_indices | x_dup_indices) & close_match_rows_updated[,3] == i
+      
+      # Check that the same row is not being matched to multiple. If they are 
+      # them and they will be handled at the end by being treated as new rows
+      matches <- close_match_rows_updated[one_to_many,]
+      if(nrow(matches) > 0){
+        match_x_dup_indices <- (duplicated(matches[,1])|duplicated(matches[,1], fromLast=TRUE))
+        match_y_dup_indices <- (duplicated(matches[,2])|duplicated(matches[,2], fromLast=TRUE))
+        discrepancies_indices <- rbind(discrepancies_indices, matches[!(match_y_dup_indices | match_x_dup_indices),])
+        check_indices <- rbind(check_indices, matches[(match_y_dup_indices | match_x_dup_indices),])
+        
+        # remove checked rows and any that have already been matched. 
+        close_match_rows_updated <- close_match_rows_updated[-unique(c(which(close_match_rows_updated[,1] %fin% matches[,1]), which(close_match_rows_updated[,2] %fin% matches[,2]))),]
+        
+      }
+    }
+  }
   # check for mistakes 
   is_mistake_present <- check_for_mistake()
   
