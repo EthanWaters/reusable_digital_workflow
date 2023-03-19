@@ -471,51 +471,53 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   }
   # close_match_rows_updated[!which(x_indices %fin% close_match_rows_updated[,1]) & !which(y_indices %fin% close_match_rows_updated[,2]),]
   
-  
+ 
   
   # Only many-to-many non perfect matches are left and need to be handled. 
   for(i in 1:distance){
+    x_dup_indices <- (duplicated(close_match_rows_updated[,1])|duplicated(close_match_rows_updated[,1], fromLast=TRUE))
+    y_dup_indices <- (duplicated(close_match_rows_updated[,2])|duplicated(close_match_rows_updated[,2], fromLast=TRUE))
     many_to_many <- (y_dup_indices & x_dup_indices) & close_match_rows_updated[,3] == i
-    nonperfect_one_to_many_matches <- close_match_rows_updated[one_to_many,]
     
     # Check that the same row is not being matched to multiple. If they are 
     # them and they will be handled at the end by being treated as new rows
     x_indices <- close_match_rows_updated[many_to_many,1]
     y_indices <- close_match_rows_updated[many_to_many,2]
     
-    perfect_x_match_counts <- data.frame(table(x_indices))
-    perfect_y_match_counts <- data.frame(table(y_indices))
+    perfect_x_match_counts <- table(x_indices)
+    perfect_y_match_counts <- table(y_indices)
     
-    discrepancy_y_matches <- perfect_y_match_counts[perfect_y_match_counts[,1] == 1,2]
-    discrepancy_x_matches <- perfect_x_match_counts[perfect_x_match_counts[,1] == 1,2]
-    dup_y_matches <- perfect_y_match_counts[perfect_y_match_counts[,1] > 1,2]
-    dup_x_matches <- perfect_x_match_counts[perfect_x_match_counts[,1] > 1,2]
-    
-    multiple_matches <- unique(c(which(close_match_rows_updated[,2] %fin% dup_y_matches), which(close_match_rows_updated[,1] %fin% dup_x_matches)))
-    correct_match <-unique(c(which(close_match_rows_updated[,2] %fin% discrepancy_y_matches), which(close_match_rows_updated[,1] %fin% discrepancy_x_matches)))
-    
-    discrepancies_indices <- rbind(discrepancies_indices, close_match_rows_updated[correct_match,])
-    check_indices <- rbind(check_indices, close_match_rows_updated[multiple_matches,])
-    
-    # remove checked rows and any that have already been matched. 
-    close_match_rows_updated <- close_match_rows_updated[-unique(c(correct_match, multiple_matches)),]
+    discrepancy_y_matches <- as.numeric(names(perfect_y_match_counts[perfect_y_match_counts == 1]))
+    discrepancy_x_matches <- as.numeric(names(perfect_x_match_counts[perfect_x_match_counts == 1]))
+    dup_y_matches <- as.numeric(names(perfect_y_match_counts[perfect_y_match_counts > 1]))
+    dup_x_matches <- as.numeric(names(perfect_x_match_counts[perfect_x_match_counts > 1]))
+    if(sum(discrepancy_x_matches, discrepancy_y_matches, dup_y_matches, dup_x_matches) > 0){
+      
+      multiple_matches <- unique(c(which(close_match_rows_updated[,2] %fin% dup_y_matches), which(close_match_rows_updated[,1] %fin% dup_x_matches)))
+      correct_match <-unique(c(which(close_match_rows_updated[,2] %fin% discrepancy_y_matches), which(close_match_rows_updated[,1] %fin% discrepancy_x_matches)))
+      discrepancies_indices <- rbind(discrepancies_indices, close_match_rows_updated[correct_match,])
+      check_indices <- rbind(check_indices, close_match_rows_updated[multiple_matches,])
+      
+      # remove checked rows and any that have already been matched. 
+      close_match_rows_updated <- close_match_rows_updated[-unique(c(correct_match, multiple_matches)),]
+    }
   }
+  
   
   # Handling one to many relationship or many to many with discrepancies may  
   # have left a number of one to one or one to many rows. This will be iterative 
   # until none remain or the 5th iteration. Anything left will be assigned to  
   # new entry to ensure that it is process correctly.
-  for(i in 1:5){
-    if(nrow(close_match_rows_updated) == 0){
-      break
-    }
-    x_dup_indices <- (duplicated(x_indices)|duplicated(x_indices, fromLast=TRUE))
-    y_dup_indices <- (duplicated(y_indices)|duplicated(y_indices, fromLast=TRUE))
+  is_unmatched <- nrow(close_match_rows_updated) > 0 
+  while(is_unmatched){
+    count <- nrow(close_match_rows_updated)
+    x_dup_indices <- (duplicated(close_match_rows_updated[,1])|duplicated(close_match_rows_updated[,1], fromLast=TRUE))
+    y_dup_indices <- (duplicated(close_match_rows_updated[,2])|duplicated(close_match_rows_updated[,2], fromLast=TRUE))
     dup_indices <- y_dup_indices|x_dup_indices
     non_dup_indices <- !dup_indices
     
     # These operations seperate rows that only have one close match
-    discrepancies_indices <- rbind(discrepancies_indices, close_match_rows_updated[non_dup_indices & close_match_rows[,3] > 0,])
+    discrepancies_indices <- rbind(discrepancies_indices, close_match_rows_updated[non_dup_indices & close_match_rows_updated[,3] > 0,])
     
     # remove rows that have already been handled to prevent double handling 
     close_match_rows_updated <- close_match_rows_updated[dup_indices,]
@@ -543,6 +545,8 @@ vectorised_seperate_close_matches <- function(close_match_rows){
         close_match_rows_updated <- close_match_rows_updated[-unique(c(which(close_match_rows_updated[,1] %fin% matches[,1]), which(close_match_rows_updated[,2] %fin% matches[,2]))),]
         
       }
+      is_unmatched <- !((count - nrow(close_match_rows_updated) == 0) | nrow(close_match_rows_updated) == 0)
+      
     }
   }
   # check for mistakes 
