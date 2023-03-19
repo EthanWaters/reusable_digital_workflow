@@ -139,19 +139,19 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
 - **Description:**
   - This function attempts to update the IDs of the legacy data where the previous processing utilised data from a PowerBI export and therefore will have IDs of NA. This will find perfect matches (distance of zero) between the legacy data and new data, and alter the IDs accordingly. Once matches are found, IDs can then be altered. If there are multiple matches then they are left as is. Ultimately this means they will be treated as a new entry.
 
-#### Function: `find_close_matches()`
+#### Function: `matrix_close_matches_vectorised()`
 - **Inputs:**
   - `x`: data frame to search in
   - `y`: data frame to search against
   - `distance`: maximum distance from perfect for a match to be considered
 - **Outputs:**
-- A list of lists, with each sublist containing:
+- A matrix containing:
     - `X_index` - the index of the row in `x` that matched
     - `Y_index` - the index of the row in `y` that matched
     - `Distance` - the distance between the matched rows
 - **Description:**
-  - This function finds a list of all close matches between rows in `x` and `y` within a specified distance. The distance is the number of non-perfect column matches within a row.
-
+  - This is a function that takes two matrices or data frames x and y and a distance value, and returns a matrix match_indices containing the indices of the rows in x and y that have non-perfect matches within the specified distance. The function first pre-allocates memory for the match_indices matrix assuming the worst-case scenario of y_rows * x_rows possible matches. If this allocation fails due to insufficient memory, it tries again with a smaller allocation of 10,000,000 rows. Then, the function iterates through each row in x and compares it to every row in y. For each value in the row of x, the function evaluates whether it matches the corresponding value in the row of y. These logical values are then appended to the matches matrix. After iterating over every column, there will be a matrix of size (y_rows, x_cols), where each row represents a row in y and each column represents a column in x. A perfect matching row in y will have a corresponding row in matches exclusively containing TRUE. Given that TRUE is equivalent to 1, the rowSums function is used to determine the number of non-perfect matches. If this number is less than or equal to the specified distance, the row index, column index and distance from perfect match are stored in match_indices. The function uses a custom vectorised function store_index_vec to append matches to match_indices. Finally, the na.omit function is used to remove rows with NA values from match_indices before it is returned.
+  
 #### Function: `match_vector_entries()`
 - **Inputs:**
   - `current_vec`: vector to search in
@@ -166,5 +166,41 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
       - `original_order_indices` - a vector indicating the original order of the input vector
       - `metadata` - data frame containing information for the metadata report  
 - **Description:**
-  - This function compares any two vectors and identifies matching entries. This utilizes a number of common NLP techniques to match elements that are intended to be identical but exhibit slight differences.
+  - This is a function in R that is designed to compare any two vectors and identify matching entries. The function takes in two vectors, current_vec and target_vec, and a few optional arguments. The first two arguments are mandatory, and they contain the two vectors that the function will compare. The check_mapped argument is a logical value that defaults to FALSE, and it controls whether the function should check for pre-defined mappings between column names or not. If check_mapped is TRUE, the function will use the map_column_names function to map non-matching column names to pre-defined column names. The correct_order argument is another logical value that defaults to FALSE, and it controls whether the function should return the matching entries in the order they appear in current_vec.The function first cleans the vector entries for easy comparison. It removes characters such as punctuation and spaces and converts all the text to lowercase. It then collects some metadata about the vectors, such as their length and whether their entries match. The function then sets a maximum distance for fuzzy string matching and identifies the current column names and indices that match a column name in the legacy format. It does this by comparing the cleaned vectors and counting how many matches there are.If the check_mapped argument is TRUE, the function checks for pre-defined mappings between column names. If there is a pre-defined mapping for a non-matching column name, the function uses it to update the column name. If there is no pre-defined mapping, the function finds the closest match within a specified distance with Levenshtein distances or by matching partial strings contained within column names. Finally, the function returns some metadata about the matching entries, including whether they are unique, whether there are any non-matching column names, and whether any column names are NA. The function also returns the matching entries, and if the correct_order argument is TRUE, it returns them in the order they appear in current_vec.
  
+#### Function: `or4()`
+- **Inputs:**
+  - `x`: logical value or size n vector of logical values 
+  - `y`: logical value or size n vector of logical values 
+- **Outputs:**
+  - A logical value or size n vector of logical values
+- **Description:**
+  - This is a custom Boolean OR function written in C for speed that works the same as the base R operator "|", with the exception that NA values are considered as TRUE. The function is called "or4", and it takes two logical vectors x and y as inputs. It first determines the length of the two vectors and assigns the larger length to the variable "n". It then allocates a new logical vector "ans" of length "n" using the "allocVector" function. The function then creates pointers to the logical values of vectors x, y, and the new vector "ans" using the "LOGICAL" macro. It then iterates through the "ans" vector, setting each element to the result of the OR operation between the corresponding elements of vectors x and y. The function also includes some logic to handle cases where the lengths of the input vectors are not equal. Specifically, it uses the variables "ix" and "iy" to keep track of the current index of vectors x and y, respectively. When the end of either vector is reached, the index is reset to 0, allowing the function to cycle through the values of the shorter vector again. Finally, the function unprotects the "ans" vector and returns it.
+
+#### Operator: `%fin%`
+- **Inputs:**
+  - `x`: size n*m vector 
+  - `y`: size a*b vector 
+- **Outputs:**
+  - size n vector 
+- **Description:**
+  - This is a faster implementation of the %in% operator that uses the fastmatch package. The fastmatch function is used to match the values in x to the values in table, and the resulting index is compared to 0. If it is greater than 0, then the value is found in the table and the function returns TRUE. If not, the function returns FALSE.
+  
+#### Function: `vectorised_separate_close_matches()`
+- **Inputs:**
+  - `close_match_rows`: A data frame containing the close matches between two data sets. It has 3 columns, where the first and second columns contain the row indices from the two data sets, and the third column contains the distances between these rows.
+- **Outputs:**
+  - The function returns a list containing 4 data frames that represent the separated close matches. Each of the data frames contains the row indices of the original data frames that correspond to the particular type of match. 
+- **Description:**
+  - The vectorised_separate_close_matches() function is used to separate the close matching rows between two data sets. This function separates the rows in a vectorized process, which involves using logical checks on vectors or matrices so Boolean operations can be used to separate the rows. This reduces computational time by two or three orders of magnitude, which is a worthy trade-off for the reduced readability. The function handles close matching rows in the following order:
+
+      - Rows with one-one close matches
+      - Rows with many-many perfect matches
+      - Rows with one-many perfect matches
+      - Rows with one-many non-perfect matches
+      - Rows with many-many non-perfect matches
+      - Rows with one-one and one-many non-perfect matches
+      
+  - This order matters, and it is not a definitive process. Therefore, the order needs to maximize the probability that a row from the new data set is matched with one from the previous data set. One-to-one matches and many-many perfect matches are the most likely to be correct and, therefore, are removed first. It is important that the next matches handled are one-many. This is to ensure a match is found for the "one," as its most likely match is one of the many with the smallest distance. Any rows with those indices can then be removed to prevent double handling. Once many-many rows have been handled, one-one or one-many relationships may have been formed and therefore can be handled repetitively until all matches have been found or no more can be found.
+  
+  

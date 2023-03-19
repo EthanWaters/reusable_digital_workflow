@@ -403,8 +403,7 @@ PowerBI</li>
 <li>This function is the main function that runs the data processing
 pipeline. It takes in several input parameters and uses them to call
 other functions to import, format, and verify data. It also creates a
-metadata report to document the data processing pipeline.<br />
-</li>
+metadata report to document the data processing pipeline.</li>
 </ul></li>
 </ul>
 </div>
@@ -431,8 +430,7 @@ number to read in the case of an <code>.xlsx</code> file</li>
 <li>This function reads data from a file and returns a dataframe. It
 determines the file type and reads the file using the appropriate
 method. It also formats column names to remove special characters and
-adds any required columns to the dataframe.<br />
-</li>
+adds any required columns to the dataframe.</li>
 </ul></li>
 </ul>
 </div>
@@ -460,8 +458,7 @@ occur in the metadata report</li>
 <ul>
 <li>This function formats column names, order and type of a dataframe to
 match a legacy dataframe. It generates comments and returns an updated
-dataframe.<br />
-</li>
+dataframe.</li>
 </ul></li>
 </ul>
 </div>
@@ -507,8 +504,7 @@ data being added</li>
 <ul>
 <li>This function adds a section to the metadata report from the
 information obtained in the previously executed function to the desired
-control data node.<br />
-</li>
+control data node.</li>
 </ul></li>
 </ul>
 </div>
@@ -527,8 +523,7 @@ control data node.<br />
 <li><strong>Description:</strong>
 <ul>
 <li>This function returns the elements of two vectors that are not in
-both of them.<br />
-</li>
+both of them.</li>
 </ul></li>
 </ul>
 </div>
@@ -546,8 +541,7 @@ both of them.<br />
 <li><strong>Description:</strong>
 <ul>
 <li>This function maps column names from one format to another. It uses
-a lookup table to map the column names.<br />
-</li>
+a lookup table to map the column names.</li>
 </ul></li>
 </ul>
 </div>
@@ -571,8 +565,7 @@ file is a PowerBI export</li>
 <li><strong>Description:</strong>
 <ul>
 <li>This function adds any required columns to a dataframe. It uses
-input parameters to add any required columns to the dataframe.<br />
-</li>
+input parameters to add any required columns to the dataframe.</li>
 </ul></li>
 </ul>
 </div>
@@ -599,8 +592,7 @@ control data being formatted</li>
 <li><strong>Description:</strong>
 <ul>
 <li>This function finds discrepancies between new data and legacy data
-and handles them appropriately. It returns a verified dataframe.<br />
-</li>
+and handles them appropriately. It returns a verified dataframe.</li>
 </ul></li>
 </ul>
 </div>
@@ -620,8 +612,7 @@ and handles them appropriately. It returns a verified dataframe.<br />
 <ul>
 <li>This function sets the data type of each column of a data frame
 based on a lookup table stored in a CSV file. It returns the updated
-data frame.<br />
-</li>
+data frame.</li>
 </ul></li>
 </ul>
 </div>
@@ -647,8 +638,7 @@ therefore will have IDs of NA. This will find perfect matches (distance
 of zero) between the legacy data and new data, and alter the IDs
 accordingly. Once matches are found, IDs can then be altered. If there
 are multiple matches then they are left as is. Ultimately this means
-they will be treated as a new entry.<br />
-</li>
+they will be treated as a new entry.</li>
 </ul></li>
 </ul>
 </div>
@@ -709,10 +699,36 @@ metadata report<br />
 </ul></li>
 <li><strong>Description:</strong>
 <ul>
-<li>This function compares any two vectors and identifies matching
-entries. This utilizes a number of common NLP techniques to match
-elements that are intended to be identical but not exhibit slight
-differences. R</li>
+<li>This is a function in R that is designed to compare any two vectors
+and identify matching entries. The function takes in two vectors,
+current_vec and target_vec, and a few optional arguments. The first two
+arguments are mandatory, and they contain the two vectors that the
+function will compare. The check_mapped argument is a logical value that
+defaults to FALSE, and it controls whether the function should check for
+pre-defined mappings between column names or not. If check_mapped is
+TRUE, the function will use the map_column_names function to map
+non-matching column names to pre-defined column names. The correct_order
+argument is another logical value that defaults to FALSE, and it
+controls whether the function should return the matching entries in the
+order they appear in current_vec.function first cleans the vector
+entries for easy comparison. It removes characters such as punctuation
+and spaces and converts all the text to lowercase. It then collects some
+metadata about the vectors, such as their length and whether their
+entries match. The function then sets a maximum distance for fuzzy
+string matching and identifies the current column names and indices that
+match a column name in the legacy format. It does this by comparing the
+cleaned vectors and counting how many matches there are.the check_mapped
+argument is TRUE, the function checks for pre-defined mappings between
+column names. If there is a pre-defined mapping for a non-matching
+column name, the function uses it to update the column name. If there is
+no pre-defined mapping, the function finds the closest match within a
+specified distance with Levenshtein distances or by matching partial
+strings contained within column names. , the function returns some
+metadata about the matching entries, including whether they are unique,
+whether there are any non-matching column names, and whether any column
+names are NA. The function also returns the matching entries, and if the
+correct_order argument is TRUE, it returns them in the order they appear
+in current_vec.</li>
 </ul></li>
 </ul>
 </div>
