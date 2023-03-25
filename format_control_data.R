@@ -446,7 +446,46 @@ vectorised_seperate_close_matches <- function(close_match_rows){
     # discrepancies which will not be able to be definitively determined and 
     # therefore will be set as new entries. 
     
+    # Initialize an empty list to store the groups of equivalent items
+    groups <- list()
     
+    # Iterate through each row of the input matrix
+    for (i in 1:nrow(matrix)) {
+      # Get the IDs of the two items in the current row
+      item1 <- matrix[i, 1]
+      item2 <- matrix[i, 2]
+      
+      # Check if either item is already in a group
+      found1 <- FALSE
+      found2 <- FALSE
+      for (j in 1:length(groups)) {
+        if (item1 %in% groups[[j]]) {
+          found1 <- TRUE
+          group1 <- j
+        }
+        if (item2 %in% groups[[j]]) {
+          found2 <- TRUE
+          group2 <- j
+        }
+      }
+      
+      # If neither item is in a group, create a new group with both items
+      if (!found1 & !found2) {
+        groups[[length(groups) + 1]] <- c(item1, item2)
+      }
+      # If only one item is in a group, add the other item to the same group
+      else if (found1 & !found2) {
+        groups[[group1]] <- c(groups[[group1]], item2)
+      }
+      else if (!found1 & found2) {
+        groups[[group2]] <- c(groups[[group2]], item1)
+      }
+      # If both items are in different groups, merge the groups
+      else if (found1 & found2 & group1 != group2) {
+        groups[[group1]] <- unique(c(groups[[group1]], groups[[group2]]))
+        groups <- groups[-group2]
+      }
+    }
     
     # update the relevant matrices if matches are found. The indices with 
     # multiple perfect matches may also have other matches that are nonperfect 
