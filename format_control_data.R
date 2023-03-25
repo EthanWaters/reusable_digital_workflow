@@ -447,36 +447,28 @@ vectorised_seperate_close_matches <- function(close_match_rows){
     # therefore will be set as new entries. 
     
     
-    ### ------------
-    #ATEMPT ONE SORT MANY TO MANY 
-    
-    
     # Initialize an empty list to store the groups of equivalent items
     groups <- list()
-    
+    groups[[1]] <- many_to_many_e[1,]
+      
     # Iterate through each row of the input matrix
-    for (i in 1:nrow(matrix)) {
+    for (i in 2:nrow(many_to_many_e)) {
       # Get the IDs of the two items in the current row
-      item <- matrix[i, 1]
+      item <- many_to_many_e[i,]
       
       # Check if either item is already in a group
       found <- FALSE
       for (j in 1:length(groups)) {
-        if (item[,1] %in% groups[[j]][,1]) {
+        if (item[,1] %in% groups[[j]][,1] | item[,2] %in% groups[[j]][,2]) {
+          groups[[j]] <- rbind(groups[[j]], item)
           found <- TRUE
-          group <- j
         }
       }
+      if(found == FALSE){
+        groups[[j + 1 ]] <- item
+      }
     }
-      # If neither item is in a group, create a new group with both items
-    
-    
-
-    ### ------------
-    #ATEMPT THREE SORT MANY TO MANY 
-    
-    ty <- lapply( split( mat[,1:2], mat[,2] ), matrix, ncol=2)
-    ty <- lapply( split( mat[,1:2], mat[,2] ), matrix, ncol=2)
+   
     
     # update the relevant matrices if matches are found. The indices with 
     # multiple perfect matches may also have other matches that are nonperfect 
