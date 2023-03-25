@@ -415,7 +415,7 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   x_updated_dup_indices <- (duplicated(close_match_rows_updated[,1])|duplicated(close_match_rows_updated[,1], fromLast=TRUE))
   y_updated_dup_indices <- (duplicated(close_match_rows_updated[,2])|duplicated(close_match_rows_updated[,2], fromLast=TRUE))
   many_to_many <- (y_updated_dup_indices & x_updated_dup_indices) 
-  perfect_many_to_many <- many_to_many & is_perfect_match
+  many_to_many_with_perfect_match <- many_to_many & is_perfect_match
   
   # many-many perfect matches have three possible scenarios. 
   # 1) A single perfect matching row with multiple close matches
@@ -423,32 +423,47 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   #     treated as unique)
   # 3) more than two perfect matching rows (This is considered a mistake and 
   #     flagged)
-  
-  if(any(perfect_many_to_many)){
+  # All scenarios need to be checked against.
+  if(any(many_to_man_with_perfect_match)){
     
-    # Table provides the frequency of indices in `close_match_rows_updated`
-    # which can then be filtered by the number of times an index is present.
-    perfect_x_match_counts <- table(close_match_rows_updated[perfect_many_to_many, 1])
-    perfect_y_match_counts <- table(close_match_rows_updated[perfect_many_to_many, 2])
+    many_to_many_with_perfect_match_entries <- close_match_rows_updated[many_to_man_with_perfect_match,]
     
-    perfect_y_mistake_matches <- as.numeric(names(perfect_y_match_counts[perfect_y_match_counts > 2]))
-    perfect_x_mistake_matches <- as.numeric(names(perfect_x_match_counts[perfect_x_match_counts > 2]))
-    perfect_y_matches <- as.numeric(names(perfect_y_match_counts[perfect_y_match_counts == 2]))
-    perfect_x_matches <- as.numeric(names(perfect_x_match_counts[perfect_x_match_counts == 2]))
-    perfect_single_y_matches <- as.numeric(names(perfect_y_match_counts[perfect_y_match_counts == 1]))
-    perfect_single_x_matches <- as.numeric(names(perfect_x_match_counts[perfect_x_match_counts == 1]))
+    x_dup_indices <- (duplicated(many_to_many_with_perfect_match_entries[,1])|duplicated(many_to_many_with_perfect_match_entries[,1], fromLast=TRUE))
+    y_dup_indices <- (duplicated(many_to_many_with_perfect_match_entries[,2])|duplicated(many_to_many_with_perfect_match_entries[,2], fromLast=TRUE))
     
-    # update the relevant matrices if matches are found
+    
+    many_to_many_i <- x_dup_indices & y_dup_indices
+    one_to_many_i <- !(y_updated_dup_indices & x_updated_dup_indices) & (y_updated_dup_indices | x_updated_dup_indices)
+    one_to_one_i <- !(y_updated_dup_indices | x_updated_dup_indices)
+    
+    
+    many_to_many_e <- many_to_many_with_perfect_match_entries[many_to_many_i,]
+    one_to_many_e <- many_to_many_with_perfect_match_entries[one_to_many_i,]
+    one_to_one_e <- many_to_many_with_perfect_match_entries[one_to_one_i,]
+    
+    # separate groups of many to many matches. There should not be one to many 
+    # relationship of perfect matches, if there is there are a combination of 
+    # discrepancies which will not be able to be definitively determined and 
+    # therefore will be set as new entries. 
+    
+   
+    
+    # update the relevant matrices if matches are found. The indices with 
+    # multiple perfect matches may also have other matches that are nonperfect 
+    # and therefore need to be filtered again to ensure only perfect is 
+    # considered
     if(sum(perfect_y_mistake_matches, perfect_x_mistake_matches, perfect_y_matches, perfect_x_matches, perfect_single_y_matches, perfect_single_x_matches) > 0){
       
-      single_perfect_duplicate_indices <- unique(c(which(close_match_rows_updated[,2] %fin% perfect_single_y_matches), which(close_match_rows_updated[,1] %fin% perfect_single_x_matches)))
-      mistake_duplicates <- unique(c(which(close_match_rows_updated[,2] %fin% perfect_y_mistake_matches), which(close_match_rows_updated[,1] %fin% perfect_x_mistake_matches)))
-      true_duplicate_entries <- unique(c(which(close_match_rows_updated[,2] %fin% perfect_y_matches), which(close_match_rows_updated[,1] %fin% perfect_x_matches)))
-      perfect_duplicate_indices <- rbind(perfect_duplicate_indices, close_match_rows_updated[true_duplicate_entries,], close_match_rows_updated[true_duplicate_entries,])
-      error_indices <- rbind(error_indices, close_match_rows_updated[mistake_duplicates,])
+      many_to_many_indices <- unique(c(which(close_match_rows_updated[,2] %fin% many_to_many_e[,2]), which(close_match_rows_updated[,1] %fin% many_to_many_e[,1])))
+      one_to_many_indices <- unique(c(which(close_match_rows_updated[,2] %fin% one_to_many_e[,2]), which(close_match_rows_updated[,1] %fin% one_to_many_e[,1])))
+      one_to_one_indices <- unique(c(which(close_match_rows_updated[,2] %fin% one_to_one_e[,2]), which(close_match_rows_updated[,1] %fin% one_to_one_e[,1])))
+      
+      perfect_duplicate_indices <- rbind(perfect_duplicate_indices, one_to_one_e)
+      check_indices <- rbind(check_indices, one_to_many_indices)
+      error_indices <- rbind(error_indices, close_match_rows_updated[mistake_duplicates[mistake_duplicates[,3] == 0,],])
       
       # remove rows that have already been handled to prevent double handling.
-      close_match_rows_updated <- close_match_rows_updated[-unique(c(mistake_duplicates, true_duplicate_entries, single_perfect_duplicate_indices)),]
+      close_match_rows_updated <- close_match_rows_updated[-unique(c(one_to_one_indices, one_to_many_indices, many_to_many_indices)),]
     }
   }
   
@@ -674,36 +689,6 @@ update_IDs <- function(new_data_df, legacy_data_df, control_data_type){
 `%fin%` <- function(x, table) {
   stopifnot(require(fastmatch))
   fmatch(x, table, nomatch = 0L) > 0L
-}
-
-find_close_matches <- function(x, y, distance){
-  # Find list of all close matches between rows in x and y within a specified 
-  # distance. This distance is the number of non perfect column matches within
-  # a row. returns a list of lists. Each is a vector containing the indices of
-  # the rows matched and the distance from perfect. (X_index, Y_index, Distance)
-  all_matches <- list()
-  row_length <- length(y[i,])
-  for(z in 1:nrow(x)){ 
-    matches <- list()
-    for(i in 1:nrow(y)){
-      match_length <- length(na.omit(match(x[z,], y[i,])))
-      if(match_length >= (row_length - distance)){
-        match <- c(z, i,length(y[1,]) - match_length)
-        matches[[length(matches)+1]] <- match
-      }
-    }
-    if(length(matches) > 0){
-      filtered_matches <- lapply(matches, function(a) Filter(Negate(is.null), a))
-      all_matches[[z]] <- filtered_matches
-    }
-    
-  }
-  filtered_matches <- lapply(all_matches, function(a) Filter(Negate(is.null), a))
-  
-  # Currently not necessary but it may be desirable to have a single list of 
-  # vectors rather than a list of lists
-  # filtered_matches <- unlist(filtered_matches, recursive = FALSE)
-  return(all_matches)
 }
 
 matrix_close_matches_vectorised <- function(x, y, distance){
