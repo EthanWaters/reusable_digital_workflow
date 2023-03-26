@@ -202,5 +202,16 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
       - Rows with one-one and one-many non-perfect matches
       
   - This order matters, and it is not a definitive process. Therefore, the order needs to maximize the probability that a row from the new data set is matched with one from the previous data set. One-to-one matches and many-many perfect matches are the most likely to be correct and, therefore, are removed first. It is important that the next matches handled are one-many. This is to ensure a match is found for the "one," as its most likely match is one of the many with the smallest distance. Any rows with those indices can then be removed to prevent double handling. Once many-many rows have been handled, one-one or one-many relationships may have been formed and therefore can be handled repetitively until all matches have been found or no more can be found.
-  
+
+#### Function: `rec_group(stack, m2m_split, groups, group)`
+- **Inputs**:
+  - `stack`: a vector containing the data to be grouped
+  - `m2m_split`: a list containing the index of the matching rows
+  - `groups`: a list of matrices containing grouped data
+  - `group`: an integer indicating the group number
+- **Outputs**:
+  - A list of matrices containing grouped data
+- **Description**:
+  - This function is designed to group sets of perfect matching rows from dataframe x and dataframe y to determine if they are mistakes or coincidental duplicates. It recursively groups data by iteratively adding the matching rows to a list of matrices (groups). The function returns the list of grouped matrices once all matching rows have been added to groups. The stack vector contains the data to be grouped, and the m2m_split list contains the index of the matching rows. The groups list of matrices contains the grouped data, and the group integer is used to keep track of the current group number.
+
   

@@ -448,44 +448,14 @@ vectorised_seperate_close_matches <- function(close_match_rows){
     
     if(nrow(many_to_many_e)){
       
-      m2m_split <- lapply(split( many_to_many_e[,1:2], many_to_many_e[,2] ), matrix, ncol=2)
-      
-      # Initialize an empty list to store the groups of equivalent items
+      many_to_many_e <- yu
+      m2m_split <- lapply(split(many_to_many_e[,1:2], many_to_many_e[,2] ), matrix, ncol=2)
+     
       groups <- list()
-      groups[[1]] <- m2m_split[[1]]
-      group <- 1
-      stack <- m2m_split[[1]][,1]
-      m2m_split <- m2m_split[-1]
+      group <- 0
+      output_rec_group <- rec_group(m2m_split, groups, group)
       
-      rec_group <- function(stack, m2m_split, groups, group){
-        for(i in 1:nrow(stack)){
-          groups[[group]] <- m2m_split[[as.character(i)]]
-          new_stack <- m2m_split[[i]][,1]
-          m2m_split <- m2m_split[-i]
-        }
-      }
-      
-      
-      # Iterate through each row of the input matrix
-      for (i in 2:nrow(many_to_many_e)) {
-        # Get the IDs of the two items in the current row
-        item <- many_to_many_e[i,]
-        
-        # Check if either item is already in a group
-        found <- FALSE
-        for (j in 1:length(groups)) {
-          if (item[,1] %in% groups[[j]][,1] | item[,2] %in% groups[[j]][,2]) {
-            groups[[j]] <- rbind(groups[[j]], item)
-            found <- TRUE
-          }
-        }
-        if(found == FALSE){
-          groups[[j + 1 ]] <- item
-        }
-      }
-      
-    } 
-    
+    }
     # update the relevant matrices if matches are found. The indices with 
     # multiple perfect matches may also have other matches that are nonperfect 
     # and therefore need to be filtered again to ensure only perfect is 
@@ -679,6 +649,30 @@ check_for_mistake <- function(discrepancies_indices, perfect_duplicate_indices, 
 verify_entries <- function(){
   
   
+}
+
+
+rec_group <- function(m2m_split, groups, group){
+  # That is recursive with the purpose of grouping sets of matching rows so that 
+  # it can be determined whether or not they are mistakes or coincidental 
+  # perfect matches.
+  group <- group + 1
+  stack <- m2m_split[[group]][,1]
+  m2m_split <- m2m_split[-group]
+  groups[[group]] <- m2m_split[[1]][1,2]
+  
+  for(i in names(m2m_split)){
+    if(identical(stack,m2m_split[[as.numeric(i)]][,1])){
+      groups[group] <- c(groups[[group]], m2m_split[[as.numeric(i)]][1,2])
+      m2m_split <- m2m_split[-as.numeric(i)]
+    }
+    
+  }
+  if(length(m2m_split) != 0){
+    return(rec_group(m2m_split, groups, group))
+  } else {
+    return(groups)
+  }
 }
 
 
