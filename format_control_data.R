@@ -660,11 +660,11 @@ rec_group <- function(m2m_split, groups, group){
   stack <- m2m_split[[group]][,1]
   m2m_split <- m2m_split[-group]
   groups[[group]] <- m2m_split[[1]][1,2]
-  
-  for(i in names(m2m_split)){
-    if(identical(stack,m2m_split[[as.numeric(i)]][,1])){
-      groups[group] <- c(groups[[group]], m2m_split[[as.numeric(i)]][1,2])
-      m2m_split <- m2m_split[-as.numeric(i)]
+  names <- names(m2m_split)
+  for(i in 1:length(names)){
+    if(identical(stack,m2m_split[as.numeric(names[i])][,1])){
+      groups[group] <- c(groups[[group]], m2m_split[[as.numeric(names[i])]][1,2])
+      m2m_split <- m2m_split[-i]
     }
     
   }
