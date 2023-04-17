@@ -376,8 +376,10 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   #Initialise variables 
   
   # Test 
-  close_match_rows <- yu 
+  close_match_rows <- mat 
   
+  x_df_col <- 1
+  y_df_col <- 2
   distance <- max(close_match_rows[,3])
   
   # initialise variables to store indices of rows after seperation
@@ -387,8 +389,8 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   check_indices <- matrix(,ncol=3, nrow =0)
   
   # extracts a vector of row indices pertaining too the two dataframes 
-  x_indices <- close_match_rows[,1]
-  y_indices <- close_match_rows[,2]
+  x_indices <- close_match_rows[,x_df_col]
+  y_indices <- close_match_rows[,y_df_col]
   
   ### ---------- 
   #one-one close matches
@@ -412,13 +414,13 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   # Boolean logic to subset many-many perfect matches from the `close_match_rows`
   # matrix
   is_perfect_match <- close_match_rows_updated[,3] == 0
-  x_updated_dup_indices <- (duplicated(close_match_rows_updated[,1])|duplicated(close_match_rows_updated[,1], fromLast=TRUE))
-  y_updated_dup_indices <- (duplicated(close_match_rows_updated[,2])|duplicated(close_match_rows_updated[,2], fromLast=TRUE))
+  x_updated_dup_indices <- (duplicated(close_match_rows_updated[,x_df_col])|duplicated(close_match_rows_updated[,x_df_col], fromLast=TRUE))
+  y_updated_dup_indices <- (duplicated(close_match_rows_updated[,y_df_col])|duplicated(close_match_rows_updated[,y_df_col], fromLast=TRUE))
   many_to_many <- (y_updated_dup_indices & x_updated_dup_indices) 
   many_to_many_with_perfect_match <- many_to_many & is_perfect_match
   
-  # many-many perfect matches have three possible scenarios. 
-  # 1) A single perfect matching row with multiple close matches
+  # many-many with perfect matches have three possible scenarios. 
+  # x_df_col) A single perfect matching row with multiple close matches
   # 2) Two perfect matching rows (This is considered coincidental and both are
   #     treated as unique)
   # 3) more than two perfect matching rows (This is considered a mistake and 
@@ -428,8 +430,8 @@ vectorised_seperate_close_matches <- function(close_match_rows){
     
     many_to_many_with_perfect_match_entries <- close_match_rows_updated[many_to_many_with_perfect_match,]
     
-    x_dup_indices <- (duplicated(many_to_many_with_perfect_match_entries[,1])|duplicated(many_to_many_with_perfect_match_entries[,1], fromLast=TRUE))
-    y_dup_indices <- (duplicated(many_to_many_with_perfect_match_entries[,2])|duplicated(many_to_many_with_perfect_match_entries[,2], fromLast=TRUE))
+    x_dup_indices <- (duplicated(many_to_many_with_perfect_match_entries[,x_df_col])|duplicated(many_to_many_with_perfect_match_entries[,x_df_col], fromLast=TRUE))
+    y_dup_indices <- (duplicated(many_to_many_with_perfect_match_entries[,y_df_col])|duplicated(many_to_many_with_perfect_match_entries[,y_df_col], fromLast=TRUE))
     
     
     many_to_many_i <- x_dup_indices & y_dup_indices
@@ -449,11 +451,11 @@ vectorised_seperate_close_matches <- function(close_match_rows){
     if(nrow(many_to_many_e)){
       
       # many_to_many_e <- mat
-      m2m_split <- lapply(split(many_to_many_e[,1:2], many_to_many_e[,2] ), matrix, ncol=2)
+      my_df_colm_split <- lapply(split(many_to_many_e[,x_df_col:y_df_col], many_to_many_e[,y_df_col] ), matrix, ncol=y_df_col)
      
-      groups <- list()
+      groups <- c()
       group <- 0
-      output_rec_group <- rec_group(m2m_split, groups, group)
+      output_rec_group <- rec_group(my_df_colm_split, groups, group)
       
     }
     # update the relevant matrices if matches are found. The indices with 
@@ -462,16 +464,19 @@ vectorised_seperate_close_matches <- function(close_match_rows){
     # considered
     if(sum(perfect_y_mistake_matches, perfect_x_mistake_matches, perfect_y_matches, perfect_x_matches, perfect_single_y_matches, perfect_single_x_matches) > 0){
       
-      many_to_many_indices <- unique(c(which(close_match_rows_updated[,2] %fin% many_to_many_e[,2]), which(close_match_rows_updated[,1] %fin% many_to_many_e[,1])))
-      one_to_many_indices <- unique(c(which(close_match_rows_updated[,2] %fin% one_to_many_e[,2]), which(close_match_rows_updated[,1] %fin% one_to_many_e[,1])))
-      one_to_one_indices <- unique(c(which(close_match_rows_updated[,2] %fin% one_to_one_e[,2]), which(close_match_rows_updated[,1] %fin% one_to_one_e[,1])))
+      many_to_many_indices <- unique(c(which(output_rec_group %fin% many_to_many_e[,y_df_col])))
+      mistake_duplicates <- unique(c(which(!(output_rec_group %fin% many_to_many_e[,y_df_col]))))
+     
+      one_to_many_indices <- unique(c(which(close_match_rows_updated[,y_df_col] %fin% one_to_many_e[,y_df_col]), which(close_match_rows_updated[,x_df_col] %fin% one_to_many_e[,x_df_col])))
+      one_to_one_indices <- unique(c(which(close_match_rows_updated[,y_df_col] %fin% one_to_one_e[,y_df_col]), which(close_match_rows_updated[,x_df_col] %fin% one_to_one_e[,x_df_col])))
       
       perfect_duplicate_indices <- rbind(perfect_duplicate_indices, one_to_one_e)
-      check_indices <- rbind(check_indices, one_to_many_indices)
-      error_indices <- rbind(error_indices, close_match_rows_updated[mistake_duplicates[mistake_duplicates[,3] == 0,],])
+      perfect_duplicate_indices <- rbind(perfect_duplicate_indices, many_to_many_e)
+      check_indices <- rbind(check_indices, one_to_many_e)
+      error_indices <- rbind(error_indices, close_match_rows_updated[mistake_duplicates,])
       
       # remove rows that have already been handled to prevent double handling.
-      close_match_rows_updated <- close_match_rows_updated[-unique(c(one_to_one_indices, one_to_many_indices, many_to_many_indices)),]
+      close_match_rows_updated <- close_match_rows_updated[-unique(c(one_to_one_indices, one_to_many_indices, many_to_many_indices, mistake_duplicates)),]
     }
   }
   
@@ -479,16 +484,16 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   ### ---------- 
   #one-many perfect matches
   
-  x_updated_dup_indices <- (duplicated(close_match_rows_updated[,1])|duplicated(close_match_rows_updated[,1], fromLast=TRUE))
-  y_updated_dup_indices <- (duplicated(close_match_rows_updated[,2])|duplicated(close_match_rows_updated[,2], fromLast=TRUE))
+  x_updated_dup_indices <- (duplicated(close_match_rows_updated[,x_df_col])|duplicated(close_match_rows_updated[,x_df_col], fromLast=TRUE))
+  y_updated_dup_indices <- (duplicated(close_match_rows_updated[,y_df_col])|duplicated(close_match_rows_updated[,y_df_col], fromLast=TRUE))
   
   # condition finds rows in `close_match_rows_updated` where only one column is a duplicate
   perfect_one_to_many <- !(y_updated_dup_indices & x_updated_dup_indices) & (y_updated_dup_indices | x_updated_dup_indices) & (close_match_rows_updated[,3] == 0)
   
   # Only select one match for a row
   perfect_one_to_many_matches <- close_match_rows_updated[perfect_one_to_many,]
-  x_indices <- perfect_one_to_many_matches[,1]
-  y_indices <- perfect_one_to_many_matches[,2]
+  x_indices <- perfect_one_to_many_matches[,x_df_col]
+  y_indices <- perfect_one_to_many_matches[,y_df_col]
   x_dup_indices <- (duplicated(x_indices)|duplicated(x_indices, fromLast=TRUE))
   y_dup_indices <- (duplicated(y_indices)|duplicated(y_indices, fromLast=TRUE))
   dup_indices <- (y_dup_indices | x_dup_indices)
@@ -498,7 +503,7 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   check_indices <- rbind(check_indices, perfect_one_to_many_matches[dup_indices,])
   
   # remove checked rows
-  close_match_rows_updated <- close_match_rows_updated[-unique(c(which(close_match_rows_updated[,1] %fin% x_indices), which(close_match_rows_updated[,2] %fin% y_indices))),]
+  close_match_rows_updated <- close_match_rows_updated[-unique(c(which(close_match_rows_updated[,x_df_col] %fin% x_indices), which(close_match_rows_updated[,y_df_col] %fin% y_indices))),]
 
   
   ### ---------- 
@@ -507,8 +512,8 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   # Iterates starting with matches of the closest distance to ensure they are 
   # given priority. 
   for(i in 0:distance){
-    x_dup_indices <- (duplicated(close_match_rows_updated[,1])|duplicated(close_match_rows_updated[,1], fromLast=TRUE))
-    y_dup_indices <- (duplicated(close_match_rows_updated[,2])|duplicated(close_match_rows_updated[,2], fromLast=TRUE))
+    x_dup_indices <- (duplicated(close_match_rows_updated[,x_df_col])|duplicated(close_match_rows_updated[,x_df_col], fromLast=TRUE))
+    y_dup_indices <- (duplicated(close_match_rows_updated[,y_df_col])|duplicated(close_match_rows_updated[,y_df_col], fromLast=TRUE))
     
     # condition finds rows in `close_match_rows_updated` where only one column is a duplicate
     one_to_many <- !(y_dup_indices & x_dup_indices) & (y_dup_indices | x_dup_indices) & close_match_rows_updated[,3] == i
@@ -516,14 +521,14 @@ vectorised_seperate_close_matches <- function(close_match_rows){
     # Check that the same row is not being matched to multiple. If they are 
     # them and they will be handled at the end by being treated as new rows
     matches <- close_match_rows_updated[one_to_many,]
-    if(nrow(matches) > 0){
-      match_x_dup_indices <- (duplicated(matches[,1])|duplicated(matches[,1], fromLast=TRUE))
-      match_y_dup_indices <- (duplicated(matches[,2])|duplicated(matches[,2], fromLast=TRUE))
+    if(!is.null(nrow(matches))){
+      match_x_dup_indices <- (duplicated(matches[,x_df_col])|duplicated(matches[,x_df_col], fromLast=TRUE))
+      match_y_dup_indices <- (duplicated(matches[,y_df_col])|duplicated(matches[,y_df_col], fromLast=TRUE))
       discrepancies_indices <- rbind(discrepancies_indices, matches[!(match_y_dup_indices | match_x_dup_indices),])
       check_indices <- rbind(check_indices, matches[(match_y_dup_indices | match_x_dup_indices),])
       
       # remove checked rows and any that have already been matched. 
-      close_match_rows_updated <- close_match_rows_updated[-unique(c(which(close_match_rows_updated[,1] %fin% matches[,1]), which(close_match_rows_updated[,2] %fin% matches[,2]))),]
+      close_match_rows_updated <- close_match_rows_updated[-unique(c(which(close_match_rows_updated[,x_df_col] %fin% matches[,x_df_col]), which(close_match_rows_updated[,y_df_col] %fin% matches[,y_df_col]))),]
     }
   }
   
@@ -531,16 +536,16 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   #many-many nonperfect matches
   
   
-  x_dup_indices <- (duplicated(close_match_rows_updated[,1])|duplicated(close_match_rows_updated[,1], fromLast=TRUE))
-  y_dup_indices <- (duplicated(close_match_rows_updated[,2])|duplicated(close_match_rows_updated[,2], fromLast=TRUE))
+  x_dup_indices <- (duplicated(close_match_rows_updated[,x_df_col])|duplicated(close_match_rows_updated[,x_df_col], fromLast=TRUE))
+  y_dup_indices <- (duplicated(close_match_rows_updated[,y_df_col])|duplicated(close_match_rows_updated[,y_df_col], fromLast=TRUE))
   
   # Only many-to-many non perfect matches are left and need to be handled. 
-  for(i in 1:distance){
+  for(i in x_df_col:distance){
     many_to_man_with_nonperfect_match <- (y_dup_indices & x_dup_indices) & close_match_rows_updated[,3] == i
     many_to_many_with_nonperfect_match_entries <- close_match_rows_updated[many_to_man_with_nonperfect_match,]
     
-    x_dup_indices <- (duplicated(many_to_many_with_nonperfect_match_entries[,1])|duplicated(many_to_many_with_nonperfect_match_entries[,1], fromLast=TRUE))
-    y_dup_indices <- (duplicated(many_to_many_with_nonperfect_match_entries[,2])|duplicated(many_to_many_with_nonperfect_match_entries[,2], fromLast=TRUE))
+    x_dup_indices <- (duplicated(many_to_many_with_nonperfect_match_entries[,x_df_col])|duplicated(many_to_many_with_nonperfect_match_entries[,x_df_col], fromLast=TRUE))
+    y_dup_indices <- (duplicated(many_to_many_with_nonperfect_match_entries[,y_df_col])|duplicated(many_to_many_with_nonperfect_match_entries[,y_df_col], fromLast=TRUE))
     
     
     many_to_many_i <- x_dup_indices & y_dup_indices
@@ -555,12 +560,12 @@ vectorised_seperate_close_matches <- function(close_match_rows){
     if(sum(discrepancy_x_matches, discrepancy_y_matches, dup_y_matches, dup_x_matches) > 0){
       
       
-      many_to_many_indices <- unique(c(which(close_match_rows_updated[,2] %fin% many_to_many_e[,2]), which(close_match_rows_updated[,1] %fin% many_to_many_e[,1])))
-      one_to_many_indices <- unique(c(which(close_match_rows_updated[,2] %fin% one_to_many_e[,2]), which(close_match_rows_updated[,1] %fin% one_to_many_e[,1])))
-      one_to_one_indices <- unique(c(which(close_match_rows_updated[,2] %fin% one_to_one_e[,2]), which(close_match_rows_updated[,1] %fin% one_to_one_e[,1])))
+      many_to_many_indices <- unique(c(which(close_match_rows_updated[,y_df_col] %fin% many_to_many_e[,y_df_col]), which(close_match_rows_updated[,x_df_col] %fin% many_to_many_e[,x_df_col])))
+      one_to_many_indices <- unique(c(which(close_match_rows_updated[,y_df_col] %fin% one_to_many_e[,y_df_col]), which(close_match_rows_updated[,x_df_col] %fin% one_to_many_e[,x_df_col])))
+      one_to_one_indices <- unique(c(which(close_match_rows_updated[,y_df_col] %fin% one_to_one_e[,y_df_col]), which(close_match_rows_updated[,x_df_col] %fin% one_to_one_e[,x_df_col])))
       
       perfect_duplicate_indices <- rbind(perfect_duplicate_indices, one_to_one_e)
-      check_indices <- rbind(check_indices, one_to_many_indices, many_to_many_indices)
+      check_indices <- rbind(check_indices, one_to_many_e, many_to_many_e)
       
       # remove rows that have already been handled to prevent double handling.
       close_match_rows_updated <- close_match_rows_updated[-unique(c(one_to_one_indices, one_to_many_indices, many_to_many_indices)),]
@@ -578,8 +583,8 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   is_unmatched <- nrow(close_match_rows_updated) > 0 
   while(is_unmatched){
     count <- nrow(close_match_rows_updated)
-    x_dup_indices <- (duplicated(close_match_rows_updated[,1])|duplicated(close_match_rows_updated[,1], fromLast=TRUE))
-    y_dup_indices <- (duplicated(close_match_rows_updated[,2])|duplicated(close_match_rows_updated[,2], fromLast=TRUE))
+    x_dup_indices <- (duplicated(close_match_rows_updated[,x_df_col])|duplicated(close_match_rows_updated[,x_df_col], fromLast=TRUE))
+    y_dup_indices <- (duplicated(close_match_rows_updated[,y_df_col])|duplicated(close_match_rows_updated[,y_df_col], fromLast=TRUE))
     dup_indices <- y_dup_indices|x_dup_indices
     non_dup_indices <- !dup_indices
     
@@ -591,25 +596,25 @@ vectorised_seperate_close_matches <- function(close_match_rows){
     
     
     # condition finds rows in `close_match_rows_updated` where only one column is a duplicate
-    for(i in 1:distance){
+    for(i in x_df_col:distance){
       if(nrow(close_match_rows_updated) == 0){
         break
       }
-      x_dup_indices <- (duplicated(close_match_rows_updated[,1])|duplicated(close_match_rows_updated[,1], fromLast=TRUE))
-      y_dup_indices <- (duplicated(close_match_rows_updated[,2])|duplicated(close_match_rows_updated[,2], fromLast=TRUE))
+      x_dup_indices <- (duplicated(close_match_rows_updated[,x_df_col])|duplicated(close_match_rows_updated[,x_df_col], fromLast=TRUE))
+      y_dup_indices <- (duplicated(close_match_rows_updated[,y_df_col])|duplicated(close_match_rows_updated[,y_df_col], fromLast=TRUE))
       one_to_many <- !(y_dup_indices & x_dup_indices) & (y_dup_indices | x_dup_indices) & close_match_rows_updated[,3] == i
       
       # Check that the same row is not being matched to multiple. If they are 
       # them and they will be handled at the end by being treated as new rows
       matches <- close_match_rows_updated[one_to_many,]
       if(nrow(matches) > 0){
-        match_x_dup_indices <- (duplicated(matches[,1])|duplicated(matches[,1], fromLast=TRUE))
-        match_y_dup_indices <- (duplicated(matches[,2])|duplicated(matches[,2], fromLast=TRUE))
+        match_x_dup_indices <- (duplicated(matches[,x_df_col])|duplicated(matches[,x_df_col], fromLast=TRUE))
+        match_y_dup_indices <- (duplicated(matches[,y_df_col])|duplicated(matches[,y_df_col], fromLast=TRUE))
         discrepancies_indices <- rbind(discrepancies_indices, matches[!(match_y_dup_indices | match_x_dup_indices),])
         check_indices <- rbind(check_indices, matches[(match_y_dup_indices | match_x_dup_indices),])
         
         # remove checked rows and any that have already been matched. 
-        close_match_rows_updated <- close_match_rows_updated[-unique(c(which(close_match_rows_updated[,1] %fin% matches[,1]), which(close_match_rows_updated[,2] %fin% matches[,2]))),]
+        close_match_rows_updated <- close_match_rows_updated[-unique(c(which(close_match_rows_updated[,x_df_col] %fin% matches[,x_df_col]), which(close_match_rows_updated[,y_df_col] %fin% matches[,y_df_col]))),]
         
       }
       is_unmatched <- !((count - nrow(close_match_rows_updated) == 0) | nrow(close_match_rows_updated) == 0)
@@ -629,11 +634,13 @@ vectorised_seperate_close_matches <- function(close_match_rows){
 }
 
 check_for_mistake <- function(discrepancies_indices, perfect_duplicate_indices, error_indices, check_indices){
+  x_df_col <- 1
+  y_df_col <- 2
   duplicated_vec <- base::Vectorize(duplicated)
   
   # Check that there are no duplicates between data frames
-  x_indices_intersecting <- Reduce(intersect, list(discrepancies_indices[,1], perfect_duplicate_indices[,1], error_indices[,1], check_indices[,1]))
-  y_indices_intersecting <- Reduce(intersect, list(discrepancies_indices[,2], perfect_duplicate_indices[,2], error_indices[,2], check_indices[,2]))
+  x_indices_intersecting <- Reduce(intersect, list(discrepancies_indices[,x_df_col], perfect_duplicate_indices[,x_df_col], error_indices[,x_df_col], check_indices[,x_df_col]))
+  y_indices_intersecting <- Reduce(intersect, list(discrepancies_indices[,y_df_col], perfect_duplicate_indices[,y_df_col], error_indices[,y_df_col], check_indices[,y_df_col]))
   
   # Check each column contains no duplicates 
   discrepancies_indices_dup <- (duplicated_vec(t(discrepancies_indices))|duplicated_vec(t(discrepancies_indices), fromLast=TRUE))
@@ -655,17 +662,15 @@ verify_entries <- function(){
 rec_group <- function(m2m_split, groups, group){
   # That is recursive with the purpose of grouping sets of matching rows so that 
   # it can be determined whether or not they are mistakes or coincidental 
-  # perfect matches.
+  # perfect matches.  
   group <- group + 1
   stack <- m2m_split[[group]][,1]
+  groups[group] <- m2m_split[[1]][1,2]
   m2m_split <- m2m_split[-group]
-  groups[[group]] <- m2m_split[[1]][1,2]
   names <- names(m2m_split)
   for(i in 1:length(names)){
-    cat("i =", i, "\n")
-    cat("names[i] =", names[i], "\n")
     if(identical(stack,m2m_split[[names[i]]][,1])){
-      groups[group] <- c(groups[[group]], m2m_split[[names[i]]][1,2])
+      groups <- c(groups, m2m_split[[names[i]]][1,2])
       m2m_split <- m2m_split[-i]
     }
     
