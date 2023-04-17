@@ -376,7 +376,7 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   #Initialise variables 
   
   # Test 
-  close_match_rows <- test_df 
+  close_match_rows <- yu 
   
   distance <- max(close_match_rows[,3])
   
@@ -424,9 +424,9 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   # 3) more than two perfect matching rows (This is considered a mistake and 
   #     flagged)
   # All scenarios need to be checked against.
-  if(any(many_to_man_with_perfect_match)){
+  if(any(many_to_many_with_perfect_match)){
     
-    many_to_many_with_perfect_match_entries <- close_match_rows_updated[many_to_man_with_perfect_match,]
+    many_to_many_with_perfect_match_entries <- close_match_rows_updated[many_to_many_with_perfect_match,]
     
     x_dup_indices <- (duplicated(many_to_many_with_perfect_match_entries[,1])|duplicated(many_to_many_with_perfect_match_entries[,1], fromLast=TRUE))
     y_dup_indices <- (duplicated(many_to_many_with_perfect_match_entries[,2])|duplicated(many_to_many_with_perfect_match_entries[,2], fromLast=TRUE))
@@ -448,7 +448,7 @@ vectorised_seperate_close_matches <- function(close_match_rows){
     
     if(nrow(many_to_many_e)){
       
-      many_to_many_e <- yu
+      # many_to_many_e <- mat
       m2m_split <- lapply(split(many_to_many_e[,1:2], many_to_many_e[,2] ), matrix, ncol=2)
      
       groups <- list()
@@ -662,8 +662,10 @@ rec_group <- function(m2m_split, groups, group){
   groups[[group]] <- m2m_split[[1]][1,2]
   names <- names(m2m_split)
   for(i in 1:length(names)){
-    if(identical(stack,m2m_split[as.numeric(names[i])][,1])){
-      groups[group] <- c(groups[[group]], m2m_split[[as.numeric(names[i])]][1,2])
+    cat("i =", i, "\n")
+    cat("names[i] =", names[i], "\n")
+    if(identical(stack,m2m_split[[names[i]]][,1])){
+      groups[group] <- c(groups[[group]], m2m_split[[names[i]]][1,2])
       m2m_split <- m2m_split[-i]
     }
     
