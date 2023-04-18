@@ -493,12 +493,13 @@ vectorised_seperate_close_matches <- function(close_match_rows){
     if(sum(perfect_y_mistake_matches, perfect_x_mistake_matches, perfect_y_matches, perfect_x_matches, perfect_single_y_matches, perfect_single_x_matches) > 0){
       
      
-      mistake_duplicate_indices <- unique(c(which((many_to_many_e[,y_df_col] %fin% too_many_matches_indices)), which((many_to_many_e[,y_df_col] %fin% too_few_matches_indices)), which((many_to_many_e[,y_df_col] %fin% incorrect_freq_indices))))
-      mistake_duplicates <- many_to_many_e[mistake_duplicate_indices,]
-      many_to_many_e <- many_to_many_e[-mistake_duplicate_indices,]
+      mistake_duplicate_manye_indices <- unique(c(which((many_to_many_e[,y_df_col] %fin% too_many_matches_indices)), which((many_to_many_e[,y_df_col] %fin% too_few_matches_indices)), which((many_to_many_e[,y_df_col] %fin% incorrect_freq_indices))))
+      mistake_duplicate_close_match_rows_indices <- unique(c(which((close_match_rows_updated[,y_df_col] %fin% too_many_matches_indices)), which((close_match_rows_updated[,y_df_col] %fin% too_few_matches_indices)), which((close_match_rows_updated[,y_df_col] %fin% incorrect_freq_indices))))
+      mistake_duplicates <- many_to_many_e[mistake_duplicate_manye_indices,]
+      many_to_many_e <- many_to_many_e[-mistake_duplicate_manye_indices,]
       
       
-      many_to_many_indices <- unique(c(which(correct_freq_indices %fin% many_to_many_e[,y_df_col])))
+      many_to_many_indices <- unique(c(which(close_match_rows_updated[,y_df_col] %fin% correct_freq_indices)))
       one_to_many_indices <- unique(c(which(close_match_rows_updated[,y_df_col] %fin% one_to_many_e[,y_df_col]), which(close_match_rows_updated[,x_df_col] %fin% one_to_many_e[,x_df_col])))
       one_to_one_indices <- unique(c(which(close_match_rows_updated[,y_df_col] %fin% one_to_one_e[,y_df_col]), which(close_match_rows_updated[,x_df_col] %fin% one_to_one_e[,x_df_col])))
       
@@ -508,7 +509,7 @@ vectorised_seperate_close_matches <- function(close_match_rows){
       error_indices <- rbind(error_indices, mistake_duplicates)
       
       # remove rows that have already been handled to prevent double handling.
-      close_match_rows_updated <- close_match_rows_updated[-unique(c(one_to_one_indices, one_to_many_indices, many_to_many_indices, mistake_duplicate_indices)),]
+      close_match_rows_updated <- close_match_rows_updated[-unique(c(one_to_one_indices, one_to_many_indices, many_to_many_indices, mistake_duplicate_close_match_rows_indices)),]
     }
   }
   
