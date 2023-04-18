@@ -451,11 +451,39 @@ vectorised_seperate_close_matches <- function(close_match_rows){
     if(nrow(many_to_many_e)){
       
       # many_to_many_e <- mat
-      my_df_colm_split <- lapply(split(many_to_many_e[,x_df_col:y_df_col], many_to_many_e[,y_df_col] ), matrix, ncol=y_df_col)
+      my_df_colm_split <- lapply(split(many_to_many_e[,x_df_col:y_df_col], many_to_many_e[,y_df_col]), matrix, ncol=y_df_col)
      
-      groups <- c()
+      groups <- replicate(length(my_df_colm_split), vector(), simplify = FALSE)
       group <- 0
       output_rec_group <- rec_group(my_df_colm_split, groups, group)
+      
+      # Now that the many to many perfect matches are grouped, if they are
+      # genuine perfect matches with no mistakes there will be as many duplicate
+      # vectors as their are matching rows. Any with more than 2 matching rows 
+      # as previously discussed will be removed and considered mistake 
+      # duplicates. A pair of perfect duplicates will be considered a 
+      # coincidence and kept 
+      
+      perfect_matching_many_to_many_rows <- (duplicated(output_rec_group)|duplicated(output_rec_group, fromLast=TRUE))
+      too_many_matches <- unlist(lapply(output_rec_group, function(x) length(x) > 2))
+      too_many_matches_indices <- unique(unlist(output_rec_group[too_many_matches]))
+      
+      too_few_matches <- unlist(lapply(output_rec_group, function(x) length(x) < 2))
+      too_few_matches_indices <- unique(unlist(output_rec_group[too_few_matches]))
+      
+      correct_many_to_many <- output_rec_group[perfect_matching_many_to_many_rows & !too_few_matches & !too_many_matches]
+      
+      # Identify unique vectors
+      unique_vectors <- unique(correct_many_to_many)
+      
+      # Count frequency of each unique vector
+      freq_table <- table(match(correct_many_to_many, unique_vectors))
+      
+      correct_freq <- unique_vectors[as.numeric(names(freq_table[freq_table == 2]))]
+      incorrect_freq <- unique_vectors[as.numeric(names(freq_table[freq_table != 2]))]
+      
+      correct_freq_indices <- unique(c(unlist(correct_freq)))
+      incorrect_freq_indices <- unique(c(unlist(incorrect_freq)))
       
     }
     # update the relevant matrices if matches are found. The indices with 
@@ -464,19 +492,23 @@ vectorised_seperate_close_matches <- function(close_match_rows){
     # considered
     if(sum(perfect_y_mistake_matches, perfect_x_mistake_matches, perfect_y_matches, perfect_x_matches, perfect_single_y_matches, perfect_single_x_matches) > 0){
       
-      many_to_many_indices <- unique(c(which(output_rec_group %fin% many_to_many_e[,y_df_col])))
-      mistake_duplicates <- unique(c(which(!(output_rec_group %fin% many_to_many_e[,y_df_col]))))
      
+      mistake_duplicate_indices <- unique(c(which((many_to_many_e[,y_df_col] %fin% too_many_matches_indices)), which((many_to_many_e[,y_df_col] %fin% too_few_matches_indices)), which((many_to_many_e[,y_df_col] %fin% incorrect_freq_indices))))
+      mistake_duplicates <- many_to_many_e[mistake_duplicate_indices,]
+      many_to_many_e <- many_to_many_e[-mistake_duplicate_indices,]
+      
+      
+      many_to_many_indices <- unique(c(which(correct_freq_indices %fin% many_to_many_e[,y_df_col])))
       one_to_many_indices <- unique(c(which(close_match_rows_updated[,y_df_col] %fin% one_to_many_e[,y_df_col]), which(close_match_rows_updated[,x_df_col] %fin% one_to_many_e[,x_df_col])))
       one_to_one_indices <- unique(c(which(close_match_rows_updated[,y_df_col] %fin% one_to_one_e[,y_df_col]), which(close_match_rows_updated[,x_df_col] %fin% one_to_one_e[,x_df_col])))
       
       perfect_duplicate_indices <- rbind(perfect_duplicate_indices, one_to_one_e)
       perfect_duplicate_indices <- rbind(perfect_duplicate_indices, many_to_many_e)
       check_indices <- rbind(check_indices, one_to_many_e)
-      error_indices <- rbind(error_indices, close_match_rows_updated[mistake_duplicates,])
+      error_indices <- rbind(error_indices, mistake_duplicates)
       
       # remove rows that have already been handled to prevent double handling.
-      close_match_rows_updated <- close_match_rows_updated[-unique(c(one_to_one_indices, one_to_many_indices, many_to_many_indices, mistake_duplicates)),]
+      close_match_rows_updated <- close_match_rows_updated[-unique(c(one_to_one_indices, one_to_many_indices, many_to_many_indices, mistake_duplicate_indices)),]
     }
   }
   
@@ -665,17 +697,14 @@ rec_group <- function(m2m_split, groups, group){
   # perfect matches.  
   group <- group + 1
   stack <- m2m_split[[group]][,1]
-  groups[group] <- m2m_split[[1]][1,2]
-  m2m_split <- m2m_split[-group]
   names <- names(m2m_split)
   for(i in 1:length(names)){
     if(identical(stack,m2m_split[[names[i]]][,1])){
-      groups <- c(groups, m2m_split[[names[i]]][1,2])
-      m2m_split <- m2m_split[-i]
+      groups[[group]] <- c(groups[[group]], m2m_split[[names[i]]][1,2])
     }
     
   }
-  if(length(m2m_split) != 0){
+  if(length(m2m_split) != group){
     return(rec_group(m2m_split, groups, group))
   } else {
     return(groups)
