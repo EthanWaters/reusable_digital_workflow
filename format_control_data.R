@@ -376,7 +376,7 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   #Initialise variables 
   
   # Test 
-  close_match_rows <- mat 
+  close_match_rows <- mat_total_df  
   
   x_df_col <- 1
   y_df_col <- 2
@@ -489,8 +489,8 @@ vectorised_seperate_close_matches <- function(close_match_rows){
       one_to_many_indices <- unique(c(which(close_match_rows_updated[,y_df_col] %fin% one_to_many_e[,y_df_col]), which(close_match_rows_updated[,x_df_col] %fin% one_to_many_e[,x_df_col])))
       x_dup_one_to_many_indices <- (duplicated(one_to_many_e[,x_df_col])|duplicated(one_to_many_e[,x_df_col], fromLast=TRUE))
       y_dup_one_to_many_indices <- (duplicated(one_to_many_e[,y_df_col])|duplicated(one_to_many_e[,y_df_col], fromLast=TRUE))
-      correct_one_to_many_e <- one_to_one_e[!(x_dup_one_to_many_indices | y_dup_one_to_many_indices)]
-      incorrect_one_to_many_e <- one_to_one_e[(x_dup_one_to_many_indices | y_dup_one_to_many_indices)]
+      correct_one_to_many_e <- one_to_many_e[!(x_dup_one_to_many_indices | y_dup_one_to_many_indices),]
+      incorrect_one_to_many_e <- one_to_many_e[(x_dup_one_to_many_indices | y_dup_one_to_many_indices),]
       
       one_to_one_indices <- unique(c(which(close_match_rows_updated[,y_df_col] %fin% one_to_one_e[,y_df_col]), which(close_match_rows_updated[,x_df_col] %fin% one_to_one_e[,x_df_col])))
       
@@ -534,13 +534,20 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   #Re-check one-one close matches
   close_match_rows_updated <- find_one_to_one_matches(close_match_rows_updated)
   
+  yu <- close_match_rows_updated
+  du <- discrepancies_indices
+  cu <- check_indices
+  
+  close_match_rows_updated <- yu
+  discrepancies_indices <- du
+  check_indices <- cu
   
   ### ---------- 
   #one-many nonperfect matches
   
   # Iterates starting with matches of the closest distance to ensure they are 
   # given priority. 
-  for(i in 0:distance){
+  for(i in 1:distance){
     x_dup_indices <- (duplicated(close_match_rows_updated[,x_df_col])|duplicated(close_match_rows_updated[,x_df_col], fromLast=TRUE))
     y_dup_indices <- (duplicated(close_match_rows_updated[,y_df_col])|duplicated(close_match_rows_updated[,y_df_col], fromLast=TRUE))
     

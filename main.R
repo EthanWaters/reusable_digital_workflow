@@ -9,6 +9,7 @@ install.packages("rio")
 install.packages('installr')
 install.packages('dplyr')
 install.packages('stringr')
+install.packages('inline')
 
 library("tools")
 library("installr")
@@ -22,6 +23,7 @@ library("dplyr")
 library("stringr")
 library("fastmatch")
 library("lubridate")
+library("inline")
 
 main <- function(leg_path, new_cull, new_manta_tow, geospatial_sites, nearest_site_algorithm, is_powerBI_export){
 
