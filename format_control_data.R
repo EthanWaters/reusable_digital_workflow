@@ -698,7 +698,6 @@ verify_entries <- function(){
 }
 
 
-
 find_one_to_one_matches <- function(close_match_rows){
   
   # Determine duplicates of the row indices.
@@ -895,23 +894,29 @@ set_data_type <- function(data_df, control_data_type){
   # compare column names retrieved from lookup table to column names in the 
   # in the dataframe. Check and find closest matches. sets the data types for
   # all columns 
+  output_df <- data_df
   for(i in dataTypes){
     columns <- setDataTypeList[[i]]
     if(i == "Numeric"){
-      for(x in columns){data_df[[x]] <- as.numeric(data_df[[x]])}
+      for(x in columns){output_df[[x]] <- as.numeric(data_df[[x]])}
     } else if (i == "Date") {
       for(x in columns){
         if(is.character(data_df[[x]][1])){
-          data_df[[x]] <- parse_date_time(data_df[[x]], orders = c('dmy', 'ymd'))
+          output_df[[x]] <- parse_date_time(data_df[[x]], orders = c('dmy', 'ymd'))
         }
       }
     } else if (i == "Integer") {
-      for(x in columns){data_df[[x]] <- as.integer(data_df[[x]])}
+      for(x in columns){output_df[[x]] <- as.integer(data_df[[x]])}
     } else if (i == "Character"){
-      for(x in columns){data_df[[x]] <- as.character(data_df[[x]])}
+      for(x in columns){output_df[[x]] <- as.character(data_df[[x]])}
+    }
+    na_rows <- which(is.na(output_df[[x]]))
+    if(length(na_rows) > 0){
+      output_df[na_rows,which(columns %in% c(x))] <- data_df[na_rows, x]
     }
   }
-  return(data_df)
+  
+  return(output_df)
   # } else if (i == "Logical"){
   #   apply(columns, function(x) data_df[x] <- as.logical(data_df[x]))
   # } else if (i == "Time") {
