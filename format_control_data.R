@@ -301,7 +301,7 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
       legacy_data_without_ID_df <- legacy_data_df[ , -which(names(legacy_data_df) %in% c(ID_col, "error_flag"))]
       close_match_rows <- matrix_close_matches_vectorised(legacy_data_without_ID_df, new_data_without_ID_df, distance)
       
-      seperated_close_matches <- separate_close_matches(close_match_rows)
+      seperated_close_matches <- vectorised_seperate_close_matches(close_match_rows)
       
       perfect_duplicates <- new_data_df[perfect_duplicate_new_indices,]
       verified_data_df <- rbind(verified_data_df, perfect_duplicates)
