@@ -297,18 +297,17 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
       # find close matching rows (distance of two) based on all columns except ID. ID is not 
       # because it will always be null if the data is exported from powerBI. 
       distance <- 2
-      new_data_without_ID_df <- new_data_df[ , -which(names(new_data_df) %in% c(ID_col, "error_flag"))]
-      legacy_data_without_ID_df <- legacy_data_df[ , -which(names(legacy_data_df) %in% c(ID_col, "error_flag"))]
+      new_data_without_ID_df <- new_data_df[ , -which(names(new_data_df) %in% c(ID_col, "error_flag", "Nearest Site"))]
+      legacy_data_without_ID_df <- legacy_data_df[ , -which(names(legacy_data_df) %in% c(ID_col, "error_flag", "Nearest Site"))]
       close_match_rows <- matrix_close_matches_vectorised(legacy_data_without_ID_df, new_data_without_ID_df, distance)
       
       seperated_close_matches <- vectorised_seperate_close_matches(close_match_rows)
       
-      perfect_duplicates <- new_data_df[perfect_duplicate_new_indices,]
+      perfect_duplicates <- new_data_df[seperated_close_matches$perfect[,2],]
+      discrepancies_legacy <- legacy_data_df[seperated_close_matches$discrepancies[,1],]
+      discrepancies_new <- new_data_df[seperated_close_matches$discrepancies[,2],]
+      new_entries <- rbind(new_data_df[seperated_close_matches$new[,2],], new_data_df[seperated_close_matches$check[,2],])
       verified_data_df <- rbind(verified_data_df, perfect_duplicates)
-      
-      discrepancies_legacy <- legacy_data_df[discrepancies_legacy_indices,]
-      discrepancies_new <- new_data_df[discrepancies_new_indices,]
-      new_entries <- unmatched_new_data_df[-discrepancies_new_indices,]
     }
     
     # new entries should not have been assigned a site if manta tow data. 
@@ -374,9 +373,6 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   
   ### ---------- 
   #Initialise variables 
-  
-  # Test 
-  close_match_rows <- mat_total_df  
   
   x_df_col <- 1
   y_df_col <- 2
@@ -534,14 +530,6 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   #Re-check one-one close matches
   close_match_rows_updated <- find_one_to_one_matches(close_match_rows_updated)
   
-  yu <- close_match_rows_updated
-  du <- discrepancies_indices
-  cu <- check_indices
-  
-  close_match_rows_updated <- yu
-  discrepancies_indices <- du
-  check_indices <- cu
-  
   ### ---------- 
   #one-many nonperfect matches
   
@@ -669,6 +657,7 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   }
   
   output <- list(discrepancies_indices, perfect_duplicate_indices, error_indices, check_indices)
+  names(output) <- c("discrepancies", "perfect", "error", "check") 
   return(output)
 }
 
@@ -692,11 +681,68 @@ check_for_mistake <- function(discrepancies_indices, perfect_duplicate_indices, 
   
 }
 
-verify_entries <- function(){
+verify_entries <- function(data_df, control_data_type){
   
+  data_df <- verify_reef(data_df)
+  
+  if (control_data_type == "manta_tow") {
+    
+    
+    
+  } else if (control_data_type == "cull") {
+    
+    
+    
+  } else if (control_data_type == "RHISS") {
+    
+    
+    
+  } 
   
 }
 
+verify_reef <- function(data_df){
+  # Check that the reef ID is in one of the correct standard formats with regex.
+  # Look for most similar reef ID if it is not. Am not checking for a match 
+  # because that would mean no new reefs would be accepted and I believe that 
+  # the reef input is restricted to existing reefs so it is unlikley to be a typo
+  
+  reef_id <- data_df[["Reef ID"]]
+  correct_reef_id_format <- grepl("^(1[1-9]|2[0-4])-\d{3}[a-z]?$", reef_id)
+  data_df[["error_flag"]] <- data_df[["error_flag"]] | !correct_reef_id_format
+  return(data_df)
+}
+
+verify_voyage_dates <- function(data_df){
+  # Check that voyage dates of observation are within in voyage dates and that 
+  # none of the dates are NA. If Voyage dates are NA set start and end to min 
+  # and max observation date.  
+  voyage_start <- data_df[["Voyage Start"]]
+  voyage_end <- data_df[["Voyage End"]]
+  
+  incomplete_dates <- unique(c(which(is.na(voyage_end)), which(is.na(voyage_start))))
+  if (length(incomplete_dates) > 0){
+    incomplete_date_rows <- data_df[incomplete_dates,]
+    vessel_voyage <- unique(incomplete_date_rows[,which(names(incomplete_dates) %in% c("Vessel", "Voyage"))])
+    for(i in 1:nrow(vessel_voyage)){
+      data_df_filtered <- data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),]
+      is_any_voyage_date_correct <- any(!is.na(data_df_filtered$`Voyage Start`) | !is.na(data_df_filtered$`Voyage End`))
+      is_any_survey_date_correct <- any(!is.na(data_df_filtered$`Survey Date`))
+      if(is_any_voyage_date_correct){
+        correct_dates <- data_df_filtered[!is.na(data_df_filtered),][1,which(names(incomplete_dates) %in% c("Vessel", "Voyage"))]
+      } else if(!is_any_voyage_date_correct & is_any_survey_date_correct){
+        incomplete_date_rows_filtered <- incomplete_date_rows[(incomplete_date_rows$Vessel == vessel_voyage[i,1]) & (incomplete_date_rows$Voyage == vessel_voyage[i,2]),]
+        estimate_start <- min(incomplete_date_rows_filtered$`Survey Date`)
+        estimate_end <- min(incomplete_date_rows_filtered$`Survey Date`)
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),which(names(incomplete_dates) %in% c("Voyage Start"))] <-  estimate_start
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),which(names(incomplete_dates) %in% c("Voyage End"))] <-  estimate_end
+      } else(!is_any_voyage_date_correct & !is_any_survey_date_correct) {
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),which(names(incomplete_dates) %in% c("error_flag"))] <- 1
+      }
+    }
+    return(data_df)
+  } 
+}
 
 find_one_to_one_matches <- function(close_match_rows){
   
