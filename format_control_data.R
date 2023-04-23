@@ -691,6 +691,7 @@ verify_entries <- function(data_df, control_data_type){
     
   } else if (control_data_type == "cull") {
     
+    data_df <- verify_voyage_dates(data_df)
     
     
   } else if (control_data_type == "RHISS") {
@@ -708,7 +709,7 @@ verify_reef <- function(data_df){
   # the reef input is restricted to existing reefs so it is unlikley to be a typo
   
   reef_id <- data_df[["Reef ID"]]
-  correct_reef_id_format <- grepl("^(1[1-9]|2[0-4])-\d{3}[a-z]?$", reef_id)
+  correct_reef_id_format <- grepl("^(1[1-9]|2[0-4])-\\d{3}[a-z]?$", reef_id)
   data_df[["error_flag"]] <- data_df[["error_flag"]] | !correct_reef_id_format
   return(data_df)
 }
@@ -726,7 +727,7 @@ verify_voyage_dates <- function(data_df){
     vessel_voyage <- unique(incomplete_date_rows[,which(names(incomplete_dates) %in% c("Vessel", "Voyage"))])
     for(i in 1:nrow(vessel_voyage)){
       data_df_filtered <- data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),]
-      is_any_voyage_date_correct <- any(!is.na(data_df_filtered$`Voyage Start`) | !is.na(data_df_filtered$`Voyage End`))
+      is_any_voyage_date_correct <- any(!is.na(data_df_filtered$`Voyage Start`) & !is.na(data_df_filtered$`Voyage End`))
       is_any_survey_date_correct <- any(!is.na(data_df_filtered$`Survey Date`))
       if(is_any_voyage_date_correct){
         correct_dates <- data_df_filtered[!is.na(data_df_filtered),][1,which(names(incomplete_dates) %in% c("Vessel", "Voyage"))]
@@ -736,12 +737,15 @@ verify_voyage_dates <- function(data_df){
         estimate_end <- min(incomplete_date_rows_filtered$`Survey Date`)
         data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),which(names(incomplete_dates) %in% c("Voyage Start"))] <-  estimate_start
         data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),which(names(incomplete_dates) %in% c("Voyage End"))] <-  estimate_end
-      } else(!is_any_voyage_date_correct & !is_any_survey_date_correct) {
+      } else if(!is_any_voyage_date_correct & !is_any_survey_date_correct) {
         data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),which(names(incomplete_dates) %in% c("error_flag"))] <- 1
       }
     }
-    return(data_df)
+   
   } 
+  data_df$error_flag <- data_df$error_flag | !(data_df$`Survey Date` >= data_df$`Voyage Start` & data_df$`Survey Date` <= data_df$`Voyage End`)
+  
+  return(data_df)
 }
 
 find_one_to_one_matches <- function(close_match_rows){
