@@ -784,18 +784,6 @@ verify_cohort_count <- function(data_df){
   return(data_df)
 }
 
-
-verify_cohort_count <- function(data_df){
-  # Check that the number of culled cots is equal to the sum of cots from each 
-  # cohort. Flag error if not the case. 
-  
-  total_count <- df$`Cohort1 (<15cm)` + df$`Cohort2 (15-25cm)` + df$`Cohort3 (25-40cm)` + df$`Cohort4 (>40cm)`
-  check <- total_count == df$Count
-  data_df[["error_flag"]] <- data_df[["error_flag"]] | !check
-  return(data_df)
-}
-
-
 verify_reef <- function(data_df){
   # Check that the reef ID is in one of the correct standard formats with regex.
   # Look for most similar reef ID if it is not. Am not checking for a match 
