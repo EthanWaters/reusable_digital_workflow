@@ -683,16 +683,18 @@ check_for_mistake <- function(discrepancies_indices, perfect_duplicate_indices, 
 
 verify_entries <- function(data_df, control_data_type){
   
+  data_df <- remove_leading_spaces(data_df, names(data_df))
   data_df <- verify_reef(data_df)
+  data_df <- verify_na_null(data_df)
   
   if (control_data_type == "manta_tow") {
     
-    
+    data_df <-verify_coral_cover(data_df)
     
   } else if (control_data_type == "cull") {
     
     data_df <- verify_voyage_dates(data_df)
-    
+    data_df <- verify_cohort_count(data_df)
     
   } else if (control_data_type == "RHISS") {
     
@@ -702,6 +704,98 @@ verify_entries <- function(data_df, control_data_type){
   
 }
 
+
+verify_na_null <- function(data_df) {
+  # check if there are any values that are NA or NULL and flag those rows as an 
+  # error 
+  
+  cols <- which(names(data_df) %in% c("error_flag", "Nearest Site"))
+  na_present <- apply(data_df[, cols], 2, function(x) is.na(x) | is.null(x))
+  check <- rowSums(na_present) > 0
+  data_df[["error_flag"]] <- data_df[["error_flag"]] | check
+  return(data_df)
+}
+
+
+remove_leading_spaces <- function(data_df, cols) {
+  # R function that removes leading and trailing spaces from all entries in a 
+  # data frame column
+  for (col_name in cols) {
+    if(is.character(data_df[[col_name]][1])){
+      data_df[[col_name]] <- gsub("^\\s+|\\s+$", "", data_df[[col_name]])
+    } 
+  }
+  return(data_df)
+}
+
+
+verify_coral_cover <- function(data_df) {
+  accepted_values <- c("1-", "2-", "3-", "4-", "5-", "1+", "2+", "3+", "4+", "5+")
+  
+  # Identify possible corrections based on common mistakes
+  possible_corrections <- data.frame(
+    Old_Value = c("-1", "-2", "-3", "-4", "-5","+1", "+2", "+3", "+4", "+5"),
+    New_Value = c("1-", "2-", "3-", "4-", "5-", "1+", "2+", "3+", "4+", "5+", "-", "-", "-")
+  )
+  
+  # Substitute similar characters for correct ones
+  data_df[["Hard Coral"]] <- gsub("—|–|−", "-", data_df[["Hard Coral"]])
+  data_df[["Soft Coral"]] <- gsub("—|–|−", "-", data_df[["Soft Coral"]])
+  data_df[["Recently Dead Coral"]] <- gsub("—|–|−", "-", data_df[["Recently Dead Coral"]])
+  
+  # Loop through possible corrections and replace values
+  for (i in 1:nrow(possible_corrections)) {
+    old_value <- possible_corrections$Old_Value[i]
+    new_value <- possible_corrections$New_Value[i]
+    data_df$`Hard Coral`[data_df$`Hard Coral` == old_value] <- new_value
+    data_df$`Soft Coral`[data_df$`Soft Coral` == old_value] <- new_value
+    data_df$`Recently Dead Coral`[data_df$`Recently Dead Coral` == old_value] <- new_value
+  }
+  
+  hc_check <- data_df$`Hard Coral` %in% accepted_values
+  sc_check <- data_df$`Soft Coral` %in% accepted_values
+  rdc_check <- data_df$`Recently Dead Coral` %in% accepted_values
+  
+  check <- hc_check | sc_check | rdc_check
+  
+  data_df[["error_flag"]] <- data_df[["error_flag"]] | !check
+  
+  return(data_df)
+}
+
+
+verify_cots_scars <- function(data_df) {
+  # check that the cots scars are an expected metric
+  
+  valid_values <- c("a", "p", "c")
+  check <- data_df$`COTS Scars` %in% valid_values
+  data_df[["error_flag"]] <- data_df[["error_flag"]] | !check
+  return(data_df)
+}
+
+
+verify_cohort_count <- function(data_df){
+  # Check that the number of culled cots is equal to the sum of cots from each 
+  # cohort. Flag error if not the case. 
+  
+  total_count <- df$`Cohort1 (<15cm)` + df$`Cohort2 (15-25cm)` + df$`Cohort3 (25-40cm)` + df$`Cohort4 (>40cm)`
+  check <- total_count == df$Count
+  data_df[["error_flag"]] <- data_df[["error_flag"]] | !check
+  return(data_df)
+}
+
+
+verify_cohort_count <- function(data_df){
+  # Check that the number of culled cots is equal to the sum of cots from each 
+  # cohort. Flag error if not the case. 
+  
+  total_count <- df$`Cohort1 (<15cm)` + df$`Cohort2 (15-25cm)` + df$`Cohort3 (25-40cm)` + df$`Cohort4 (>40cm)`
+  check <- total_count == df$Count
+  data_df[["error_flag"]] <- data_df[["error_flag"]] | !check
+  return(data_df)
+}
+
+
 verify_reef <- function(data_df){
   # Check that the reef ID is in one of the correct standard formats with regex.
   # Look for most similar reef ID if it is not. Am not checking for a match 
@@ -709,7 +803,7 @@ verify_reef <- function(data_df){
   # the reef input is restricted to existing reefs so it is unlikley to be a typo
   
   reef_id <- data_df[["Reef ID"]]
-  correct_reef_id_format <- grepl("^(1[1-9]|2[0-4])-\\d{3}[a-z]?$", reef_id)
+  correct_reef_id_format <- grepl("^(1[1-9]|2[0-9])-\\d{3}[a-z]?$", reef_id)
   data_df[["error_flag"]] <- data_df[["error_flag"]] | !correct_reef_id_format
   return(data_df)
 }
