@@ -683,9 +683,10 @@ check_for_mistake <- function(discrepancies_indices, perfect_duplicate_indices, 
 
 verify_entries <- function(data_df, control_data_type){
   
+  data_df <- verify_na_null(data_df)
+  data_df <- verify_integers_positive(data_df)
   data_df <- remove_leading_spaces(data_df, names(data_df))
   data_df <- verify_reef(data_df)
-  data_df <- verify_na_null(data_df)
   
   if (control_data_type == "manta_tow") {
     
@@ -716,6 +717,20 @@ verify_na_null <- function(data_df) {
   return(data_df)
 }
 
+verify_integers_positive <- function(data_df, cols) {
+  # R function that verifys all integers are positive values as they represent 
+  # real quantities. Note: Whole numbers are not integers, they must be declared
+  # as such. All relevant columns were set as integers in the set_data_type 
+  # function
+  
+  for (col_name in cols) {
+    if(is.integer(data_df[[col_name]][1])){
+      check <- data_df[[col_name]] > 0 
+      data_df[["error_flag"]] <- data_df[["error_flag"]] | check
+    } 
+  }
+  return(data_df)
+}
 
 remove_leading_spaces <- function(data_df, cols) {
   # R function that removes leading and trailing spaces from all entries in a 
@@ -799,7 +814,8 @@ verify_reef <- function(data_df){
 verify_voyage_dates <- function(data_df){
   # Check that voyage dates of observation are within in voyage dates and that 
   # none of the dates are NA. If Voyage dates are NA set start and end to min 
-  # and max observation date.  
+  # and max observation date. Check that voyage dates associated with a vessels 
+  # voyage are unique (There should only be on departure and return date)
   voyage_start <- data_df[["Voyage Start"]]
   voyage_end <- data_df[["Voyage End"]]
   
@@ -824,8 +840,18 @@ verify_voyage_dates <- function(data_df){
       }
     }
    
-  } 
+  }
+  
   data_df$error_flag <- data_df$error_flag | !(data_df$`Survey Date` >= data_df$`Voyage Start` & data_df$`Survey Date` <= data_df$`Voyage End`)
+  
+  vessel_voyage <- unique(data_df[,which(names(data_df) %in% c("Vessel", "Voyage"))])
+  for (i in 1:nrow(vessel_voyage)){
+    filtered_data_df <- data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),]
+    start_dates <- unique(filtered_data_df$`Voyage Start`) 
+    end_dates <- unique(filtered_data_df$`Voyage End`)
+    
+    
+  }
   
   return(data_df)
 }
