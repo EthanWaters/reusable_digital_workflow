@@ -687,6 +687,7 @@ verify_entries <- function(data_df, control_data_type){
   data_df <- verify_integers_positive(data_df)
   data_df <- remove_leading_spaces(data_df, names(data_df))
   data_df <- verify_reef(data_df)
+  data_df <- verify_percentages(data_df)
   
   if (control_data_type == "manta_tow") {
     
@@ -703,6 +704,16 @@ verify_entries <- function(data_df, control_data_type){
     
   } 
   
+}
+
+
+verify_percentages <- function(data_df) {
+  perc_cols <- grep("%", colnames(data_df))
+  perc_cols_vals <- data_df[, perc_cols]
+  col_check <- apply(perc_cols_vals, 2, function(x) x < 0 | x > 100)
+  check <- rowSums(col_check) > 0
+  data_df[["error_flag"]] <- data_df[["error_flag"]] | check
+  return(data_df)
 }
 
 
@@ -750,7 +761,7 @@ verify_coral_cover <- function(data_df) {
   # Identify possible corrections based on common mistakes
   possible_corrections <- data.frame(
     Old_Value = c("-1", "-2", "-3", "-4", "-5","+1", "+2", "+3", "+4", "+5"),
-    New_Value = c("1-", "2-", "3-", "4-", "5-", "1+", "2+", "3+", "4+", "5+", "-", "-", "-")
+    New_Value = c("1-", "2-", "3-", "4-", "5-", "1+", "2+", "3+", "4+", "5+")
   )
   
   # Substitute similar characters for correct ones
@@ -828,15 +839,17 @@ verify_voyage_dates <- function(data_df){
       is_any_voyage_date_correct <- any(!is.na(data_df_filtered$`Voyage Start`) & !is.na(data_df_filtered$`Voyage End`))
       is_any_survey_date_correct <- any(!is.na(data_df_filtered$`Survey Date`))
       if(is_any_voyage_date_correct){
-        correct_dates <- data_df_filtered[!is.na(data_df_filtered),][1,which(names(incomplete_dates) %in% c("Vessel", "Voyage"))]
+        correct_dates <- data_df_filtered[!is.na(data_df_filtered),][1,c("Vessel", "Voyage")]
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), "Voyage Start"] <- correct_dates
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), "Voyage End"] <- correct_dates
       } else if(!is_any_voyage_date_correct & is_any_survey_date_correct){
         incomplete_date_rows_filtered <- incomplete_date_rows[(incomplete_date_rows$Vessel == vessel_voyage[i,1]) & (incomplete_date_rows$Voyage == vessel_voyage[i,2]),]
         estimate_start <- min(incomplete_date_rows_filtered$`Survey Date`)
         estimate_end <- min(incomplete_date_rows_filtered$`Survey Date`)
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),which(names(incomplete_dates) %in% c("Voyage Start"))] <-  estimate_start
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),which(names(incomplete_dates) %in% c("Voyage End"))] <-  estimate_end
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), c("Voyage Start")] <-  estimate_start
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), c("Voyage Start")] <-  estimate_end
       } else if(!is_any_voyage_date_correct & !is_any_survey_date_correct) {
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),which(names(incomplete_dates) %in% c("error_flag"))] <- 1
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), c("Voyage Start")] <- 1
       }
     }
    
@@ -849,8 +862,14 @@ verify_voyage_dates <- function(data_df){
     filtered_data_df <- data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),]
     start_dates <- unique(filtered_data_df$`Voyage Start`) 
     end_dates <- unique(filtered_data_df$`Voyage End`)
-    
-    
+    if(length(start_dates) > 1){
+      mf_start <- names(sort(table(start_dates), decreasing = TRUE)[1])
+      data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), "Voyage Start"] <- mf_start
+    }
+    if(length(end_dates) > 1){
+      mf_end <- names(sort(table(end_dates), decreasing = TRUE)[1])
+      data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), "Voyage End"] <- mf_end
+    }
   }
   
   return(data_df)
