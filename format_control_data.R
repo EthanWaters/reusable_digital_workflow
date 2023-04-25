@@ -707,6 +707,34 @@ verify_entries <- function(data_df, control_data_type){
 }
 
 
+verify_RHISS <- function(data_df) {
+  # check that columns in RHISS data contain expected values according to metadata
+  
+  # N is likely to be M
+  data_df[data_df$`Tide` == "N","Tide"] <- "M"
+  valid_tide <- c("L", "M", "H")
+  check_tide <- data_df$`Tide` %in% valid_tide
+  
+  cols <- c("Slime Height (cm)", "Entangled/Mat-Like Height (cm)", "Filamentous Height (cm)", "Leafy/Fleshy Height (cm)", "Tree/Bush-Like Height (cm)")
+  valid_macroalgae <- c("A", "B", "C", "0", "1", "2", "3")
+  is_valid_macroalgae <- apply(data_df[, cols], 2, function(x) !(x %in% valid_macroalgae))
+  check_macroalgae <- rowSums(is_valid_macroalgae) > 0
+  
+  valid_descriptive_bleach_severity <- c("Totally bleached white", "pale/fluoro (very light or yellowish)", "None", "Bleached only on upper surface", "Pale (very light)/Focal bleaching", "Totally bleached white/fluoro", "Recently dead coral lightly covered in algae")
+  bcols <- c("Mushroom Bleach Severity", "Massive Bleach Severity", "Encrusting Bleach Severity", "Vase/Foliose Bleach Severity", "Plate/Table Bleach Severity", "Bushy Bleach Severity", "Branching Bleach Severity")
+  is_valid_descriptive_bleach_severity <- apply(data_df[, bcols], 2, function(x) !(x %in% valid_descriptive_bleach_severity))
+  check_descriptive_bleach_severity <- rowSums(is_valid_descriptive_bleach_severity) > 0
+  
+  bleached_severity <- data_df$`Bleached Average Severity Index (calculated via matrix)`
+  check_bleach_severity <- bleached_severity >= 1 & bleached_severity <= 8
+  
+  check <- !check_tide | check_macroalgae | !check_bleach_severity | check_descriptive_bleach_severity
+  
+  data_df[["error_flag"]] <- data_df[["error_flag"]] | check 
+  return(data_df)
+}
+
+
 verify_percentages <- function(data_df) {
   perc_cols <- grep("%", colnames(data_df))
   perc_cols_vals <- data_df[, perc_cols]
