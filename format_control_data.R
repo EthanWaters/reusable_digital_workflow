@@ -700,7 +700,7 @@ verify_entries <- function(data_df, control_data_type){
     
   } else if (control_data_type == "RHISS") {
     
-    
+    data_df <- verify_RHISS(data_df)
     
   } 
   
@@ -750,7 +750,7 @@ verify_na_null <- function(data_df) {
   # error 
   
   cols <- which(names(data_df) %in% c("error_flag", "Nearest Site"))
-  na_present <- apply(data_df[, cols], 2, function(x) is.na(x) | is.null(x))
+  na_present <- apply(data_df[, -cols], 2, function(x) is.na(x) | is.null(x))
   check <- rowSums(na_present) > 0
   data_df[["error_flag"]] <- data_df[["error_flag"]] | check
   return(data_df)
@@ -917,6 +917,7 @@ find_one_to_one_matches <- function(close_match_rows){
   
   # remove rows that have already been handled to prevent double handling.
   close_match_rows_updated <- close_match_rows[dup_indices,]
+  return(close_match_rows_updated)
 }
 
 

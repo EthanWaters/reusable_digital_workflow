@@ -215,3 +215,89 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
   - This function is designed to group sets of perfect matching rows from dataframe x and dataframe y to determine if they are mistakes or coincidental duplicates. It recursively groups data by iteratively adding the matching rows to a list of matrices (groups). The function returns the list of grouped matrices once all matching rows have been added to groups. The stack vector contains the data to be grouped, and the m2m_split list contains the index of the matching rows. The groups list of matrices contains the grouped data, and the group integer is used to keep track of the current group number.
 
   
+### Function: `verify_RHISS()`
+
+- **Inputs:**
+    - `data_df`: a data frame
+- **Outputs:**
+    - `data_df` (data frame) after altering a column called "error_flag"
+- **Description:**
+    - This function verifies that the data in the tide, bleaching and macroalgae columns of the data frame are valid. The function returns the input data frame `data_df` after altering a column called "error_flag"
+
+### Function: `verify_percentages()`
+
+- **Inputs:**
+    - `data_df`: a data frame
+- **Outputs:**
+    - `data_df` (data frame) after altering a column called "error_flag"
+- **Description:**
+    - This function verifies that all percentage values in the data frame are between 0 and 100. The function returns the input data frame `data_df` after altering a column called "error_flag"
+
+### Function: `verify_na_null()`
+
+- **Inputs:**
+    - `data_df`: a data frame
+- **Outputs:**
+    - `data_df` (data frame) after altering a column called "error_flag"
+- **Description:**
+    - This function checks if any values in `data_df` are NA or NULL, and flags those rows as invalid by adding a "TRUE" value to the "error_flag" column. 
+    
+### Function: `verify_integers_positive()`
+
+- **Inputs:**
+    - `data_df`: a data frame
+    - `cols`: a vector of column names
+- **Outputs:**
+    - `data_df` (data frame) after altering a column called "error_flag"
+- **Description:**
+    - This function verifies that all values in specified integer columns are positive integers.  The function returns the input data frame `data_df` after altering a column called "error_flag"
+
+### Function: `remove_leading_spaces()`
+
+- **Inputs:**
+    - `data_df`: a data frame
+    - `cols`: a vector of column names
+- **Outputs:**
+    - `data_df` modified
+- **Description:**
+    - This function removes leading and trailing spaces from all entries in the specified data frame columns. The function returns the modified data frame.
+
+### Function: `verify_coral_cover()`
+
+- **Inputs:**
+    - `data_df`: a data frame
+- **Outputs:**
+    - `data_df` (data frame) after altering a column called "error_flag"
+- **Description:**
+    - This function verifies that all values in the "Hard Coral", "Soft Coral", and "Recently Dead Coral" columns of the data frame are valid coral cover descriptors ("1-", "2-", "3-", "4-", "5-", "1+", "2+", "3+", "4+", or "5+"). The function returns the input data frame `data_df` after altering a column called "error_flag"
+
+### Function: `verify_cots_scars()`
+
+- **Inputs:**
+    - `data_df`: a data frame
+- **Outputs:**
+    - `data_df` (data frame) after altering a column called "error_flag"
+- **Description:**
+    - This function verifies that all values in the "COTS Scars" column of the data frame are valid ("a", "p", or "c"). The function returns the input data frame `data_df` after altering a column called "error_flag"
+
+### Function: `verify_cohort_count()`
+
+- **Inputs:**
+    - `data_df`: a data frame
+- **Outputs:**
+    - `data_df` (data frame) after altering a column called "error_flag"
+- **Description:**
+    - This function verifies that all values in the "Cohort Count" column of the data frame are valid integers. The function returns the input data frame `data_df` after altering a column called "error_flag"
+
+### Function: `find_one_to_one_matches()`
+
+- **Inputs:**
+    - `close_match_rows`: a data frame with columns "x_index", "y_index" and "difference"
+      - "x_index" is the row index of the row from dataframe x that has a close match to a row in dataframe y indicated by "y_index" with a distance of "distance"
+      - "y_index" is the row index of the row from dataframe y that has a close match to a row in dataframe x indicated by "x_index" with a distance of "distance"
+- **Outputs:**
+    - None
+- **Description:**
+    - This function determines one-to-one matches between rows in two data frames, based on the output of the "find_close_matches" function. The function takes as input a data frame with columns "x_index", "y_index" and "difference", and determines which rows have one-to-one matches. A one-to-one match is defined as a row in the x_df data frame that has a single match in the y_df data frame, and vice versa. The function updates two global variables, "perfect_duplicate_indices" and "discrepancies_indices", which are data frames containing the row indices of perfect matches and discrepancies, respectively.
+    
+    

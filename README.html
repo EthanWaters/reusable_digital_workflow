@@ -877,15 +877,215 @@ rows</li>
 </ul></li>
 <li><strong>Description</strong>:
 <ul>
-<li>This function is designed to group sets of matching rows in order to
-determine whether they are mistakes or coincidental perfect matches. It
-recursively groups data by iteratively adding the matching rows to a
-list of matrices (groups). The function returns the list of grouped
-matrices once all matching rows have been added to groups. The stack
-vector contains the data to be grouped, and the m2m_split list contains
-the index of the matching rows. The groups list of matrices contains the
-grouped data, and the group integer is used to keep track of the current
-group number.</li>
+<li>This function is designed to group sets of perfect matching rows
+from dataframe x and dataframe y to determine if they are mistakes or
+coincidental duplicates. It recursively groups data by iteratively
+adding the matching rows to a list of matrices (groups). The function
+returns the list of grouped matrices once all matching rows have been
+added to groups. The stack vector contains the data to be grouped, and
+the m2m_split list contains the index of the matching rows. The groups
+list of matrices contains the grouped data, and the group integer is
+used to keep track of the current group number.</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-verify_rhiss" class="section level3">
+<h3>Function: <code>verify_RHISS()</code></h3>
+<ul>
+<li><strong>Inputs:</strong>
+<ul>
+<li><code>data_df</code>: a data frame</li>
+</ul></li>
+<li><strong>Outputs:</strong>
+<ul>
+<li><code>data_df</code> (data frame) after altering a column called
+“error_flag”</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>This function verifies that the data in the tide, bleaching and
+macroalgae columns of the data frame are valid. The function returns the
+input data frame <code>data_df</code> after altering a column called
+“error_flag”</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-verify_percentages" class="section level3">
+<h3>Function: <code>verify_percentages()</code></h3>
+<ul>
+<li><strong>Inputs:</strong>
+<ul>
+<li><code>data_df</code>: a data frame</li>
+</ul></li>
+<li><strong>Outputs:</strong>
+<ul>
+<li><code>data_df</code> (data frame) after altering a column called
+“error_flag”</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>This function verifies that all percentage values in the data frame
+are between 0 and 100. The function returns the input data frame
+<code>data_df</code> after altering a column called “error_flag”</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-verify_na_null" class="section level3">
+<h3>Function: <code>verify_na_null()</code></h3>
+<ul>
+<li><strong>Inputs:</strong>
+<ul>
+<li><code>data_df</code>: a data frame</li>
+</ul></li>
+<li><strong>Outputs:</strong>
+<ul>
+<li><code>data_df</code> (data frame) after altering a column called
+“error_flag”</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>This function checks if any values in <code>data_df</code> are NA or
+NULL, and flags those rows as invalid by adding a “TRUE” value to the
+“error_flag” column.</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-verify_integers_positive" class="section level3">
+<h3>Function: <code>verify_integers_positive()</code></h3>
+<ul>
+<li><strong>Inputs:</strong>
+<ul>
+<li><code>data_df</code>: a data frame</li>
+<li><code>cols</code>: a vector of column names</li>
+</ul></li>
+<li><strong>Outputs:</strong>
+<ul>
+<li><code>data_df</code> (data frame) after altering a column called
+“error_flag”</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>This function verifies that all values in specified integer columns
+are positive integers. The function returns the input data frame
+<code>data_df</code> after altering a column called “error_flag”</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-remove_leading_spaces" class="section level3">
+<h3>Function: <code>remove_leading_spaces()</code></h3>
+<ul>
+<li><strong>Inputs:</strong>
+<ul>
+<li><code>data_df</code>: a data frame</li>
+<li><code>cols</code>: a vector of column names</li>
+</ul></li>
+<li><strong>Outputs:</strong>
+<ul>
+<li><code>data_df</code> modified</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>This function removes leading and trailing spaces from all entries
+in the specified data frame columns. The function returns the modified
+data frame.</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-verify_coral_cover" class="section level3">
+<h3>Function: <code>verify_coral_cover()</code></h3>
+<ul>
+<li><strong>Inputs:</strong>
+<ul>
+<li><code>data_df</code>: a data frame</li>
+</ul></li>
+<li><strong>Outputs:</strong>
+<ul>
+<li><code>data_df</code> (data frame) after altering a column called
+“error_flag”</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>This function verifies that all values in the “Hard Coral”, “Soft
+Coral”, and “Recently Dead Coral” columns of the data frame are valid
+coral cover descriptors (“1-”, “2-”, “3-”, “4-”, “5-”, “1+”, “2+”, “3+”,
+“4+”, or “5+”). The function returns the input data frame
+<code>data_df</code> after altering a column called “error_flag”</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-verify_cots_scars" class="section level3">
+<h3>Function: <code>verify_cots_scars()</code></h3>
+<ul>
+<li><strong>Inputs:</strong>
+<ul>
+<li><code>data_df</code>: a data frame</li>
+</ul></li>
+<li><strong>Outputs:</strong>
+<ul>
+<li><code>data_df</code> (data frame) after altering a column called
+“error_flag”</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>This function verifies that all values in the “COTS Scars” column of
+the data frame are valid (“a”, “p”, or “c”). The function returns the
+input data frame <code>data_df</code> after altering a column called
+“error_flag”</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-verify_cohort_count" class="section level3">
+<h3>Function: <code>verify_cohort_count()</code></h3>
+<ul>
+<li><strong>Inputs:</strong>
+<ul>
+<li><code>data_df</code>: a data frame</li>
+</ul></li>
+<li><strong>Outputs:</strong>
+<ul>
+<li><code>data_df</code> (data frame) after altering a column called
+“error_flag”</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>This function verifies that all values in the “Cohort Count” column
+of the data frame are valid integers. The function returns the input
+data frame <code>data_df</code> after altering a column called
+“error_flag”</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-find_one_to_one_matches" class="section level3">
+<h3>Function: <code>find_one_to_one_matches()</code></h3>
+<ul>
+<li><strong>Inputs:</strong>
+<ul>
+<li><code>close_match_rows</code>: a data frame with columns “x_index”,
+“y_index” and “difference”
+<ul>
+<li>“x_index” is the row index of the row from dataframe x that has a
+close match to a row in dataframe y indicated by “y_index” with a
+distance of “distance”</li>
+<li>“y_index” is the row index of the row from dataframe y that has a
+close match to a row in dataframe x indicated by “x_index” with a
+distance of “distance”</li>
+</ul></li>
+</ul></li>
+<li><strong>Outputs:</strong>
+<ul>
+<li>None</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>This function determines one-to-one matches between rows in two data
+frames, based on the output of the “find_close_matches” function. The
+function takes as input a data frame with columns “x_index”, “y_index”
+and “difference”, and determines which rows have one-to-one matches. A
+one-to-one match is defined as a row in the x_df data frame that has a
+single match in the y_df data frame, and vice versa. The function
+updates two global variables, “perfect_duplicate_indices” and
+“discrepancies_indices”, which are data frames containing the row
+indices of perfect matches and discrepancies, respectively.</li>
 </ul></li>
 </ul>
 </div>
