@@ -861,7 +861,7 @@ verify_voyage_dates <- function(data_df){
   incomplete_dates <- unique(c(which(is.na(voyage_end)), which(is.na(voyage_start))))
   if (length(incomplete_dates) > 0){
     incomplete_date_rows <- data_df[incomplete_dates,]
-    vessel_voyage <- unique(incomplete_date_rows[,which(names(incomplete_dates) %in% c("Vessel", "Voyage"))])
+    vessel_voyage <- unique(incomplete_date_rows[,which(names(incomplete_date_rows) %in% c("Vessel", "Voyage"))])
     for(i in 1:nrow(vessel_voyage)){
       data_df_filtered <- data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),]
       is_any_voyage_date_correct <- any(!is.na(data_df_filtered$`Voyage Start`) & !is.na(data_df_filtered$`Voyage End`))
@@ -875,9 +875,9 @@ verify_voyage_dates <- function(data_df){
         estimate_start <- min(incomplete_date_rows_filtered$`Survey Date`)
         estimate_end <- min(incomplete_date_rows_filtered$`Survey Date`)
         data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), c("Voyage Start")] <-  estimate_start
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), c("Voyage Start")] <-  estimate_end
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), c("end")] <-  estimate_end
       } else if(!is_any_voyage_date_correct & !is_any_survey_date_correct) {
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), c("Voyage Start")] <- 1
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), c("error_flag")] <- 1
       }
     }
    
