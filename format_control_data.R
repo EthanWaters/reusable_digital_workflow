@@ -310,14 +310,6 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
       verified_data_df <- rbind(verified_data_df, perfect_duplicates)
     }
     
-    # new entries should not have been assigned a site if manta tow data. 
-    # Although this test can only be used on one type of data it should never
-    # fail. In any scenario that it does, a serious code review should be 
-    # undertaken
-    if(control_data_type == "manta_tow"){
-      
-    }
-    
     # Given that it is not possible to definitively know if a change / discrepancy 
     # was intentional or not both new and change entries will pass through the 
     # same validation checks and if passed will be accepted as usable and assumed to be . If failed, 
@@ -325,8 +317,9 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
     # discrepancies will check the original legacy entry, which if failed will 
     # be left as is. 
     verified_new <- verify_entries(new_entries, control_data_type)
-    verified_discrepancies <- verify_entries(discrepancies_new, control_data_type)
-    verified_discrepancies <- compare_discrepancies(discrepancies_new, discrepancies_legacy, control_data_type)
+    verified_new_discrepancies <- verify_entries(discrepancies_new, control_data_type)
+    verified_legacy_discrepancies <- verify_entries(discrepancies_legacy, control_data_type)
+    verified_discrepancies <- compare_discrepancies(verified_new_discrepancies, verified_legacy_discrepancies, control_data_type)
     verified_data_df <- rbind(verified_data_df, verified_discrepancies)
     verified_data_df <- rbind(verified_data_df, verified_new)
    
@@ -340,6 +333,21 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
   return(verified_data_df)
   
 }
+
+
+compare_discrepancies <- function(verified_new_discrepancies, verified_legacy_discrepancies, control_data_type){
+  
+  output <- verified_new_discrepancies[verified_new_discrepancies$error_flag == 1,]
+  verified_new_discrepancies <- verified_new_discrepancies[verified_new_discrepancies$error_flag != 1,]
+  verified_legacy_discrepancies <- verified_legacy_discrepancies[verified_new_discrepancies$error_flag != 1,]
+  output <- rbind(output, verified_legacy_discrepancies[verified_legacy_discrepancies$error_flag == 1,])
+  verified_new_discrepancies <- verified_new_discrepancies[verified_legacy_discrepancies$error_flag != 1,]
+  verified_legacy_discrepancies <- verified_legacy_discrepancies[verified_legacy_discrepancies$error_flag != 1,]
+  output <- rbind(output, verified_new_discrepancies)
+  return(output)
+  
+}
+
 
 vectorised_seperate_close_matches <- function(close_match_rows){
   # Separate the close matching rows with a vectorized process. Duplicates in 
@@ -683,7 +691,7 @@ check_for_mistake <- function(discrepancies_indices, perfect_duplicate_indices, 
 
 verify_entries <- function(data_df, control_data_type){
   
-  data_df <- verify_na_null(data_df)
+  
   data_df <- verify_integers_positive(data_df)
   data_df <- remove_leading_spaces(data_df, names(data_df))
   data_df <- verify_reef(data_df)
@@ -703,7 +711,7 @@ verify_entries <- function(data_df, control_data_type){
     data_df <- verify_RHISS(data_df)
     
   } 
-  
+  data_df <- verify_na_null(data_df)
 }
 
 
@@ -863,19 +871,19 @@ verify_voyage_dates <- function(data_df){
     incomplete_date_rows <- data_df[incomplete_dates,]
     vessel_voyage <- unique(incomplete_date_rows[,which(names(incomplete_date_rows) %in% c("Vessel", "Voyage"))])
     for(i in 1:nrow(vessel_voyage)){
-      data_df_filtered <- data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),]
+      data_df_filtered <- data_df[(data_df$Vessel == vessel_voyage[i,2]) & (data_df$Voyage == vessel_voyage[i,1]),]
       is_any_voyage_date_correct <- any(!is.na(data_df_filtered$`Voyage Start`) & !is.na(data_df_filtered$`Voyage End`))
       is_any_survey_date_correct <- any(!is.na(data_df_filtered$`Survey Date`))
       if(is_any_voyage_date_correct){
-        correct_dates <- data_df_filtered[!is.na(data_df_filtered),][1,c("Vessel", "Voyage")]
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), "Voyage Start"] <- correct_dates
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), "Voyage End"] <- correct_dates
+        correct_dates <- data_df_filtered[!is.na(data_df_filtered),][1,c("Voyage Start", "Voyage End")]
+        data_df[(data_df$Vessel == vessel_voyage[i,2]) & (data_df$Voyage == vessel_voyage[i,1]), "Voyage Start"] <- correct_dates[1]
+        data_df[(data_df$Vessel == vessel_voyage[i,2]) & (data_df$Voyage == vessel_voyage[i,1]), "Voyage End"] <- correct_dates[2]
       } else if(!is_any_voyage_date_correct & is_any_survey_date_correct){
         incomplete_date_rows_filtered <- incomplete_date_rows[(incomplete_date_rows$Vessel == vessel_voyage[i,1]) & (incomplete_date_rows$Voyage == vessel_voyage[i,2]),]
         estimate_start <- min(incomplete_date_rows_filtered$`Survey Date`)
         estimate_end <- min(incomplete_date_rows_filtered$`Survey Date`)
         data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), c("Voyage Start")] <-  estimate_start
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), c("end")] <-  estimate_end
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), c("Voyage End")] <-  estimate_end
       } else if(!is_any_voyage_date_correct & !is_any_survey_date_correct) {
         data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), c("error_flag")] <- 1
       }
