@@ -94,14 +94,13 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
 - **Description:**
     - This function maps column names from one format to another. It uses a lookup table to map the column names.
 
-#### Function: `add_required_columns(df, control_data_type, is_powerBI_export)`
+#### Function: `add_required_columns(control_data_type, is_powerBI_export)`
 
 - **Input:**
-    - `df`: the dataframe to which the columns will be added
     - `control_data_type`: a string representing the type of control data contained within the dataframe
     - `is_powerBI_export`: a boolean indicating whether the file is a PowerBI export
 - **Output:**
-    - dataframe with added columns
+    - column names required for the control data
 - **Description:**
     - This function adds any required columns to a dataframe. It uses input parameters to add any required columns to the dataframe.
 

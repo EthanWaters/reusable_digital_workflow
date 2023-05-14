@@ -4,3 +4,6 @@ departure date,Voyage Start
 return date,Voyage End
 date,observation date
 Tow Time,Tow date
+Reef label,Reef ID
+Reef name,Reef
+COTS Surveillance Id,ID

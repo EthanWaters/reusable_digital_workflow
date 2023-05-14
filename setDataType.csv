@@ -18,7 +18,7 @@ COTS Observed,Integer
 Feeding Scars,Character
 Hard Coral,Character
 Soft Coral,Character
-Recently Dead Coral,
+Recently Dead Coral,Character
 Nearest Site,Character
 Capture ID,Integer
 Site Name,Character

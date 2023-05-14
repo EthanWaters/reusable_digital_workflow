@@ -59,8 +59,8 @@ trywait <- 0
 
 
 legacy_df <- import_data(leg_path, control_data_type, is_powerBI_export, leg_sheet_index)
-new_data_df <- import_data(manta_tow_new1, control_data_type, is_powerBI_export, manta_tow_sheet_index)
-legacy_df <- set_data_type(manta_tow_legacy_df, control_data_type) 
+new_data_df <- import_data(new_path, control_data_type, is_powerBI_export, leg_sheet_index)
+legacy_df <- set_data_type(legacy_df, control_data_type) 
 
 
 # Format Dataframe Columns ------------------------------------------------

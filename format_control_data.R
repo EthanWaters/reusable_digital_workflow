@@ -41,9 +41,6 @@ import_data <- function(data, control_data_type, is_powerBI_export, sheet=1){
         # }
         # data_df <- data_df[-has.na,]
         
-        # this is temporary until a more sophisticated method is produced
-        data_df <- na.omit(data_df)
-        
         # create matrix of warnings so they are added to the specified XML node 
         # in the metadata report in a vectorised mannor. 
        
@@ -51,11 +48,6 @@ import_data <- function(data, control_data_type, is_powerBI_export, sheet=1){
         # warnings_matrix <- matrix(warnings, 1,length(warnings))
         # contribute_to_metadata_report(control_data_type, "Import", warnings_matrix)
         
-        # add any additional columns no longer in the current dataset. # may wish
-        # to expand upon this to vary depending on where the input data was 
-        # acquired from as PowerBI export and direct database querys have 
-        # different requirements
-        data_df <- add_required_columns(data_df, control_data_type, is_powerBI_export)
         
         return(data_df)
       },
@@ -91,7 +83,7 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
       legacy_col_names <- colnames(legacy_df)
       
       # compare the column names of the legacy and current format
-      matched_vector_entries <- match_vector_entries(current_col_names, legacy_col_names, section, correct_order = FALSE, check_mapped = TRUE)
+      matched_vector_entries <- match_vector_entries(current_col_names, legacy_col_names, control_data_type, correct_order = TRUE, check_mapped = TRUE)
       matched_col_names <- matched_vector_entries[[1]]
       matching_entry_indices <- matched_vector_entries[[2]]
       metadata <- matched_vector_entries[[4]]
@@ -219,15 +211,14 @@ map_column_names <- function(column_names){
   return(mapped_names)
 }
   
-add_required_columns <- function(df, control_data_type, is_powerBI_export){
+add_required_columns <- function(control_data_type, is_powerBI_export){
   lookup <- read.csv("additionalColumns.csv", header = TRUE)
   if(is_powerBI_export == 1){
     new_columns <- lookup[lookup$type == control_data_type, 1]
   } else {
     new_columns <- lookup[((lookup$type == control_data_type) & (lookup$is_mandatory == 1)), 1]
   }
-  df[new_columns] <- NA
-  return(df)
+  return(new_columns)
 }
   
   
@@ -1095,14 +1086,14 @@ set_data_type <- function(data_df, control_data_type){
   setDataType_df <- read.csv("setDataType.csv", header = TRUE)
   
   columns <- setDataType_df$column
-  matched_output <- match_vector_entries(columns, column_names, "Set Data Type", correct_order = TRUE) # This returns the matching column names in the original order
+  matched_output <- match_vector_entries(columns, column_names, correct_order = TRUE) # This returns the matching column names in the original order
   
   matched_column_names <- matched_output[[1]]
   matched_column_indices<- matched_output[[2]]
   
   # check that both sets of column names are still the same length after the 
   # matching
-  if(length(columns) != length(column_names)){
+  if(length(matched_column_names) != length(column_names)){
     # TODO contribute to meta data report. This is not necessarily a fatal error 
     # if the data is saved or parsed as the correct type. 
     
@@ -1134,17 +1125,19 @@ set_data_type <- function(data_df, control_data_type){
     } else if (i == "Character"){
       for(x in columns){output_df[[x]] <- as.character(data_df[[x]])}
     }
-    na_rows <- which(is.na(output_df[[x]]))
-    if(length(na_rows) > 0){
-      output_df[na_rows,which(columns %in% c(x))] <- data_df[na_rows, x]
-    }
+    
   }
   
+  # May be desirable to keep data that cant be coerced to correct type and try 
+  # a different method. The code below does not work any more and will need to
+  # be rewritten.
+  # na_rows <- which(is.na(output_df[[x]]))
+  # if(length(na_rows) > 0){
+  #   output_df[na_rows, which(columns %in% c(x))] <- data_df[na_rows, x]
+  # }
+  
+  
   return(output_df)
-  # } else if (i == "Logical"){
-  #   apply(columns, function(x) data_df[x] <- as.logical(data_df[x]))
-  # } else if (i == "Time") {
-  #   apply(columns, function(x) data_df[x] <- as.time(data_df[x]))
 } 
 
 
@@ -1171,7 +1164,7 @@ or4 <- cfunction(c(x="logical", y="logical"), "
 # warnings_matrix <- matrix(warnings, 1,length(warnings))
 # contribute_to_metadata_report(control_data_type, paste("Set Data Type", i), warnings_matrix)
 
-match_vector_entries <- function(current_vec, target_vec, section, check_mapped = FALSE, correct_order = FALSE){
+match_vector_entries <- function(current_vec, target_vec, control_data_type = NULL, check_mapped = FALSE, correct_order = FALSE){
   # Compare any form two vectors and identify matching entries.
   
   out <- tryCatch(
@@ -1260,6 +1253,23 @@ match_vector_entries <- function(current_vec, target_vec, section, check_mapped 
             nonmatching_current_entry_indices <- nonmatching_current_entry_indices[-mapped_name_indices]
           }
         }
+        
+        
+        # add any additional columns no longer in the current dataset. # may wish
+        # to expand upon this to vary depending on where the input data was 
+        # acquired from as PowerBI export and direct database querys have 
+        # different requirements
+        if(!is.null(control_data_type)){
+          additional_col <- add_required_columns(control_data_type, is_powerBI_export)
+          clean_additional_col <- gsub('[[:punct:] ]+',' ', additional_col)
+          clean_additional_col <- gsub(' ', '', clean_additional_col)
+          clean_additional_col <- gsub('\\.', '', clean_additional_col)
+          clean_additional_col <- gsub('[)(/&]', '', clean_additional_col)
+          clean_additional_col <- tolower(clean_additional_col)
+          clean_current_vec <- c(clean_current_vec, clean_additional_col)
+          current_vec <- c(current_vec, additional_col)
+        }
+        
         # find closest match within a specified distance with levenshtein
         # distances or matching partial strings contained within column 
         # names.
