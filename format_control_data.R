@@ -317,8 +317,6 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
     # discrepancies will check the original legacy entry, which if failed will 
     # be left as is. 
     verified_new <- verify_entries(new_entries, control_data_type)
-    verified_new_discrepancies <- verify_entries(discrepancies_new, control_data_type)
-    verified_legacy_discrepancies <- verify_entries(discrepancies_legacy, control_data_type)
     verified_discrepancies <- compare_discrepancies(verified_new_discrepancies, verified_legacy_discrepancies, control_data_type)
     verified_data_df <- rbind(verified_data_df, verified_discrepancies)
     verified_data_df <- rbind(verified_data_df, verified_new)
@@ -328,6 +326,8 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
     verified_data_df <- rbind(verified_data_df, verified_new)
     
   }
+  
+  Verified_output_test <<- verified_data_df
   
   # merge the verified dataset
   return(verified_data_df)
@@ -1070,6 +1070,16 @@ find_previous_process_date <- function(){
     return(NA)
   }
  
+}
+
+get_file_and_line <- function() {
+  # can get the information of where warnings were generated approximately
+  
+  frame <- sys.frame(n = 1)
+  info <- rlang::trace_back(frame, x = FALSE)
+  file <- attr(info, "file")
+  line <- attr(info, "line")
+  return(list(file = file, line = line))
 }
 
 set_data_type <- function(data_df, control_data_type){

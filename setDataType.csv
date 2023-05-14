@@ -6,7 +6,7 @@ ID,Integer
 Tow date,Date
 Tow Time,Time
 Vessel,Character
-Voyage,Integer
+Voyage,Character
 Reef,Character
 Start Lat,Numeric
 Start Lng,Numeric
@@ -34,3 +34,4 @@ Cohort3 (25-40cm),Integer
 Cohort4 (>40cm),Integer
 Longitude,Numeric
 Latitude,Numeric
+Reef ID,Character
