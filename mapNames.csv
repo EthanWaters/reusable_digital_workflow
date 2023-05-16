@@ -1,9 +1,5 @@
-﻿current,target
-reef name,Reef
-departure date,Voyage Start
-return date,Voyage End
-date,observation date
-Tow Time,Tow date
+current,target
+Tow time,Tow date
 Reef label,Reef ID
 Reef name,Reef
 COTS Surveillance Id,ID

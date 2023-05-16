@@ -83,7 +83,7 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
       legacy_col_names <- colnames(legacy_df)
       
       # compare the column names of the legacy and current format
-      matched_vector_entries <- match_vector_entries(current_col_names, legacy_col_names, control_data_type, correct_order = TRUE, check_mapped = TRUE)
+      matched_vector_entries <- match_vector_entries(current_col_names, legacy_col_names, control_data_type, correct_order = FALSE, check_mapped = TRUE)
       matched_col_names <- matched_vector_entries[[1]]
       matching_entry_indices <- matched_vector_entries[[2]]
       metadata <- matched_vector_entries[[4]]
@@ -134,7 +134,7 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
 
 create_metadata_report <- function(count){
     #Generate the XML template for the control data process report.
-    reports_location <<- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\reports\\"
+    reports_location <<- "reports\\"
     
     #create file name systematically
     date <- as.character(Sys.Date())
@@ -160,7 +160,7 @@ contribute_to_metadata_report <- function(control_data_type, section, data, key 
   
   # finds files with current date in file name and attempts to open xml file
   file_count <- 1
-  reports_location <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\reports\\"
+  reports_location <- "reports\\"
   trywait <- 0
   xml_files <- list.files(path= reports_location, pattern = as.character(Sys.Date()))
   xml_filename <- xml_files[file_count]
@@ -206,13 +206,13 @@ outersect <- function(x, y) {
 }
 
 map_column_names <- function(column_names){
-  lookup <- read.csv("mapNames.csv", header = TRUE)
+  lookup <- read.csv("mapNames.csv", header = TRUE, check.names = FALSE, skipNul = TRUE, encoding = "utf-8")
   mapped_names <- lapply(column_names, function(x) lookup$target[match(x, lookup$current)])
   return(mapped_names)
 }
   
 add_required_columns <- function(control_data_type, is_powerBI_export){
-  lookup <- read.csv("additionalColumns.csv", header = TRUE)
+  lookup <- read.csv("additionalColumns.csv", header = TRUE, check.names = FALSE)
   if(is_powerBI_export == 1){
     new_columns <- lookup[lookup$type == control_data_type, 1]
   } else {
@@ -1170,6 +1170,8 @@ match_vector_entries <- function(current_vec, target_vec, control_data_type = NU
   out <- tryCatch(
     {
       
+      current_vec <- colnames(new_data_df)
+      target_vec <- colnames(legacy_df)
       # clean vector entries for easy comparison. The cleaning is done in this 
       # specific order to remove characters such as '.' that appear after
       # removing spaces or specific character from text in a CSV. 
@@ -1204,8 +1206,7 @@ match_vector_entries <- function(current_vec, target_vec, control_data_type = NU
       matching_entries_length <- length(matching_entries)
       perfect_matching_entries <- intersect(current_vec, target_vec)
       perfect_matching_entries_length <- length(perfect_matching_entries)
-      matching_target_entries_indices <- which(clean_target_vec %in% matching_entries)
-      matching_current_entries_indexes <- which(clean_current_vec %in% matching_entries)
+      perfect_matching_current_entries_indices <- which(current_vec %in% perfect_matching_entries)
       
       # conditional statements to be passed to error handling so a more detailed 
       # description of any failure mode can be provided. 
@@ -1223,8 +1224,8 @@ match_vector_entries <- function(current_vec, target_vec, control_data_type = NU
         closest_matching_indices <- c()
         
         nonmatching_current_entry_indices <- 1:length(current_vec)
-        nonmatching_current_entry_indices <- nonmatching_current_entry_indices[-matching_current_entries_indexes]
-        nonmatching_entries <- clean_current_vec[nonmatching_current_entry_indices]
+        nonmatching_current_entry_indices <- nonmatching_current_entry_indices[-perfect_matching_current_entries_indices]
+        nonmatching_entries <- current_vec[nonmatching_current_entry_indices]
         
         if(check_mapped){
           # check if there is a pre-defined mapping to a non-matching column name.
@@ -1293,10 +1294,10 @@ match_vector_entries <- function(current_vec, target_vec, control_data_type = NU
       # find list of vector of indices which indicate the position of current columns names in the legacy format. 
       # this will be used to indicate if at the end of the mapping and matching process, the program was able to 
       # correctly find all required columns. This will also then be utilised to rearrange the order of the columns
-      correct_order_indices <- sapply(clean_target_vec, function(x) match(x, clean_current_vec))
+      correct_order_indices <- match(clean_target_vec, clean_current_vec)
       correct_order_indices <- correct_order_indices[!is.na(correct_order_indices)]
       
-      original_order_indices <- sapply(clean_current_vec, function(x) match(x, clean_target_vec))
+      original_order_indices <- match(clean_current_vec, clean_target_vec)
       original_order_indices <- original_order_indices[!is.na(original_order_indices)]
      
       # This means the vector of strings can be returned in the original order if 
