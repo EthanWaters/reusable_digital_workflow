@@ -1,9 +1,9 @@
-﻿current,target
-reef name,Reef
-departure date,Voyage Start
-return date,Voyage End
-date,observation date
-Tow Time,Tow date
-Reef label,Reef ID
-Reef name,Reef
-COTS Surveillance Id,ID
+﻿current,target,control_data_type
+reef name,Reef,manta_tow
+departure date,Voyage Start,manta_tow
+return date,Voyage End,manta_tow
+date,observation date,manta_tow
+Tow time,Tow date,manta_tow
+Reef label,Reef ID,manta_tow
+Reef name,Reef,manta_tow
+COTS Surveillance Id,ID,manta_tow

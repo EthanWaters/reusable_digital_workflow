@@ -73,14 +73,14 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
       # However, this will interrupt the workflow as this indicates the information  
       # provided is insufficient is required to be correct to proceed. 
       
-      # current_df <- new_cull_data_df
-      # legacy_df <- cull_legacy_df
       # create comments variable to store points of interest.
       comments <- ""
       
       # acquire column names and ensure they are formatted as characters
       current_col_names <- colnames(current_df)
       legacy_col_names <- colnames(legacy_df)
+      
+      current_df[,add_required_columns(control_data_type, is_powerBI_export)] <- NA
       
       # compare the column names of the legacy and current format
       matched_vector_entries <- match_vector_entries(current_col_names, legacy_col_names, control_data_type, correct_order = TRUE, check_mapped = TRUE)
@@ -93,7 +93,7 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
       }
       
       # rearrange columns
-      updated_current_df <- current_df[matching_entry_indices]
+      updated_current_df <- current_df[,matching_entry_indices]
       
       # Update the current dataframe column names with the vector found above.
       colnames(updated_current_df) <- matched_col_names
@@ -134,7 +134,7 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
 
 create_metadata_report <- function(count){
     #Generate the XML template for the control data process report.
-    reports_location <<- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\reports\\"
+    reports_location <<- "reports\\"
     
     #create file name systematically
     date <- as.character(Sys.Date())
@@ -160,7 +160,7 @@ contribute_to_metadata_report <- function(control_data_type, section, data, key 
   
   # finds files with current date in file name and attempts to open xml file
   file_count <- 1
-  reports_location <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\reports\\"
+  reports_location <- "reports\\"
   trywait <- 0
   xml_files <- list.files(path= reports_location, pattern = as.character(Sys.Date()))
   xml_filename <- xml_files[file_count]
@@ -205,27 +205,26 @@ outersect <- function(x, y) {
          y[!y%in%x]))
 }
 
-map_column_names <- function(column_names){
+map_column_names <- function(column_names, control_data_type){
   lookup <- read.csv("mapNames.csv", header = TRUE)
+  lookup <- lookup[lookup$control_data_type == control_data_type,]
   mapped_names <- lapply(column_names, function(x) lookup$target[match(x, lookup$current)])
   return(mapped_names)
 }
   
 add_required_columns <- function(control_data_type, is_powerBI_export){
   lookup <- read.csv("additionalColumns.csv", header = TRUE)
-  if(is_powerBI_export == 1){
-    new_columns <- lookup[lookup$type == control_data_type, 1]
-  } else {
-    new_columns <- lookup[((lookup$type == control_data_type) & (lookup$is_mandatory == 1)), 1]
-  }
+  new_columns <- lookup[((lookup$type == control_data_type) & (lookup$is_mandatory == 1)), 1]
   return(new_columns)
 }
   
   
-verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_type, ID_col, section, is_new){
+verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_type, section, is_new){
   
-  new_data_df <- Updated_cull_data_format
-  legacy_data_df <- cull_legacy_df
+  ID_col <- colnames(new_data_df)[1]
+  
+  new_data_df <- Updated_data_format   
+  legacy_data_df <- legacy_df
   
   column_names <- colnames(legacy_data_df)
   verified_data_df <- data.frame(matrix(ncol = length(column_names), nrow = 0))
@@ -1117,7 +1116,7 @@ set_data_type <- function(data_df, control_data_type){
     } else if (i == "Date") {
       for(x in columns){
         if(is.character(data_df[[x]][1])){
-          output_df[[x]] <- parse_date_time(data_df[[x]], orders = c('dmy', 'ymd'))
+          output_df[[x]] <- parse_date_time(data_df[[x]], orders = c('dmy', 'ymd', '%d/%b/%Y %I:%M:%S %p', '%Y/%b/%d %I:%M:%S %p'))
         }
       }
     } else if (i == "Integer") {
@@ -1165,11 +1164,13 @@ or4 <- cfunction(c(x="logical", y="logical"), "
 # contribute_to_metadata_report(control_data_type, paste("Set Data Type", i), warnings_matrix)
 
 match_vector_entries <- function(current_vec, target_vec, control_data_type = NULL, check_mapped = FALSE, correct_order = FALSE){
-  # Compare any form two vectors and identify matching entries.
+  # Compare any form two vectors and identify matching entries. There are a 
+  # number of pre-defined transformations that will occur if check_mapped is set
+  # to true. 
   
   out <- tryCatch(
     {
-      
+  
       # clean vector entries for easy comparison. The cleaning is done in this 
       # specific order to remove characters such as '.' that appear after
       # removing spaces or specific character from text in a CSV. 
@@ -1224,11 +1225,11 @@ match_vector_entries <- function(current_vec, target_vec, control_data_type = NU
         
         nonmatching_current_entry_indices <- 1:length(current_vec)
         nonmatching_current_entry_indices <- nonmatching_current_entry_indices[-matching_current_entries_indexes]
-        nonmatching_entries <- clean_current_vec[nonmatching_current_entry_indices]
+        nonmatching_entries <- current_vec[nonmatching_current_entry_indices]
         
         if(check_mapped){
           # check if there is a pre-defined mapping to a non-matching column name.
-          mapped_output <- map_column_names(nonmatching_entries)
+          mapped_output <- map_column_names(current_vec, control_data_type)
           mapped_name_indices <- which(!is.na(mapped_output))
           
           #control statements below utilised to prevent errors
@@ -1240,34 +1241,18 @@ match_vector_entries <- function(current_vec, target_vec, control_data_type = NU
           # vector
           if (length(na.omit(mapped_name_indices)) > 0){
             for(x in mapped_name_indices){ 
-              mapped_index <- nonmatching_current_entry_indices[x]
               clean_mapped_name <- gsub('[[:punct:] ]+',' ', mapped_output[x])
               clean_mapped_name <- gsub(' ', '', clean_mapped_name)
               clean_mapped_name <- gsub('\\.', '', clean_mapped_name)
               clean_mapped_name <- gsub('[)(/&]', '', clean_mapped_name)
               clean_mapped_name <- tolower(clean_mapped_name)
-              clean_current_vec[mapped_index] <- clean_mapped_name
-              current_vec[mapped_index] <- mapped_output[x]
+              clean_current_vec[x] <- clean_mapped_name
+              current_vec[x] <- mapped_output[x]
             }
-            nonmatching_entries <- nonmatching_entries[-mapped_name_indices]
-            nonmatching_current_entry_indices <- nonmatching_current_entry_indices[-mapped_name_indices]
+            updated_nonmatching_indices <- which(!(current_vec %in% intersect(current_vec, target_vec)))
+            nonmatching_entries <- current_vec[updated_nonmatching_indices]
+            nonmatching_current_entry_indices <- updated_nonmatching_indices
           }
-        }
-        
-        
-        # add any additional columns no longer in the current dataset. # may wish
-        # to expand upon this to vary depending on where the input data was 
-        # acquired from as PowerBI export and direct database querys have 
-        # different requirements
-        if(!is.null(control_data_type)){
-          additional_col <- add_required_columns(control_data_type, is_powerBI_export)
-          clean_additional_col <- gsub('[[:punct:] ]+',' ', additional_col)
-          clean_additional_col <- gsub(' ', '', clean_additional_col)
-          clean_additional_col <- gsub('\\.', '', clean_additional_col)
-          clean_additional_col <- gsub('[)(/&]', '', clean_additional_col)
-          clean_additional_col <- tolower(clean_additional_col)
-          clean_current_vec <- c(clean_current_vec, clean_additional_col)
-          current_vec <- c(current_vec, additional_col)
         }
         
         # find closest match within a specified distance with levenshtein

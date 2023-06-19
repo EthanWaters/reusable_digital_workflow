@@ -61,7 +61,7 @@ trywait <- 0
 legacy_df <- import_data(leg_path, control_data_type, is_powerBI_export, leg_sheet_index)
 new_data_df <- import_data(new_path, control_data_type, is_powerBI_export, leg_sheet_index)
 legacy_df <- set_data_type(legacy_df, control_data_type) 
-
+test <- set_data_type(legacy_df, control_data_type) 
 
 # Format Dataframe Columns ------------------------------------------------
 
@@ -71,6 +71,7 @@ section <- 'Format'
 # is deemed to be in the ideal target format. Any necessary changes will be made 
 # and recorded. This will be executed irrespective of data set provided.
 Updated_data_format <- format_control_data(new_data_df, legacy_df, control_data_type, section)
+Updated_data_format <- set_data_type(Updated_data_format, control_data_type) 
 
 # Find Row Discrepancies --------------------------------------------------
 
