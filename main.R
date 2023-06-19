@@ -41,6 +41,7 @@ section <- "Import"
 # Create new report. If the file cannot be created due to file name issues a new
 # file name will be created.
 file_count <- 1
+trywait <- 0
 report_attempt <- try(create_metadata_report(file_count))
 while ((class(report_attempt)[[1]]=='try-error')&(trywait<=(10))){
   print(paste('retrying in ', trywait, 'second(s)')) 

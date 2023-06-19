@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿current,target,control_data_type
 reef name,Reef,manta_tow
 departure date,Voyage Start,manta_tow
@@ -7,3 +8,10 @@ Tow time,Tow date,manta_tow
 Reef label,Reef ID,manta_tow
 Reef name,Reef,manta_tow
 COTS Surveillance Id,ID,manta_tow
+=======
+current,target
+Tow time,Tow date
+Reef label,Reef ID
+Reef name,Reef
+COTS Surveillance Id,ID
+>>>>>>> 67b20963e7c7b5346c3142bb9d72a9a294f3fdb3
