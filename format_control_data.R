@@ -1269,13 +1269,10 @@ match_vector_entries <- function(current_vec, target_vec, control_data_type = NU
           if(length(partial_name_matches) == 1){
             clean_current_vec[i] <- nonmatched_clean_target_entries[partial_name_matches]
             current_vec[i] <- nonmatched_target_entries[partial_name_matches]
-            nonmatched_clean_target_entries <- nonmatched_clean_target_entries[-partial_name_matches]
           } else if ((length(closest_matching_indices) == 1) & (minimum_distance < maxium_levenshtein_distance)) {
             clean_current_vec[i] <- nonmatched_clean_target_entries[closest_matching_indices]
-            current_vec[i] <- nonmatched_target_entries
-            nonmatched_clean_target_entries <- nonmatched_clean_target_entries[-closest_matching_indices]
-          }
-          
+            current_vec[i] <- nonmatched_target_entries[closest_matching_indices]
+          } 
         }
       } 
       

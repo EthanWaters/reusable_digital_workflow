@@ -73,7 +73,7 @@ section <- 'Format'
 Updated_data_format <- format_control_data(new_data_df, legacy_df, control_data_type, section)
 Updated_data_format <- set_data_type(Updated_data_format, control_data_type) 
 legacy_df <- set_data_type(legacy_df, control_data_type) 
-test <- set_data_type(legacy_df, control_data_type) 
+test <- set_data_type(Updated_data_format, control_data_type) 
 
 # Find Row Discrepancies --------------------------------------------------
 
