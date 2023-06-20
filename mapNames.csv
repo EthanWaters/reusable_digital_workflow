@@ -1,5 +1,4 @@
-<<<<<<< HEAD
-﻿current,target,control_data_type
+current,target,control_data_type
 reef name,Reef,manta_tow
 departure date,Voyage Start,manta_tow
 return date,Voyage End,manta_tow
@@ -8,10 +7,12 @@ Tow time,Tow date,manta_tow
 Reef label,Reef ID,manta_tow
 Reef name,Reef,manta_tow
 COTS Surveillance Id,ID,manta_tow
-=======
-current,target
-Tow time,Tow date
-Reef label,Reef ID
-Reef name,Reef
-COTS Surveillance Id,ID
->>>>>>> 67b20963e7c7b5346c3142bb9d72a9a294f3fdb3
+Program,Survey Program,RHISS
+Reef Label,Reef ID,RHISS
+Marine Park Zone Type,Marine Park Zone,RHISS
+Management Area,Marine Park Mgmt Section,RHISS
+Live And Recently Dead Coral,Live + R.Dead Coral %,RHISS
+Recently Dead Coral Cover % of Total Coral Cover,RDC% of Total Coral Cover,RHISS
+Live Coral Cover % of Total Coral Cover,LCC% of Total Coral Cover,RHISS
+COTS (Juvenile),COTS Seen (Juvenile),RHISS
+COTS (Adult),COTS Seen (Adult),RHISS

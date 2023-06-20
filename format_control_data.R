@@ -28,19 +28,6 @@ import_data <- function(data, control_data_type, is_powerBI_export, sheet=1){
         column_names <- gsub("\\s+", " ", column_names)
         colnames(data_df) <- column_names
         
-        # Remove rows where the majority of fields are NA
-        
-        # has.na <- c()
-        # for(x in 1:length(data_df)){
-        #   if(any(is.na(data_df[x,]))){
-        #     index <- sapply(data_df[x,], function(i){is.na(i)})
-        #     if(length(x[index]) >= length(x)/2){
-        #       has.na <- c(has.na, x)
-        #     }
-        #   }
-        # }
-        # data_df <- data_df[-has.na,]
-        
         # create matrix of warnings so they are added to the specified XML node 
         # in the metadata report in a vectorised mannor. 
        
@@ -76,11 +63,14 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
       # create comments variable to store points of interest.
       comments <- ""
       
+      # Add required column names to legacy dataframe that no longer exist in 
+      # the current version.
+      current_df[,add_required_columns(control_data_type, is_powerBI_export)] <- NA
+      
       # acquire column names and ensure they are formatted as characters
       current_col_names <- colnames(current_df)
       legacy_col_names <- colnames(legacy_df)
       
-      current_df[,add_required_columns(control_data_type, is_powerBI_export)] <- NA
       
       # compare the column names of the legacy and current format
       matched_vector_entries <- match_vector_entries(current_col_names, legacy_col_names, control_data_type, correct_order = FALSE, check_mapped = TRUE)
@@ -96,7 +86,7 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
       updated_current_df <- current_df[,matching_entry_indices]
       
       # Update the current dataframe column names with the vector found above.
-      colnames(updated_current_df) <- matched_col_names
+      colnames(updated_current_df) <- matched_col_names[matching_entry_indices]
       
       
       
@@ -1171,6 +1161,9 @@ match_vector_entries <- function(current_vec, target_vec, control_data_type = NU
   
   out <- tryCatch(
     {
+    
+      # current_vec <- current_col_names
+      # target_vec <- legacy_col_names
 
       # clean vector entries for easy comparison. The cleaning is done in this 
       # specific order to remove characters such as '.' that appear after
@@ -1207,6 +1200,10 @@ match_vector_entries <- function(current_vec, target_vec, control_data_type = NU
       perfect_matching_entries <- intersect(current_vec, target_vec)
       perfect_matching_entries_length <- length(perfect_matching_entries)
       perfect_matching_current_entries_indices <- which(current_vec %in% perfect_matching_entries)
+      
+      # finds the target entries that have not been mapped or matched.
+      nonmatched_clean_target_entries <- clean_target_vec[which(!(target_vec %in% intersect(current_vec, target_vec)))]
+      nonmatched_target_entries <- target_vec[which(!(target_vec %in% intersect(current_vec, target_vec)))]
       
       # conditional statements to be passed to error handling so a more detailed 
       # description of any failure mode can be provided. 
@@ -1249,29 +1246,36 @@ match_vector_entries <- function(current_vec, target_vec, control_data_type = NU
               clean_current_vec[x] <- clean_mapped_name
               current_vec[x] <- mapped_output[x]
             }
+             
             updated_nonmatching_indices <- which(!(current_vec %in% intersect(current_vec, target_vec)))
-            nonmatching_entries <- current_vec[updated_nonmatching_indices]
             nonmatching_current_entry_indices <- updated_nonmatching_indices
+            
+            # finds the target entries that have not been mapped or matched.
+            nonmatched_clean_target_entries <- clean_target_vec[which(!(target_vec %in% intersect(current_vec, target_vec)))]
+            nonmatched_target_entries <- target_vec[which(!(target_vec %in% intersect(current_vec, target_vec)))]
           }
         }
         
         # find closest match within a specified distance with levenshtein
         # distances or matching partial strings contained within column 
-        # names.
+        # names for non-matched target entries. 
         for(i in nonmatching_current_entry_indices){
           entry <- clean_current_vec[i]
-          levenshtein_distances <- adist(entry , clean_target_vec)
+          levenshtein_distances <- adist(entry , nonmatched_clean_target_entries)
           minimum_distance <- min(levenshtein_distances)
           closest_matching_indices <- which(levenshtein_distances==minimum_distance)
           
-          partial_name_matches <- grep(entry, clean_target_vec)
+          partial_name_matches <- grep(entry, nonmatched_clean_target_entries)
           if(length(partial_name_matches) == 1){
-            clean_current_vec[i] <- clean_target_vec[partial_name_matches]
-            current_vec[i] <- target_vec[partial_name_matches]
+            clean_current_vec[i] <- nonmatched_clean_target_entries[partial_name_matches]
+            current_vec[i] <- nonmatched_target_entries[partial_name_matches]
+            nonmatched_clean_target_entries <- nonmatched_clean_target_entries[-partial_name_matches]
           } else if ((length(closest_matching_indices) == 1) & (minimum_distance < maxium_levenshtein_distance)) {
-            clean_current_vec[i] <- clean_target_vec[closest_matching_indices]
-            current_vec[i] <- target_vec[closest_matching_indices]
-          } 
+            clean_current_vec[i] <- nonmatched_clean_target_entries[closest_matching_indices]
+            current_vec[i] <- nonmatched_target_entries
+            nonmatched_clean_target_entries <- nonmatched_clean_target_entries[-closest_matching_indices]
+          }
+          
         }
       } 
       

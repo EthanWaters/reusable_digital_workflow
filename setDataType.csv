@@ -35,3 +35,90 @@ Cohort4 (>40cm),Integer
 Longitude,Numeric
 Latitude,Numeric
 Reef ID,Character
+Program ID,Integer
+Survey Program,Character
+Observation Date,Date
+Reef ID,Character
+Reef Name,Character
+COTS Cull Site,Character
+Longitude,Numeric
+Latitude,Numeric
+Marine Park Zone,Character
+Marine Park Mgmt Section,Character
+Habitat,Character
+Aspect,Character
+Swim Type,Character
+Water Depth (M),Character
+Visibility,Character
+Tide,Character
+Flood Plume,Character
+Macroalgae,Numeric
+Live Coral,Numeric
+Live Coral Rock,Numeric
+Recently Dead Coral,Numeric
+Coral Rubble,Numeric
+Live + R.Dead Coral %,Numeric
+RDC% of Total Coral Cover,Numeric
+LCC% of Total Coral Cover,Numeric
+Total Hard Coral %,Numeric
+% Benthos Live Soft Coral,Numeric
+% Benthos Live Hard Coral,Numeric
+Slime Amount,Numeric
+Slime Height (cm),Character
+Entangled/Mat-Like Amount,Numeric
+Entangled/Mat-Like Height (cm),Character
+Filamentous Amount,Numeric
+Filamentous Height (cm),Character
+Leafy/Fleshy Amount,Numeric
+Leafy/Fleshy Height (cm),Character
+Tree/Bush-Like Amount,Numeric
+Tree/Bush-Like Height (cm),Character
+Soft Coral % (Live and Recently dead),Numeric
+ Soft Coral % (Recently dead of coral type),Numeric
+Soft Coral % (Live coral of coral type),Numeric
+Branching Coral % (Live and Recently dead),Numeric
+Branching Coral % (Recently dead of coral type),Numeric
+Branching Coral % (Live coral of coral type),Numeric
+Bushy Coral % (Live and Recently dead),Numeric
+Bushy Coral % (Recently dead of coral type),Numeric
+Bushy Coral % (Live coral of coral type),Numeric
+Plate/Table Coral % (Live and Recently dead),Numeric
+Plate/Table Coral % (Recently dead of coral type),Numeric
+Plate/Table Coral % (Live coral of coral type),Numeric
+Vase/Foliose Coral % (Live and Recently dead),Numeric
+Vase/Foliose Coral % (Recently dead of coral type),Numeric
+Vase/Foliose Coral % (Live coral of coral type),Numeric
+Encrusting Coral % (Live and Recently dead),Numeric
+Encrusting Coral % (Recently dead of coral type),Numeric
+Encrusting Coral % (Live coral of coral type),Numeric
+Massive Coral % (Live and Recently dead),Numeric
+Massive Coral % (Recently dead of coral type),Numeric
+Massive Coral % (Live coral of coral type),Numeric
+Mushroom Coral % (Live and Recently dead),Numeric
+Mushroom Coral % (Recently dead of coral type),Numeric
+Mushroom Coral % (Live coral of coral type),Numeric
+Bleaching Present (Y/N),Character
+Bleaching Cause,Character
+Bleach Impact (calculated via matrix),Numeric
+Bleached Coral % (calculated via matrix),Numeric
+Bleached Coral Code (calculated via matrix),Numeric
+Bleached Average Severity Index (calculated via matrix),Numeric
+Branching Bleached %,Numeric
+Bushy Bleached %,Numeric
+Plate/Table Bleached %,Numeric
+Vase/Foliose Bleached %,Numeric
+Encrusting Bleached %,Numeric
+Massive Bleached %,Numeric
+Mushroom Bleached %,Numeric
+Soft Bleached %,Numeric
+Branching Bleach Severity,Character
+Bushy Bleach Severity,Character
+Plate/Table Bleach Severity,Character
+Vase/Foliose Bleach Severity,Character
+Encrusting Bleach Severity,Character
+Massive Bleach Severity,Character
+Mushroom Bleach Severity,Character
+Soft Bleach Severity,Character
+COTS Seen (Adult),Integer
+COTS Seen (Juvenile),Integer
+% coral cover affected by COTS,Numeric
