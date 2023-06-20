@@ -1,7 +1,7 @@
 # Format the new control data into the stardard legacy format 
 
 
-import_data <- function(data, control_data_type, is_powerBI_export, sheet=1){
+import_data <- function(data, control_data_type, has_authorative_ID, sheet=1){
     out <- tryCatch(
       {
         # Could assign the control_data_type as the file name. Yet to implement 
@@ -65,7 +65,7 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
       
       # Add required column names to legacy dataframe that no longer exist in 
       # the current version.
-      current_df[,add_required_columns(control_data_type, is_powerBI_export)] <- NA
+      current_df[,add_required_columns(control_data_type, has_authorative_ID)] <- NA
       
       # acquire column names and ensure they are formatted as characters
       current_col_names <- colnames(current_df)
@@ -203,7 +203,7 @@ map_column_names <- function(column_names, control_data_type){
   return(mapped_names)
 }
   
-add_required_columns <- function(control_data_type, is_powerBI_export){
+add_required_columns <- function(control_data_type, has_authorative_ID){
   lookup <- read.csv("additionalColumns.csv", header = TRUE)
   new_columns <- lookup[((lookup$type == control_data_type) & (lookup$is_mandatory == 1)), 1]
   return(new_columns)
@@ -214,8 +214,8 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
   
   ID_col <- colnames(new_data_df)[1]
   
-  new_data_df <- Updated_data_format   
-  legacy_data_df <- legacy_df
+  # new_data_df <- Updated_data_format   
+  # legacy_data_df <- legacy_df
   
   column_names <- colnames(legacy_data_df)
   verified_data_df <- data.frame(matrix(ncol = length(column_names), nrow = 0))
@@ -232,81 +232,78 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
   # mistakenly changed. For first time processing any error flagged entries can 
   # be compared to the legacy data set in an iterative process without checking 
   # IDs to find likely matches. 
-  if(!is_new){
-    # If there is a unique ID then perfect duplicates can easily be removed.
-    if(!is_powerBI_export){
+  if(is_new){
+    legacy_df <- verify_entries(legacy_df, control_data_type) 
+  }
+  
+  # If there is a unique ID then perfect duplicates can easily be removed.
+  if(!has_authorative_ID){
+    
+    # Update IDs that are NA from powerBI export based on perfect duplicates. 
+    # Find close matches of rows left without an ID and no perfect duplicates. 
+    # Rows with a single close match will be considered a discrepancy and then
+    # the ID checked against the all the IDs in legacy_data_df to ensure it does 
+    # not already exist.
+    if(any(is.na(legacy_data_df[ID_col]))){
+      legacy_data_df <- update_IDs(new_data_df, legacy_data_df, control_data_type)
+      # create new dataframe without rows that have NA ID so that they can
+      # be passed through the check functions as new row entries. 
+      legacy_data_df <- legacy_data_df[is.na(legacy_data_df[ID_col]),]
       
-      # Update IDs that are NA from powerBI export based on perfect duplicates. 
-      # Find close matches of rows left without an ID and no perfect duplicates. 
-      # Rows with a single close match will be considered a discrepancy and then
-      # the ID checked against the all the IDs in legacy_data_df to ensure it does 
-      # not already exist.
-      if(any(is.na(legacy_data_df[ID_col]))){
-        legacy_data_df <- update_IDs(new_data_df, legacy_data_df, control_data_type)
-        # create new dataframe without rows that have NA ID so that they can
-        # be passed through the check functions as new row entries. 
-        legacy_data_df <- legacy_data_df[is.na(legacy_data_df[ID_col]),]
-        
-      }
-      
-      
-      #find perfect duplicates and add to verified data df
-      perfect_duplicates <- inner_join(legacy_data_df, new_data_df)
-      verified_data_df <- rbind(verified_data_df, perfect_duplicates)
-      
-      # Determine discrepancies and store both versions of the entries
-      discrepancies_legacy <- anti_join(legacy_data_df, new_data_df)   
-      discrepancies_new_indices <- which(new_data_df[[ID_col]] %in% discrepancies_legacy[[ID_col]])
-      discrepancies_new <- new_data_df[discrepancies_new_indices,]
-      
-      # find new entries based on whether the ID is present in both dataframes 
-      new_entries <- anti_join(new_data_df, legacy_data_df, by=ID_col)  
-      
-      # Check that no IDs have changed. 
-      if(!(length(discrepancies_new) == length(discrepancies_legacy))){
-        # This would imply entries with tempory IDs have been previously processed 
-        # and have now been updated. This will require an iterative process to 
-        # find the closest matching record. This will be required for any
-        # situation without an ID.
-        FAILURE <- TRUE
-        contribute_to_metadata_report(control_data_type, "Check ID Change", FAILURE)
-        
-      }
-        
-    } else {
-
-      # find close matching rows (distance of two) based on all columns except ID. ID is not 
-      # because it will always be null if the data is exported from powerBI. 
-      distance <- 2
-      new_data_without_ID_df <- new_data_df[ , -which(names(new_data_df) %in% c(ID_col, "error_flag", "Nearest Site"))]
-      legacy_data_without_ID_df <- legacy_data_df[ , -which(names(legacy_data_df) %in% c(ID_col, "error_flag", "Nearest Site"))]
-      close_match_rows <- matrix_close_matches_vectorised(legacy_data_without_ID_df, new_data_without_ID_df, distance)
-      
-      seperated_close_matches <- vectorised_seperate_close_matches(close_match_rows)
-      
-      perfect_duplicates <- new_data_df[seperated_close_matches$perfect[,2],]
-      discrepancies_legacy <- legacy_data_df[seperated_close_matches$discrepancies[,1],]
-      discrepancies_new <- new_data_df[seperated_close_matches$discrepancies[,2],]
-      new_entries <- rbind(new_data_df[seperated_close_matches$new[,2],], new_data_df[seperated_close_matches$check[,2],])
-      verified_data_df <- rbind(verified_data_df, perfect_duplicates)
     }
     
-    # Given that it is not possible to definitively know if a change / discrepancy 
-    # was intentional or not both new and change entries will pass through the 
-    # same validation checks and if passed will be accepted as usable and assumed to be . If failed, 
-    # assumed to be a QA change. If failed,  the data will be flagged. Failed 
-    # discrepancies will check the original legacy entry, which if failed will 
-    # be left as is. 
-    verified_new <- verify_entries(new_entries, control_data_type)
-    verified_discrepancies <- compare_discrepancies(verified_new_discrepancies, verified_legacy_discrepancies, control_data_type)
-    verified_data_df <- rbind(verified_data_df, verified_discrepancies)
-    verified_data_df <- rbind(verified_data_df, verified_new)
-   
-  } else if (is_new & !is_powerBI_export){
-    verified_new <- verify_entries(new_data_df, control_data_type)
-    verified_data_df <- rbind(verified_data_df, verified_new)
     
+    #find perfect duplicates and add to verified data df
+    perfect_duplicates <- inner_join(legacy_data_df, new_data_df)
+    verified_data_df <- rbind(verified_data_df, perfect_duplicates)
+    
+    # Determine discrepancies and store both versions of the entries
+    discrepancies_legacy <- anti_join(legacy_data_df, new_data_df)   
+    discrepancies_new_indices <- which(new_data_df[[ID_col]] %in% discrepancies_legacy[[ID_col]])
+    discrepancies_new <- new_data_df[discrepancies_new_indices,]
+    
+    # find new entries based on whether the ID is present in both dataframes 
+    new_entries <- anti_join(new_data_df, legacy_data_df, by=ID_col)  
+    
+    # Check that no IDs have changed. 
+    if(!(length(discrepancies_new) == length(discrepancies_legacy))){
+      # This would imply entries with tempory IDs have been previously processed 
+      # and have now been updated. This will require an iterative process to 
+      # find the closest matching record. This will be required for any
+      # situation without an ID.
+      FAILURE <- TRUE
+      contribute_to_metadata_report(control_data_type, "Check ID Change", FAILURE)
+      
+    }
+      
+  } else {
+
+    # find close matching rows (distance of two) based on all columns except ID. ID is not 
+    # because it will always be null if the data is exported from powerBI. 
+    distance <- 2
+    new_data_without_ID_df <- new_data_df[ , -which(names(new_data_df) %in% c(ID_col, "error_flag", "Nearest Site"))]
+    legacy_data_without_ID_df <- legacy_data_df[ , -which(names(legacy_data_df) %in% c(ID_col, "error_flag", "Nearest Site"))]
+    close_match_rows <- matrix_close_matches_vectorised(legacy_data_without_ID_df, new_data_without_ID_df, distance)
+    
+    seperated_close_matches <- vectorised_seperate_close_matches(close_match_rows)
+    
+    perfect_duplicates <- new_data_df[seperated_close_matches$perfect[,2],]
+    discrepancies_legacy <- legacy_data_df[seperated_close_matches$discrepancies[,1],]
+    discrepancies_new <- new_data_df[seperated_close_matches$discrepancies[,2],]
+    new_entries <- rbind(new_data_df[seperated_close_matches$new[,2],], new_data_df[seperated_close_matches$check[,2],])
+    verified_data_df <- rbind(verified_data_df, perfect_duplicates)
   }
+  
+  # Given that it is not possible to definitively know if a change / discrepancy 
+  # was intentional or not both new and change entries will pass through the 
+  # same validation checks and if passed will be accepted as usable and assumed to be . If failed, 
+  # assumed to be a QA change. If failed,  the data will be flagged. Failed 
+  # discrepancies will check the original legacy entry, which if failed will 
+  # be left as is. 
+  verified_new <- verify_entries(new_entries, control_data_type)
+  verified_discrepancies <- compare_discrepancies(verified_new_discrepancies, verified_legacy_discrepancies, control_data_type)
+  verified_data_df <- rbind(verified_data_df, verified_discrepancies)
+  verified_data_df <- rbind(verified_data_df, verified_new)
   
   Verified_output_test <<- verified_data_df
   
@@ -852,13 +849,13 @@ verify_voyage_dates <- function(data_df){
     incomplete_date_rows <- data_df[incomplete_dates,]
     vessel_voyage <- unique(incomplete_date_rows[,which(names(incomplete_date_rows) %in% c("Vessel", "Voyage"))])
     for(i in 1:nrow(vessel_voyage)){
-      data_df_filtered <- data_df[(data_df$Vessel == vessel_voyage[i,2]) & (data_df$Voyage == vessel_voyage[i,1]),]
+      data_df_filtered <- data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),]
       is_any_voyage_date_correct <- any(!is.na(data_df_filtered$`Voyage Start`) & !is.na(data_df_filtered$`Voyage End`))
       is_any_survey_date_correct <- any(!is.na(data_df_filtered$`Survey Date`))
       if(is_any_voyage_date_correct){
         correct_dates <- data_df_filtered[!is.na(data_df_filtered),][1,c("Voyage Start", "Voyage End")]
-        data_df[(data_df$Vessel == vessel_voyage[i,2]) & (data_df$Voyage == vessel_voyage[i,1]), "Voyage Start"] <- correct_dates[1]
-        data_df[(data_df$Vessel == vessel_voyage[i,2]) & (data_df$Voyage == vessel_voyage[i,1]), "Voyage End"] <- correct_dates[2]
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), "Voyage Start"] <- correct_dates[1]
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), "Voyage End"] <- correct_dates[2]
       } else if(!is_any_voyage_date_correct & is_any_survey_date_correct){
         incomplete_date_rows_filtered <- incomplete_date_rows[(incomplete_date_rows$Vessel == vessel_voyage[i,1]) & (incomplete_date_rows$Voyage == vessel_voyage[i,2]),]
         estimate_start <- min(incomplete_date_rows_filtered$`Survey Date`)
@@ -872,7 +869,7 @@ verify_voyage_dates <- function(data_df){
    
   }
   
-  data_df$error_flag <- data_df$error_flag | !(data_df$`Survey Date` >= data_df$`Voyage Start` & data_df$`Survey Date` <= data_df$`Voyage End`)
+  data_df$error_flag <- data_df$error_flag | (data_df$`Survey Date` < data_df$`Voyage Start` | data_df$`Survey Date` > data_df$`Voyage End`)
   
   vessel_voyage <- unique(data_df[,which(names(data_df) %in% c("Vessel", "Voyage"))])
   for (i in 1:nrow(vessel_voyage)){
