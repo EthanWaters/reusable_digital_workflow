@@ -122,3 +122,20 @@ Soft Bleach Severity,Character
 COTS Seen (Adult),Integer
 COTS Seen (Juvenile),Integer
 % coral cover affected by COTS,Numeric
+Capture ID,Integer
+Vessel,Character
+Voyage,Character
+Site Name,Character
+Reef Name,Character
+Reef ID,Character
+Voyage Start,Date
+Voyage End,Date
+Survey Date,Date
+Depth (meters),Numeric
+Bottomtime,Numeric
+Cohort 1 (<15cm),Integer
+Cohort2 (15-25cm),Integer
+Cohort3 (25-40cm),Integer
+Cohort4 (>40cm),Integer
+Longitude,Numeric
+Latitude,Numeric

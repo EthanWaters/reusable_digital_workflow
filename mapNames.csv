@@ -16,3 +16,5 @@ Recently Dead Coral Cover % of Total Coral Cover,RDC% of Total Coral Cover,RHISS
 Live Coral Cover % of Total Coral Cover,LCC% of Total Coral Cover,RHISS
 COTS (Juvenile),COTS Seen (Juvenile),RHISS
 COTS (Adult),COTS Seen (Adult),RHISS
+COTS Cull Dive Id,Capture ID,cull
+Reef label,Reef ID,cull
