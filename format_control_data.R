@@ -296,13 +296,19 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
     }
       
   } else {
-
+  
+    # Determine additional columns required by the new data format and remove 
+    # from comparison
+    required_columns <- add_required_columns(control_data_type, has_authorative_ID)
+    required_columns <- c(required_columns, "error_flag", ID_col)
+    
     # find close matching rows (distance of two) based on all columns except ID. ID is not 
     # because it will always be null if the data is exported from powerBI. 
     distance <- 2
-    new_data_without_ID_df <- new_data_df[ , -which(names(new_data_df) %in% c(ID_col, "error_flag", "Nearest Site"))]
-    legacy_data_without_ID_df <- legacy_data_df[ , -which(names(legacy_data_df) %in% c(ID_col, "error_flag", "Nearest Site"))]
-    close_match_rows <- matrix_close_matches_vectorised(legacy_data_without_ID_df, new_data_without_ID_df, distance)
+    
+    temp_new__df <- new_data_df[ , -which(names(new_data_df) %in% required_columns)]
+    temp_legacy_df <- legacy_data_df[ , -which(names(legacy_data_df) %in% required_columns)]
+    close_match_rows <- matrix_close_matches_vectorised(temp_legacy_df, temp_new__df, distance)
     
     seperated_close_matches <- vectorised_seperate_close_matches(close_match_rows)
     
