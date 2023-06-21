@@ -214,8 +214,8 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
   
   ID_col <- colnames(new_data_df)[1]
   
-  # new_data_df <- Updated_data_format   
-  # legacy_data_df <- legacy_df
+  new_data_df <- Updated_data_format
+  legacy_data_df <- legacy_df
   
   column_names <- colnames(legacy_data_df)
   verified_data_df <- data.frame(matrix(ncol = length(column_names), nrow = 0))
@@ -252,19 +252,38 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
       
     }
     
+    # Determine additional columns required by the new data format and remove 
+    # from comparison
+    required_columns <- add_required_columns(control_data_type, has_authorative_ID)
+    required_columns <- c(required_columns, "error_flag")
+   
+    # save original dataframes for legacy and new data so it can be manipulated
+    # without loosing data. Columns will be removed that are not going to be  
+    # compared for similarity. A unique identifier for each row will be created 
+    # based on data in the row and compared. 
+    temp_legacy_df <- legacy_data_df[,-which(colnames(legacy_data_df) %in% required_columns)]
+    temp_new_df <- new_data_df[,-which(colnames(new_data_df) %in% required_columns)]
+   
+    # Create a unique identifier for each row in legacy_data_df and new_data_df
+    temp_legacy_df$Identifier <- apply(temp_legacy_df, 1, function(row) paste(row, collapse = "_"))
+    temp_new_df$Identifier <- apply(temp_new_df, 1, function(row) paste(row, collapse = "_"))
     
     #find perfect duplicates and add to verified data df
-    perfect_duplicates <- inner_join(legacy_data_df, new_data_df)
+    perfect_duplicates <- legacy_data_df[temp_new_df$Identifier %in% temp_legacy_df$Identifier, ]
     verified_data_df <- rbind(verified_data_df, perfect_duplicates)
     
-    # Determine discrepancies and store both versions of the entries
-    discrepancies_legacy <- anti_join(legacy_data_df, new_data_df)   
-    discrepancies_new_indices <- which(new_data_df[[ID_col]] %in% discrepancies_legacy[[ID_col]])
-    discrepancies_new <- new_data_df[discrepancies_new_indices,]
+    # remove identifier columns
+    temp_legacy_df$Identifier <- NULL
+    temp_new_df$Identifier <- NULL
     
     # find new entries based on whether the ID is present in both dataframes 
-    new_entries <- anti_join(new_data_df, legacy_data_df, by=ID_col)  
+    new_entries <- anti_join(new_data_df, legacy_data_df, by=ID_col)
     
+    # Determine discrepancies and store both versions of the entries
+    non_discrepancy_indices <- c(perfect_duplicates[[ID_col]], new_entries[[ID_col]])
+    discrepancies_new <- new_data_df[!(new_data_df[[ID_col]] %in% non_discrepancy_indices),]
+    discrepancies_legacy <- legacy_data_df[!(legacy_data_df[[ID_col]] %in% non_discrepancy_indices),]
+  
     # Check that no IDs have changed. 
     if(!(length(discrepancies_new) == length(discrepancies_legacy))){
       # This would imply entries with tempory IDs have been previously processed 
