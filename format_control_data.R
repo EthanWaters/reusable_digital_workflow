@@ -28,6 +28,9 @@ import_data <- function(data, control_data_type, has_authorative_ID, sheet=1){
         column_names <- gsub("\\s+", " ", column_names)
         colnames(data_df) <- column_names
         
+        # remove rows containing all NA, "" or NULL values 
+        data_df <- data_df[rowSums(is.na(data_df) | data_df == "" | is.null(data_df)) < (ncol(data_df) - 1), ]
+        
         # create matrix of warnings so they are added to the specified XML node 
         # in the metadata report in a vectorised mannor. 
        
@@ -212,10 +215,10 @@ add_required_columns <- function(control_data_type, has_authorative_ID){
   
 verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_type, section, is_new){
   
-  ID_col <- colnames(new_data_df)[1]
-  
   new_data_df <- Updated_data_format
   legacy_data_df <- legacy_df
+  
+  ID_col <- colnames(new_data_df)[1]
   
   column_names <- colnames(legacy_data_df)
   verified_data_df <- data.frame(matrix(ncol = length(column_names), nrow = 0))
@@ -269,7 +272,7 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
     temp_new_df$Identifier <- apply(temp_new_df, 1, function(row) paste(row, collapse = "_"))
     
     #find perfect duplicates and add to verified data df
-    perfect_duplicates <- legacy_data_df[temp_new_df$Identifier %in% temp_legacy_df$Identifier, ]
+    perfect_duplicates <- legacy_data_df[temp_legacy_df$Identifier %in% temp_new_df$Identifier, ]
     verified_data_df <- rbind(verified_data_df, perfect_duplicates)
     
     # remove identifier columns
@@ -284,6 +287,15 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
     discrepancies_new <- new_data_df[!(new_data_df[[ID_col]] %in% non_discrepancy_indices),]
     discrepancies_legacy <- legacy_data_df[!(legacy_data_df[[ID_col]] %in% non_discrepancy_indices),]
   
+    # New entries need to be checked for duplicates. If there is more than one
+    # duplicate it can be assumed to be an error and the error flag set. This 
+    # will use a similar identifier new_entries df. This will only flag the 
+    # duplicate versions of the row as an error as it still contains new 
+    # information there has just been multiple instances of data entry. 
+    new_entries$Identifier <- apply(new_entries[,2:ncol(new_entries)], 1, function(row) paste(row, collapse = "_"))
+    new_entries$error_flag <- ifelse(!duplicated(new_entries$Identifier), 0, 1)
+    new_entries$Identifier <- NULL
+    
     # Check that no IDs have changed. 
     if(!(length(discrepancies_new) == length(discrepancies_legacy))){
       # This would imply entries with tempory IDs have been previously processed 
