@@ -64,7 +64,7 @@ if("error_flag" %in% colnames(legacy_df)){
   is_new <- 0
 } else {
   is_new <- 1
-  legacy_df["error_flag"] <- NA
+  legacy_df["error_flag"] <- 0
 }
 
 # Format Dataframe Columns ------------------------------------------------

@@ -28,8 +28,8 @@ import_data <- function(data, control_data_type, has_authorative_ID, sheet=1){
         column_names <- gsub("\\s+", " ", column_names)
         colnames(data_df) <- column_names
         
-        # remove rows containing all NA, "" or NULL values 
-        data_df <- data_df[rowSums(is.na(data_df) | data_df == "" | is.null(data_df)) < (ncol(data_df) - 1), ]
+        # remove rows containing mostly NA, "" or NULL values 
+        data_df <- data_df[rowSums(is.na(data_df) | data_df == "" | is.null(data_df)) < (ncol(data_df) - 2), ]
         
         # create matrix of warnings so they are added to the specified XML node 
         # in the metadata report in a vectorised mannor. 
@@ -292,8 +292,14 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
     # will use a similar identifier new_entries df. This will only flag the 
     # duplicate versions of the row as an error as it still contains new 
     # information there has just been multiple instances of data entry. 
+    # Additionally no new entry should be a duplicate of any "perfect duplicate" 
+    # as legitimate duplicates would come from the same source and uploaded at 
+    # the same time.
     new_entries$Identifier <- apply(new_entries[,2:ncol(new_entries)], 1, function(row) paste(row, collapse = "_"))
     new_entries$error_flag <- ifelse(!duplicated(new_entries$Identifier), 0, 1)
+    perfect_duplicates$Identifier <- apply(perfect_duplicates[,2:ncol(perfect_duplicates)], 1, function(row) paste(row, collapse = "_"))
+    new_entries$error_flag <- ifelse(new_entries$Identifier %in% perfect_duplicates$Identifier, 1, new_entries$error_flag)
+    
     new_entries$Identifier <- NULL
     
     # Check that no IDs have changed. 
@@ -318,9 +324,9 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
     # because it will always be null if the data is exported from powerBI. 
     distance <- 2
     
-    temp_new__df <- new_data_df[ , -which(names(new_data_df) %in% required_columns)]
+    temp_new_df <- new_data_df[ , -which(names(new_data_df) %in% required_columns)]
     temp_legacy_df <- legacy_data_df[ , -which(names(legacy_data_df) %in% required_columns)]
-    close_match_rows <- matrix_close_matches_vectorised(temp_legacy_df, temp_new__df, distance)
+    close_match_rows <- matrix_close_matches_vectorised(temp_legacy_df, temp_new_df, distance)
     
     seperated_close_matches <- vectorised_seperate_close_matches(close_match_rows)
     
@@ -338,11 +344,10 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
   # discrepancies will check the original legacy entry, which if failed will 
   # be left as is. 
   verified_new <- verify_entries(new_entries, control_data_type)
+  
   verified_discrepancies <- compare_discrepancies(verified_new_discrepancies, verified_legacy_discrepancies, control_data_type)
   verified_data_df <- rbind(verified_data_df, verified_discrepancies)
   verified_data_df <- rbind(verified_data_df, verified_new)
-  
-  Verified_output_test <<- verified_data_df
   
   # merge the verified dataset
   return(verified_data_df)
@@ -705,8 +710,6 @@ check_for_mistake <- function(discrepancies_indices, perfect_duplicate_indices, 
 }
 
 verify_entries <- function(data_df, control_data_type){
-  
-  
   data_df <- verify_integers_positive(data_df)
   data_df <- remove_leading_spaces(data_df, names(data_df))
   data_df <- verify_reef(data_df)
@@ -928,6 +931,9 @@ verify_voyage_dates <- function(data_df){
 
 find_one_to_one_matches <- function(close_match_rows){
   
+  x_df_col <- 1
+  y_df_col <- 2
+  
   # Determine duplicates of the row indices.
   x_dup_indices <- (duplicated(close_match_rows[,x_df_col])|duplicated(close_match_rows[,x_df_col], fromLast=TRUE))
   y_dup_indices <- (duplicated(close_match_rows[,y_df_col])|duplicated(close_match_rows[,y_df_col], fromLast=TRUE))
@@ -1056,7 +1062,7 @@ matrix_close_matches_vectorised <- function(x, y, distance){
     num_matches <- ifelse(num_matches <= distance, num_matches, NA)
     nonNA <- which(!is.na(num_matches))
     nonNAvalues <- num_matches[nonNA]
-    if(length(match) > 1){
+    if(length(nonNAvalues) >= 1){
       match <- store_index_vec(nonNAvalues, nonNA, z)
       match <- t(match)
       match_indices[index:(index+nrow(match)-1),] <- match
