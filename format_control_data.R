@@ -98,7 +98,7 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
       updated_current_df <- set_data_type(updated_current_df, control_data_type) 
 
       #Determine initial error flags based on returned metadata
-      initial_error_flag <- rep(NA, nrow(updated_current_df))
+      initial_error_flag <- rep(0, nrow(updated_current_df))
       if (!is_not_matching_column_names & !is_not_matching_column_names_updated){
         comments <- paste0(comments,"One or more columns in legacy format were 
                            not matched and exceeded the allowable levenshtein 
@@ -715,10 +715,15 @@ verify_entries <- function(data_df, control_data_type, ID_col){
   data_df <- verify_reef(data_df)
   data_df <- verify_percentages(data_df)
   
+  #verify long and lat separately
+  data_df <- verify_lat_lng(data_df, max_val=160, min_val=138, columns=c("Longitude", "Start Lng", "End Lng"), ID_col)
+  data_df <- verify_lat_lng(data_df, max_val=-5, min_val=-32, columns=c("Latitude", "Start Lat", "End Lat"), ID_col)
+  
   if (control_data_type == "manta_tow") {
     
     data_df <- verify_tow_date(data_df)
     data_df <- verify_coral_cover(data_df)
+    data_df <- verify_scar(data_df)
     
   } else if (control_data_type == "cull") {
     
@@ -733,6 +738,35 @@ verify_entries <- function(data_df, control_data_type, ID_col){
 }
 
 
+verify_lat_lng <- function(data_df, max_val, min_val, columns, ID_col){
+  for (col in columns) {
+    if (col %in% colnames(data)) {
+      values <- data[[col]]
+      if (!is.numeric(values)) {
+        warning(paste("Column", col, "is not numeric. Skipping..."))
+        next
+      }
+      out_of_range <- values < min_val | values > max_val
+      data_df[["error_flag"]] <- data_df[["error_flag"]] | !out_of_range 
+      if (any(out_of_range)) {
+        IDs_out_of_range <- data_df[which(out_of_range), ID_col]
+        warning("Values in column", col, " are out of range with IDs:", toString(IDs_out_of_range))
+      }
+      
+    }
+  }
+  return(data_df)
+}
+
+
+verify_scar <- function(data_df) {
+  # check that columns in RHISS data contain expected values according to metadata
+  valid_scar <- c("a", "p", "c")
+  check_valid_scar <- data_df$`Feeding Scars` %in% valid_scar
+  
+  data_df[["error_flag"]] <- data_df[["error_flag"]] | !check_valid_scar 
+  return(data_df)
+}
 
 verify_tow_date <- function(data_df){
   # Approximate a tow date based on vessel and voyage if it does not exist. 
@@ -923,7 +957,7 @@ verify_voyage_dates <- function(data_df){
         data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage Start`) | (data_df$`Voyage Start` == "")), c("Voyage Start")] <-  estimate_start
         data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage End`) | (data_df$`Voyage End` == "")), c("Voyage End")] <-  estimate_end
       } else if(!is_any_voyage_date_correct & !is_any_survey_date_correct) {
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage Start`) | (data_df$`Voyage Start` == "") | is.na(data_df$`Voyage End`) | (data_df$`Voyage End` == "")), c("error_flag")] <- 1
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage Start`) | (data_df$`Voyage Start` == "") | is.na(data_df$`Voyage End`) | (data_df$`Voyage End` == "")), "error_flag"] <- 1
       }
     }
    
