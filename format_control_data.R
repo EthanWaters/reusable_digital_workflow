@@ -717,7 +717,9 @@ verify_entries <- function(data_df, control_data_type){
   
   if (control_data_type == "manta_tow") {
     
-    data_df <-verify_coral_cover(data_df)
+    data_df <- verify_tow_date(data_df)
+    data_df <- verify_voyage_vessel(data_df)
+    data_df <- verify_coral_cover(data_df)
     
   } else if (control_data_type == "cull") {
     
@@ -730,6 +732,32 @@ verify_entries <- function(data_df, control_data_type){
     
   } 
   data_df <- verify_na_null(data_df)
+}
+
+
+
+verify_tow_date <- function(data_df){
+  # Approximate a tow date based on vessel and voyage if it does not exist. 
+  
+  tow_date <- data_df[["Tow date"]]
+  incomplete_dates <- unique(which(is.na(tow_date)))
+  if (length(incomplete_dates) > 0){
+    incomplete_date_rows <- data_df[incomplete_dates,]
+    vessel_voyage <- unique(incomplete_date_rows[,which(names(incomplete_date_rows) %in% c("Vessel", "Voyage"))])
+    for(i in 1:nrow(vessel_voyage)){
+      data_df_filtered <- data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),]
+      is_any_voyage_date_correct <- any(!is.na(data_df_filtered$`Tow date`))
+      if(is_any_voyage_date_correct){
+        correct_date <- data_df_filtered[!is.na(data_df_filtered),][1,"Tow date"]
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Tow date`) | (data_df$`Tow date` == "")), "Tow date"] <- correct_date
+      } else if(!is_any_voyage_date_correct & !is_any_survey_date_correct) {
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Tow date`) | (data_df$`Tow date` == "")), c("error_flag")] <- 1
+      }
+    }
+    
+  }
+  
+  return(data_df)
 }
 
 
@@ -894,16 +922,16 @@ verify_voyage_dates <- function(data_df){
       is_any_survey_date_correct <- any(!is.na(data_df_filtered$`Survey Date`))
       if(is_any_voyage_date_correct){
         correct_dates <- data_df_filtered[!is.na(data_df_filtered),][1,c("Voyage Start", "Voyage End")]
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), "Voyage Start"] <- correct_dates[1]
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), "Voyage End"] <- correct_dates[2]
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage Start`) | (data_df$`Voyage Start` == "")), "Voyage Start"] <- correct_dates[1]
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage End`) | (data_df$`Voyage End` == "")), "Voyage End"] <- correct_dates[2]
       } else if(!is_any_voyage_date_correct & is_any_survey_date_correct){
         incomplete_date_rows_filtered <- incomplete_date_rows[(incomplete_date_rows$Vessel == vessel_voyage[i,1]) & (incomplete_date_rows$Voyage == vessel_voyage[i,2]),]
         estimate_start <- min(incomplete_date_rows_filtered$`Survey Date`)
         estimate_end <- min(incomplete_date_rows_filtered$`Survey Date`)
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), c("Voyage Start")] <-  estimate_start
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), c("Voyage End")] <-  estimate_end
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage Start`) | (data_df$`Voyage Start` == "")), c("Voyage Start")] <-  estimate_start
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage End`) | (data_df$`Voyage End` == "")), c("Voyage End")] <-  estimate_end
       } else if(!is_any_voyage_date_correct & !is_any_survey_date_correct) {
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), c("error_flag")] <- 1
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage Start`) | (data_df$`Voyage Start` == "") | is.na(data_df$`Voyage End`) | (data_df$`Voyage End` == "")), c("error_flag")] <- 1
       }
     }
    
