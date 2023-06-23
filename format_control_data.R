@@ -236,7 +236,7 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
   # be compared to the legacy data set in an iterative process without checking 
   # IDs to find likely matches. 
   if(is_new){
-    legacy_df <- verify_entries(legacy_df, control_data_type) 
+    legacy_df <- verify_entries(legacy_df, control_data_type, ID_col) 
   }
   
   # If there is a unique ID then perfect duplicates can easily be removed.
@@ -301,6 +301,7 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
     new_entries$error_flag <- ifelse(new_entries$Identifier %in% perfect_duplicates$Identifier, 1, new_entries$error_flag)
     
     new_entries$Identifier <- NULL
+    perfect_duplicates$Identifier <- NULL
     
     # Check that no IDs have changed. 
     if(!(length(discrepancies_new) == length(discrepancies_legacy))){
@@ -343,7 +344,7 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
   # assumed to be a QA change. If failed,  the data will be flagged. Failed 
   # discrepancies will check the original legacy entry, which if failed will 
   # be left as is. 
-  verified_new <- verify_entries(new_entries, control_data_type)
+  verified_new <- verify_entries(new_entries, control_data_type, ID_col)
   
   verified_discrepancies <- compare_discrepancies(verified_new_discrepancies, verified_legacy_discrepancies, control_data_type)
   verified_data_df <- rbind(verified_data_df, verified_discrepancies)
@@ -709,29 +710,26 @@ check_for_mistake <- function(discrepancies_indices, perfect_duplicate_indices, 
   
 }
 
-verify_entries <- function(data_df, control_data_type){
+verify_entries <- function(data_df, control_data_type, ID_col){
   data_df <- verify_integers_positive(data_df)
-  data_df <- remove_leading_spaces(data_df, names(data_df))
   data_df <- verify_reef(data_df)
   data_df <- verify_percentages(data_df)
   
   if (control_data_type == "manta_tow") {
     
     data_df <- verify_tow_date(data_df)
-    data_df <- verify_voyage_vessel(data_df)
     data_df <- verify_coral_cover(data_df)
     
   } else if (control_data_type == "cull") {
     
     data_df <- verify_voyage_dates(data_df)
-    data_df <- verify_cohort_count(data_df)
     
   } else if (control_data_type == "RHISS") {
     
     data_df <- verify_RHISS(data_df)
     
   } 
-  data_df <- verify_na_null(data_df)
+  data_df <- verify_na_null(data_df, control_data_type, ID_col)
 }
 
 
@@ -749,9 +747,9 @@ verify_tow_date <- function(data_df){
       is_any_voyage_date_correct <- any(!is.na(data_df_filtered$`Tow date`))
       if(is_any_voyage_date_correct){
         correct_date <- data_df_filtered[!is.na(data_df_filtered),][1,"Tow date"]
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Tow date`) | (data_df$`Tow date` == "")), "Tow date"] <- correct_date
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Tow date`)), "Tow date"] <- correct_date
       } else if(!is_any_voyage_date_correct & !is_any_survey_date_correct) {
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Tow date`) | (data_df$`Tow date` == "")), c("error_flag")] <- 1
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Tow date`)), c("error_flag")] <- 1
       }
     }
     
@@ -763,9 +761,6 @@ verify_tow_date <- function(data_df){
 
 verify_RHISS <- function(data_df) {
   # check that columns in RHISS data contain expected values according to metadata
-  
-  # N is likely to be M
-  data_df[data_df$`Tide` == "N","Tide"] <- "M"
   valid_tide <- c("L", "M", "H")
   check_tide <- data_df$`Tide` %in% valid_tide
   
@@ -790,47 +785,55 @@ verify_RHISS <- function(data_df) {
 
 
 verify_percentages <- function(data_df) {
+  # Check that all percentages in a row are between 0 and 100
   perc_cols <- grep("%", colnames(data_df))
-  perc_cols_vals <- data_df[, perc_cols]
-  col_check <- apply(perc_cols_vals, 2, function(x) x < 0 | x > 100)
-  check <- rowSums(col_check) > 0
-  data_df[["error_flag"]] <- data_df[["error_flag"]] | check
+  if(length(perc_cols) > 0){
+    perc_cols_vals <- data_df[, perc_cols]
+    col_check <- apply(perc_cols_vals, 2, function(x) x < 0 | x > 100)
+    check <- rowSums(col_check) > 0
+    data_df[["error_flag"]] <- data_df[["error_flag"]] | check
+  }
   return(data_df)
 }
 
 
-verify_na_null <- function(data_df) {
+verify_na_null <- function(data_df, control_data_type, ID_col) {
   # check if there are any values that are NA or NULL and flag those rows as an 
-  # error 
+  # error. This does not include new additional columns as they are assigned a
+  # default value at the end of the verification process or ID column.
   
-  cols <- which(names(data_df) %in% c("error_flag", "Nearest Site"))
-  na_present <- apply(data_df[, -cols], 2, function(x) is.na(x) | is.null(x))
+  exempt_cols <- which(names(data_df) %in% c("error_flag", ID_col, add_required_columns(control_data_type, has_authorative_ID)))
+  na_present <- apply(data_df[, -exempt_cols], 2, function(x) is.na(x) | is.null(x))
   check <- rowSums(na_present) > 0
   data_df[["error_flag"]] <- data_df[["error_flag"]] | check
   return(data_df)
 }
 
-verify_integers_positive <- function(data_df, cols) {
+verify_integers_positive <- function(data_df) {
   # R function that verifys all integers are positive values as they represent 
   # real quantities. Note: Whole numbers are not integers, they must be declared
   # as such. All relevant columns were set as integers in the set_data_type 
   # function
   
+  cols <- colnames(data_df)
   for (col_name in cols) {
-    if(is.integer(data_df[[col_name]][1])){
-      check <- data_df[[col_name]] > 0 
-      data_df[["error_flag"]] <- data_df[["error_flag"]] | check
+    is_integer <- is.integer(data_df[[col_name]])
+    if(any(is_integer)){
+      check <- data_df[is_integer, col_name] < 0 
+      data_df[is_integer, "error_flag"] <- data_df[is_integer, "error_flag"] | check
     } 
   }
   return(data_df)
 }
 
-remove_leading_spaces <- function(data_df, cols) {
+remove_leading_spaces <- function(data_df) {
   # R function that removes leading and trailing spaces from all entries in a 
   # data frame column
+  cols <- colnames(data_df)
   for (col_name in cols) {
-    if(is.character(data_df[[col_name]][1])){
-      data_df[[col_name]] <- gsub("^\\s+|\\s+$", "", data_df[[col_name]])
+    is_character <- is.character(data_df[[col_name]])
+    if(any(is_character)){
+      data_df[is_character, col_name] <- gsub("^\\s+|\\s+$", "", data_df[is_character, col_name])
     } 
   }
   return(data_df)
@@ -881,17 +884,6 @@ verify_cots_scars <- function(data_df) {
   return(data_df)
 }
 
-
-verify_cohort_count <- function(data_df){
-  # Check that the number of culled cots is equal to the sum of cots from each 
-  # cohort. Flag error if not the case. 
-  
-  total_count <- df$`Cohort1 (<15cm)` + df$`Cohort2 (15-25cm)` + df$`Cohort3 (25-40cm)` + df$`Cohort4 (>40cm)`
-  check <- total_count == df$Count
-  data_df[["error_flag"]] <- data_df[["error_flag"]] | !check
-  return(data_df)
-}
-
 verify_reef <- function(data_df){
   # Check that the reef ID is in one of the correct standard formats with regex.
   # Look for most similar reef ID if it is not. Am not checking for a match 
@@ -900,7 +892,7 @@ verify_reef <- function(data_df){
   
   reef_id <- data_df[["Reef ID"]]
   correct_reef_id_format <- grepl("^(1[1-9]|2[0-9])-\\d{3}[a-z]?$", reef_id)
-  data_df[["error_flag"]] <- data_df[["error_flag"]] | !correct_reef_id_format
+  data_df[,"error_flag"] <- data_df[,"error_flag"] | !correct_reef_id_format
   return(data_df)
 }
 
@@ -1186,14 +1178,11 @@ set_data_type <- function(data_df, control_data_type){
     
   }
   
-  # May be desirable to keep data that cant be coerced to correct type and try 
-  # a different method. The code below does not work any more and will need to
-  # be rewritten.
-  # na_rows <- which(is.na(output_df[[x]]))
-  # if(length(na_rows) > 0){
-  #   output_df[na_rows, which(columns %in% c(x))] <- data_df[na_rows, x]
-  # }
+  # INSERT CODE HERE to identify which rows have been coerced to NA and listed 
+  # in metadata report. 
   
+  # remove trailing and leading spaces from strings for comparison. 
+  output_df <- remove_leading_spaces(output_df)
   
   return(output_df)
 } 
