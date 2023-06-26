@@ -240,7 +240,7 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
   }
   
   # If there is a unique ID then perfect duplicates can easily be removed.
-  if(!has_authorative_ID){
+  if(has_authorative_ID){
     
     # Update IDs that are NA from powerBI export based on perfect duplicates. 
     # Find close matches of rows left without an ID and no perfect duplicates. 
@@ -346,7 +346,7 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
   # be left as is. 
   verified_new <- verify_entries(new_entries, control_data_type, ID_col)
   
-  verified_discrepancies <- compare_discrepancies(verified_new_discrepancies, verified_legacy_discrepancies, control_data_type)
+  verified_discrepancies <- compare_discrepancies(discrepancies_new, discrepancies_legacy, control_data_type)
   verified_data_df <- rbind(verified_data_df, verified_discrepancies)
   verified_data_df <- rbind(verified_data_df, verified_new)
   
@@ -356,15 +356,15 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
 }
 
 
-compare_discrepancies <- function(verified_new_discrepancies, verified_legacy_discrepancies, control_data_type){
+compare_discrepancies <- function(verified_new, discrepancies_legacy, control_data_type){
   
-  output <- verified_new_discrepancies[verified_new_discrepancies$error_flag == 1,]
-  verified_new_discrepancies <- verified_new_discrepancies[verified_new_discrepancies$error_flag != 1,]
-  verified_legacy_discrepancies <- verified_legacy_discrepancies[verified_new_discrepancies$error_flag != 1,]
-  output <- rbind(output, verified_legacy_discrepancies[verified_legacy_discrepancies$error_flag == 1,])
-  verified_new_discrepancies <- verified_new_discrepancies[verified_legacy_discrepancies$error_flag != 1,]
-  verified_legacy_discrepancies <- verified_legacy_discrepancies[verified_legacy_discrepancies$error_flag != 1,]
-  output <- rbind(output, verified_new_discrepancies)
+  output <- verified_new[verified_new$error_flag == 0,]
+  verified_new <- verified_new[verified_new$error_flag != 0,]
+  discrepancies_legacy <- discrepancies_legacy[verified_new$error_flag != 0,]
+  output <- rbind(output, discrepancies_legacy[discrepancies_legacy$error_flag == 0,])
+  verified_new <- verified_new[discrepancies_legacy$error_flag != 0,]
+  discrepancies_legacy <- discrepancies_legacy[discrepancies_legacy$error_flag != 0,]
+  output <- rbind(output, verified_new)
   return(output)
   
 }
@@ -735,6 +735,8 @@ verify_entries <- function(data_df, control_data_type, ID_col){
     
   } 
   data_df <- verify_na_null(data_df, control_data_type, ID_col)
+  data_df$error_flag <- as.integer(data_df$error_flag)
+  return(data_df)
 }
 
 
@@ -837,7 +839,7 @@ verify_na_null <- function(data_df, control_data_type, ID_col) {
   # default value at the end of the verification process or ID column.
   
   exempt_cols <- which(names(data_df) %in% c("error_flag", ID_col, add_required_columns(control_data_type, has_authorative_ID)))
-  na_present <- apply(data_df[, -exempt_cols], 2, function(x) is.na(x) | is.null(x))
+  na_present <- apply(data_df[, -exempt_cols], 2, function(x) is.na(x) | is.null(x) | x == "")
   check <- rowSums(na_present) > 0
   data_df[["error_flag"]] <- data_df[["error_flag"]] | check
   return(data_df)
@@ -875,7 +877,7 @@ remove_leading_spaces <- function(data_df) {
 
 
 verify_coral_cover <- function(data_df) {
-  accepted_values <- c("1-", "2-", "3-", "4-", "5-", "1+", "2+", "3+", "4+", "5+")
+  accepted_values <- c("1-", "2-", "3-", "4-", "5-", "1+", "2+", "3+", "4+", "5+", "0")
   
   # Identify possible corrections based on common mistakes
   possible_corrections <- data.frame(
@@ -901,9 +903,9 @@ verify_coral_cover <- function(data_df) {
   sc_check <- data_df$`Soft Coral` %in% accepted_values
   rdc_check <- data_df$`Recently Dead Coral` %in% accepted_values
   
-  check <- hc_check | sc_check | rdc_check
+  error <- !hc_check | !sc_check | !rdc_check
   
-  data_df[["error_flag"]] <- data_df[["error_flag"]] | !check
+  data_df[["error_flag"]] <- data_df[["error_flag"]] | error
   
   return(data_df)
 }
