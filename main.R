@@ -38,12 +38,12 @@ assign("is_powerBI_export", is_powerBI_export, envir = .GlobalEnv)
 # file name will be created.
 file_count <- 1
 trywait <- 0
-report_attempt <- try(create_metadata_report(file_count))
+report_attempt <- try(create_metadata_report(control_data_type))
 while ((class(report_attempt)[[1]]=='try-error')&(trywait<=(10))){
   print(paste('retrying in ', trywait, 'second(s)')) 
   Sys.sleep(trywait) 
   trywait <- trywait+1 
-  report_attempt <- try(create_metadata_report(file_count))
+  report_attempt <- try(create_metadata_report(control_data_type))
 }
 if (trywait>(10)) print(paste('Cannot create metadata report'))  
 trywait <- 0

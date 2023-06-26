@@ -125,28 +125,28 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
 }
 
 
-create_metadata_report <- function(count){
+create_metadata_report <- function(control_data_type){
     #Generate the XML template for the control data process report.
     reports_location <<- "reports\\"
     
     #create file name systematically
     date <- as.character(Sys.Date())
     timestamp <- as.character(Sys.time())
-    filename <- paste0(reports_location, "Processed Control Data Report ", date, " [", count, "].xml", sep="")
+    filename <- paste0(reports_location, "Processed Control Data Report ", date, control_data_type, ".xml", sep="")
     
     #generate template
     template <- xml_new_root("session") 
     control_data <- xml_find_all(template, "//session")
     xml_add_child(control_data, "timestamp", timestamp) 
-    xml_add_child(control_data, "warnings")
+    xml_add_child(control_data, "Notifications")
     write_xml(template, file = filename, options =c("format", "no_declaration"))
 }
 
 
-contribute_to_metadata_report <- function(control_data_type, section, data, key = "Warning"){
+contribute_to_metadata_report <- function(control_data_type, data, key = "Warning"){
   # Finds desired control data node and adds a section from the information 
   # obtained in the previously executed function. 
-  
+
   # finds files with current date in file name and attempts to open xml file
   file_count <- 1
   reports_location <- "reports\\"
@@ -162,7 +162,7 @@ contribute_to_metadata_report <- function(control_data_type, section, data, key 
     trywait <- trywait + 1 
     xml_file_data <- try(read_xml(paste0(reports_location, xml_filename, sep="")))
   }
-  node <- xml_find_all(xml_file_data, "//warnings")
+  node <- xml_find_all(xml_file_data, "//Notifications")
   
   # Only add to node if it exists. Node Should always exist. 
   # A dataframe will add a key value pair for each column. A single value will  
@@ -170,16 +170,14 @@ contribute_to_metadata_report <- function(control_data_type, section, data, key 
   # before being assigned as a value. 
   # A matrix will pair each entry with the specified key. 
   if(length(node) > 0){
-    
     if(is.data.frame(data)){
-      xml_add_child(node, section, data)
+      xml_add_child(node, key ,data)
     } else {
-      xml_add_child(node, section)
-      desired_nodes <- xml_find_all(xml_file_data, paste0("//", section, sep=""))
+      desired_nodes <- xml_find_all(xml_file_data, "//Notifications")
       newest_desired_node <- desired_nodes[[length(desired_nodes)]]
       sapply(1:length(data), function(i) {
         xml_add_child(newest_desired_node, key, data[i])
-      }
+       }
       )
     }
     
