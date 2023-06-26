@@ -33,11 +33,7 @@ main <- function(leg_path, leg_sheet_index ,new_path, control_data_type, geospat
 # Initialize -------------------------------------------------------------
   
 assign("is_powerBI_export", is_powerBI_export, envir = .GlobalEnv) 
-  
-# utilised to indicate the relevant node in XML report based on section of 
-# code executed.
-section <- "Import"
-  
+
 # Create new report. If the file cannot be created due to file name issues a new
 # file name will be created.
 file_count <- 1
@@ -69,8 +65,6 @@ if("error_flag" %in% colnames(legacy_df)){
 
 # Format Dataframe Columns ------------------------------------------------
 
-section <- 'Format'
-
 # The column formatting of New data will be compared with a legacy data set that 
 # is deemed to be in the ideal target format. Any necessary changes will be made 
 # and recorded. This will be executed irrespective of data set provided.
@@ -86,7 +80,6 @@ verified_data_df <- verify_control_dataframe(Updated_data_format, legacy_df, con
 
 
 # Assign Nearest Sites ----------------------------------------------------
-
 nearest_sites_cull <- assign_nearest_sites(geospatial_sites, nearest_site_algorithm, verified_data_df)
 
 

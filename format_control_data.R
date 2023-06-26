@@ -138,11 +138,7 @@ create_metadata_report <- function(count){
     template <- xml_new_root("session") 
     control_data <- xml_find_all(template, "//session")
     xml_add_child(control_data, "timestamp", timestamp) 
-    xml_add_child(control_data, "control_data")
-    control_data <- xml_find_all(template, "//control_data")
-    xml_add_child(control_data, "manta_tow")  
-    xml_add_child(control_data, "cull") 
-    xml_add_child(control_data, "RHIS")
+    xml_add_child(control_data, "warnings")
     write_xml(template, file = filename, options =c("format", "no_declaration"))
 }
 
@@ -166,7 +162,7 @@ contribute_to_metadata_report <- function(control_data_type, section, data, key 
     trywait <- trywait + 1 
     xml_file_data <- try(read_xml(paste0(reports_location, xml_filename, sep="")))
   }
-  node <- xml_find_all(xml_file_data, paste0("//", control_data_type, sep=""))
+  node <- xml_find_all(xml_file_data, "//warnings")
   
   # Only add to node if it exists. Node Should always exist. 
   # A dataframe will add a key value pair for each column. A single value will  
@@ -235,9 +231,12 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
   # mistakenly changed. For first time processing any error flagged entries can 
   # be compared to the legacy data set in an iterative process without checking 
   # IDs to find likely matches. 
+  
+  #verify data and flag if there are any errors 
   if(is_new){
-    legacy_df <- verify_entries(legacy_df, control_data_type, ID_col) 
+    legacy_data_df <- verify_entries(legacy_data_df, control_data_type, ID_col) 
   }
+  new_data_df <- verify_entries(new_data_df, control_data_type, ID_col)
   
   # If there is a unique ID then perfect duplicates can easily be removed.
   if(has_authorative_ID){
@@ -344,11 +343,10 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
   # assumed to be a QA change. If failed,  the data will be flagged. Failed 
   # discrepancies will check the original legacy entry, which if failed will 
   # be left as is. 
-  verified_new <- verify_entries(new_entries, control_data_type, ID_col)
-  
-  verified_discrepancies <- compare_discrepancies(discrepancies_new, discrepancies_legacy, control_data_type)
+ 
+  verified_discrepancies <- compare_discrepancies(discrepancies_new, discrepancies_legacy, control_data_type, ID_col)
   verified_data_df <- rbind(verified_data_df, verified_discrepancies)
-  verified_data_df <- rbind(verified_data_df, verified_new)
+  verified_data_df <- rbind(verified_data_df, new_entries)
   
   # merge the verified dataset
   return(verified_data_df)
@@ -356,15 +354,22 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
 }
 
 
-compare_discrepancies <- function(verified_new, discrepancies_legacy, control_data_type){
+compare_discrepancies <- function(discrepancies_new, discrepancies_legacy, control_data_type, ID_col){
   
-  output <- verified_new[verified_new$error_flag == 0,]
-  verified_new <- verified_new[verified_new$error_flag != 0,]
-  discrepancies_legacy <- discrepancies_legacy[verified_new$error_flag != 0,]
-  output <- rbind(output, discrepancies_legacy[discrepancies_legacy$error_flag == 0,])
-  verified_new <- verified_new[discrepancies_legacy$error_flag != 0,]
-  discrepancies_legacy <- discrepancies_legacy[discrepancies_legacy$error_flag != 0,]
-  output <- rbind(output, verified_new)
+  if(has_authorative_ID){
+    
+    correct_new_entry_IDs <- discrepancies_new[discrepancies_new$error_flag == 0, ID_col]
+    output <- discrepancies_new[discrepancies_new[[ID_col]] %in% correct_new_entry_IDs,]
+    discrepancies_new <- discrepancies_new[!(discrepancies_new[[ID_col]] %in% correct_new_entry_IDs),]
+    discrepancies_legacy <- discrepancies_legacy[!(discrepancies_legacy[[ID_col]] %in% correct_new_entry_IDs),]
+    
+    correct_legacy_entry_IDs <- discrepancies_new[discrepancies_legacy$error_flag == 0, ID_col]
+    output <- rbind(output, discrepancies_legacy[discrepancies_legacy[[ID_col]] %in% correct_legacy_entry_IDs,])
+    discrepancies_new <- discrepancies_new[!(discrepancies_new[[ID_col]] %in% correct_legacy_entry_IDs),]
+    discrepancies_legacy <- discrepancies_legacy[!(discrepancies_legacy[[ID_col]] %in% correct_legacy_entry_IDs),]
+    output <- rbind(output, discrepancies_new)
+  }
+  
   return(output)
   
 }
