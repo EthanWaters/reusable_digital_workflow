@@ -720,17 +720,26 @@ verify_entries <- function(data_df, control_data_type, ID_col){
 
 verify_lat_lng <- function(data_df, max_val, min_val, columns, ID_col){
   for (col in columns) {
-    if (col %in% colnames(data)) {
-      values <- data[[col]]
-      if (!is.numeric(values)) {
+    if (col %in% colnames(data_df)) {
+      values <- data_df[[col]]
+      if (!all(is.numeric(values))) {
         warning(paste("Column", col, "is not numeric. Skipping..."))
         next
       }
       out_of_range <- values < min_val | values > max_val
-      data_df[["error_flag"]] <- data_df[["error_flag"]] | !out_of_range 
+      data_df[["error_flag"]] <- data_df[["error_flag"]] | out_of_range
+      
       if (any(out_of_range)) {
-        IDs_out_of_range <- data_df[which(out_of_range), ID_col]
-        warning("Values in column", col, " are out of range with IDs:", toString(IDs_out_of_range))
+        grandparent <- as.character(sys.call(sys.parent()))[1]
+        parent <- as.character(match.call())[1]
+        warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have inappropriate LatLong coordinates:", 
+                         toString(data_df[out_of_range, 1]), "and the following indexes", toString(1:nrow(data_df)[out_of_range]))
+        message(warning)
+        
+        # Append the warning to an existing matrix 
+        warning_matrix <- matrix(warning)
+        contribute_to_metadata_report(control_data_type, warning_matrix)
+        
       }
       
     }
@@ -745,6 +754,18 @@ verify_scar <- function(data_df) {
   check_valid_scar <- data_df$`Feeding Scars` %in% valid_scar
   
   data_df[["error_flag"]] <- data_df[["error_flag"]] | !check_valid_scar 
+  if (any(!check_valid_scar )) {
+    grandparent <- as.character(sys.call(sys.parent()))[1]
+    parent <- as.character(match.call())[1]
+    warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid COTS scar:",
+                     toString(data_df[!check_valid_scar , 1]), "and the following indexes:", toString(1:nrow(data_df)[!check_valid_scar ]))
+    message(warning)
+    
+    # Append the warning to an existing matrix 
+    warning_matrix <- matrix(warning)
+    contribute_to_metadata_report(control_data_type, warning_matrix)
+    
+  }
   return(data_df)
 }
 
@@ -764,11 +785,26 @@ verify_tow_date <- function(data_df){
         data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Tow date`)), "Tow date"] <- correct_date
       } else if(!is_any_voyage_date_correct & !is_any_survey_date_correct) {
         data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Tow date`)), c("error_flag")] <- 1
+        
       }
     }
     
   }
+ 
+  post_estimation_tow_dates <- data_df[["Tow date"]]
   
+  if (any(!check_valid_scar )) {
+    grandparent <- as.character(sys.call(sys.parent()))[1]
+    parent <- as.character(match.call())[1]
+    warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid COTS scar:",
+                     toString(data_df[!check_valid_scar , 1]), "and the following indexes:", toString(1:nrow(data_df)[!check_valid_scar ]))
+    message(warning)
+    
+    # Append the warning to an existing matrix 
+    warning_matrix <- matrix(warning)
+    contribute_to_metadata_report(control_data_type, warning_matrix)
+    
+  }
   return(data_df)
 }
 
@@ -1201,16 +1237,12 @@ set_data_type <- function(data_df, control_data_type){
   
     grandparent <- as.character(sys.call(sys.parent()))[1]
     parent <- as.character(match.call())[1]
-    if(has_authorative_ID){
-      warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have had value(s) coerced to NA:", paste( data_df[coerced_na, 1], collapse = ", "))
-    } else {
-      warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following indexes have had value(s) coerced to NA:", paste( 1:length(coerced_na)[coerced_na, 1], collapse = ", "))
-    }
+    warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have had value(s) coerced to NA:",
+                     paste( data_df[coerced_na, 1], collapse = ", "), "and the following indexes", paste( 1:length(coerced_na)[coerced_na, 1], collapse = ", "))
     message(warning)
     
     # Append the warning to an existing matrix 
     warning_matrix <- matrix(warning)
-    print(matrix(warning))
     contribute_to_metadata_report(control_data_type, warning_matrix)
   }
   
@@ -1419,7 +1451,6 @@ match_vector_entries <- function(current_vec, target_vec, control_data_type = NU
         
         # Append the warning to an existing matrix 
         warning_matrix <- matrix(warning)
-        print(matrix(warning))
         contribute_to_metadata_report(control_data_type, warning_matrix)
       }
       
