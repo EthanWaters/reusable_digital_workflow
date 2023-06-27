@@ -63,9 +63,6 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
       # However, this will interrupt the workflow as this indicates the information  
       # provided is insufficient is required to be correct to proceed. 
       
-      # create comments variable to store points of interest.
-      comments <- ""
-      
       # Add required column names to legacy dataframe that no longer exist in 
       # the current version.
       current_df[,add_required_columns(control_data_type, has_authorative_ID)] <- NA
@@ -74,24 +71,15 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
       current_col_names <- colnames(current_df)
       legacy_col_names <- colnames(legacy_df)
       
-      
       # compare the column names of the legacy and current format
       matched_vector_entries <- match_vector_entries(current_col_names, legacy_col_names, control_data_type, correct_order = FALSE, check_mapped = TRUE)
       matched_col_names <- matched_vector_entries[[1]]
       matching_entry_indices <- matched_vector_entries[[2]]
-      metadata <- matched_vector_entries[[4]]
       
-      if(any(is.na(matched_col_names)) || any(is.na(matching_entry_indices))){
-        comments <- paste0(comments,"matching_entry_indices or matched_col_names has returned NA, indicating a fatal error in match_vector_entries")
-      }
-      
-      # rearrange columns
-      updated_current_df <- current_df[,matching_entry_indices]
-      
-      # Update the current dataframe column names with the vector found above.
+      # rearrange columns and update the current dataframe column names with the 
+      # vector found above.
+      updated_current_df <- current_df[,matching_entry_indices] 
       colnames(updated_current_df) <- matched_col_names[matching_entry_indices]
-      
-      
       
       # set the data type of all entries to ensure that performed operations have 
       # expected output. 
@@ -99,25 +87,12 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
 
       #Determine initial error flags based on returned metadata
       initial_error_flag <- rep(0, nrow(updated_current_df))
-      if (!is_not_matching_column_names & !is_not_matching_column_names_updated){
-        comments <- paste0(comments,"One or more columns in legacy format were 
-                           not matched and exceeded the allowable levenshtein 
-                           distance to fuzzy match an avaliable column.")
-      }
-      if(size_legacy_df > size_curent_df){
-        comments <- paste0(comments,"Insufficient number of columns to match
-                           legacy formatting.")
-      }
-        
       updated_current_df["error_flag"] <- initial_error_flag
-      
-      # contribute_to_metadata_report(control_data_type, section, comments)
-      
       
       return(updated_current_df)
     },
     error=function(cond) {
-      contribute_to_metadata_report(control_data_type, section, cond)
+      contribute_to_metadata_report(control_data_type, matrix(cond))
      
     }
   ) 
@@ -1217,8 +1192,28 @@ set_data_type <- function(data_df, control_data_type){
     
   }
   
-  # INSERT CODE HERE to identify which rows have been coerced to NA and listed 
-  # in metadata report. 
+  # Identify which rows have been coerced to NA and listed in metadata report. 
+  original_has_na <- apply(data_df, 2, function(x) is.na(x))
+  conversion_has_na <- apply(output_df, 2, function(x) is.na(x))
+  coerced_na <- rowSums(original_has_na) < rowSums(conversion_has_na)
+  
+  if(any(coerced_na)){
+  
+    grandparent <- as.character(sys.call(sys.parent()))[1]
+    parent <- as.character(match.call())[1]
+    if(has_authorative_ID){
+      warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have had value(s) coerced to NA:", paste( data_df[coerced_na, 1], collapse = ", "))
+    } else {
+      warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following indexes have had value(s) coerced to NA:", paste( 1:length(coerced_na)[coerced_na, 1], collapse = ", "))
+    }
+    message(warning)
+    
+    # Append the warning to an existing matrix 
+    warning_matrix <- matrix(warning)
+    print(matrix(warning))
+    contribute_to_metadata_report(control_data_type, warning_matrix)
+  }
+  
   
   # remove trailing and leading spaces from strings for comparison. 
   output_df <- remove_leading_spaces(output_df)
@@ -1411,37 +1406,29 @@ match_vector_entries <- function(current_vec, target_vec, control_data_type = NU
       is_matching_indices_unique <- !any(duplicated(closest_matching_indices))
       is_column_name_na <- any(is.na(current_vec))
       
-      # For metadata report.
-      updated_matching_entries <- current_vec[correct_order_indices]
-      updated_nonmatching_entry_indices <- which(!clean_current_vec %in% clean_target_vec)
-      updated_nonmatching_entries <- clean_current_vec[updated_nonmatching_entry_indices]
-      is_not_matching_entries_updated <- !((length(updated_matching_entries) == length(clean_current_vec)) || (length(updated_matching_entries) == length(clean_target_vec)))
-      updated_nonmatching_entries_str <- paste0(updated_nonmatching_entries, collapse=', ')
       
+      # finds the target entries that have not been mapped or matched and 
+      # creates a warning 
+      nonmatched_target_entries <- target_vec[which(!(target_vec %in% intersect(current_vec, target_vec)))]
+      if(length(nonmatched_target_entries) > 0){
       
+        grandparent <- as.character(sys.call(sys.parent()))[1]
+        parent <- as.character(match.call())[1]
+        warning <- paste("Warning in", parent , "within", grandparent, "- The following target entries were not matched:", paste(nonmatched_target_entries, collapse = ", "))
+        message(warning)
+        
+        # Append the warning to an existing matrix 
+        warning_matrix <- matrix(warning)
+        print(matrix(warning))
+        contribute_to_metadata_report(control_data_type, warning_matrix)
+      }
       
-      metadata <- data.frame(size_target_vec,
-                             size_current_vec,
-                             is_not_matching_entries, 
-                             is_not_matching_entries_updated,
-                             updated_nonmatching_entries_str,
-                             is_matching_indices_unique,
-                             is_column_name_na) 
-      
-      
-      
-      # write any warnings and points of interest generated to the metadata report
-      warnings <- names(warnings())
-      warnings_matrix <- matrix(warnings, 1,length(warnings))
-      # contribute_to_metadata_report(control_data_type, section, warnings_matrix)
-      # contribute_to_metadata_report(control_data_type, section, metadata)
-      
-      output <- list(current_vec, correct_order_indices, original_order_indices, metadata)
+      output <- list(current_vec, correct_order_indices, original_order_indices)
       return(output)
       
     },
     error=function(cond) {
-      contribute_to_metadata_report(control_data_type, section, comments)
+      contribute_to_metadata_report(control_data_type, matrix(cond))
       
     }
   )

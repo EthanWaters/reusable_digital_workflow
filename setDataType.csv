@@ -139,3 +139,4 @@ Cohort3 (25-40cm),Integer
 Cohort4 (>40cm),Integer
 Longitude,Numeric
 Latitude,Numeric
+error_flag,Integer
