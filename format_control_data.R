@@ -1084,12 +1084,12 @@ verify_voyage_dates <- function(data_df){
     grandparent <- as.character(sys.call(sys.parent()))[1]
     parent <- as.character(match.call())[1]
     if (any(dated_estimated)) {
-      warning1 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have their tow date estimated from their vessel",
+      warning1 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have their voyage dates estimated from their vessel",
                         toString(data_df[dated_estimated , 1]), "Their respective row indexes are:", toString(1:nrow(data_df)[dated_estimated]))
       message(warning1)
     }
     if (any(na_present)) {
-      warning2 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have no tow date",
+      warning2 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have voyage dates",
                         toString(data_df[dated_estimated , 1]), "Their respective row indexes are:", toString(1:nrow(data_df)[dated_estimated]))
       message(warning2)
     }  
