@@ -84,10 +84,9 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
       # set the data type of all entries to ensure that performed operations have 
       # expected output. 
       updated_current_df <- set_data_type(updated_current_df, control_data_type) 
-
-      #Determine initial error flags based on returned metadata
-      initial_error_flag <- rep(0, nrow(updated_current_df))
-      updated_current_df["error_flag"] <- initial_error_flag
+      
+      #Set default values of new columns based on records in file
+      updated_current_df <- set_default_values(updated_current_df, control_data_type, has_authorative_ID)
       
       return(updated_current_df)
     },
@@ -97,6 +96,17 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
     }
   ) 
   
+} 
+
+
+set_default_values <- function(data_df, control_data_type, has_authorative_ID){
+  lookup <- read.csv("additionalColumns.csv", header = TRUE)
+  new_columns <- lookup[((lookup$type == control_data_type) & (lookup$is_mandatory == 1)), c("addition", "default")]
+  for(i in new_columns[["addition"]]){
+    data_df[,i] <- new_columns[new_columns[["addition"]]==i,"default"]
+  }
+  
+  return(data_df)
 }
 
 
