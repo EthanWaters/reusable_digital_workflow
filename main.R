@@ -27,12 +27,12 @@ library("lubridate")
 library("rlang")
 library("inline")
 
-main <- function(leg_path, leg_sheet_index ,new_path, control_data_type, geospatial_sites, nearest_site_algorithm, is_powerBI_export){
+main <- function(leg_path, leg_sheet_index ,new_path, control_data_type, geospatial_sites, nearest_site_algorithm, has_authorative_ID){
 
 
 # Initialize -------------------------------------------------------------
   
-assign("is_powerBI_export", is_powerBI_export, envir = .GlobalEnv) 
+assign("has_authorative_ID", has_authorative_ID, envir = .GlobalEnv) 
 
 # Create new report. If the file cannot be created due to file name issues a new
 # file name will be created.
@@ -54,8 +54,8 @@ trywait <- 0
 # in the XLSX files and is irrelevant for CSV as it is considered "Flat". 
 #Defaults to sheet index 1. 
 
-legacy_df <- import_data(leg_path, control_data_type, is_powerBI_export, leg_sheet_index)
-new_data_df <- import_data(new_path, control_data_type, is_powerBI_export, leg_sheet_index)
+legacy_df <- import_data(leg_path, control_data_type, has_authorative_ID, leg_sheet_index)
+new_data_df <- import_data(new_path, control_data_type, has_authorative_ID, leg_sheet_index)
 if("error_flag" %in% colnames(legacy_df)){
   is_new <- 0
 } else {

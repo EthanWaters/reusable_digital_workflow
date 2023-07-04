@@ -81,12 +81,12 @@ format_control_data <- function(current_df, legacy_df, control_data_type, sectio
       updated_current_df <- current_df[,matching_entry_indices] 
       colnames(updated_current_df) <- matched_col_names[matching_entry_indices]
       
+      #Set default values of new columns based on records in file
+      updated_current_df <- set_default_values(updated_current_df, control_data_type, has_authorative_ID)
+      
       # set the data type of all entries to ensure that performed operations have 
       # expected output. 
       updated_current_df <- set_data_type(updated_current_df, control_data_type) 
-      
-      #Set default values of new columns based on records in file
-      updated_current_df <- set_default_values(updated_current_df, control_data_type, has_authorative_ID)
       
       return(updated_current_df)
     },
@@ -113,6 +113,9 @@ set_default_values <- function(data_df, control_data_type, has_authorative_ID){
 create_metadata_report <- function(control_data_type){
     #Generate the XML template for the control data process report.
     reports_location <<- "reports\\"
+    if (!dir.exists(reports_location)) {
+      dir.create(reports_location)
+    }
     
     #create file name systematically
     date <- as.character(Sys.Date())
@@ -1273,11 +1276,12 @@ matrix_close_matches_vectorised <- function(x, y, distance){
   return(match_indices)
 }
 
-store_index_vec <- base::Vectorize(store_index)
+
 store_index <- function(nonNAvalues, nonNA, z){
   match_indices <- c(z, nonNA, nonNAvalues)
   return(match_indices)
 }
+store_index_vec <- base::Vectorize(store_index)
 
 find_previous_process_date <- function(){
   # finds the dates stored in the metadata report file names with REGEX. 
@@ -1385,20 +1389,23 @@ set_data_type <- function(data_df, control_data_type){
 
 
 # Custom Boolean Or function written in C for speed. Works exactly the same as 
-# base R operator | however NA is considered TRUE.
-or4 <- cfunction(c(x="logical", y="logical"), "
-    int nx = LENGTH(x), ny = LENGTH(y), n = nx > ny ? nx : ny;
-    SEXP ans = PROTECT(allocVector(LGLSXP, n));
-    int *xp = LOGICAL(x), *yp = LOGICAL(y), *ansp = LOGICAL(ans);
-    for (int i = 0, ix = 0, iy = 0; i < n; ++i)
-    {
-        *ansp++ = xp[ix] || yp[iy];
-        ix = (++ix == nx) ? 0 : ix;
-        iy = (++iy == ny) ? 0 : iy;
-    }
-    UNPROTECT(1);
-    return ans;
-")
+# base R operator | however NA is considered TRUE. 
+
+#REMOVED TEMPORARILY TO UNTIL FUNCTION IS MORE STABLE
+
+# or4 <- cfunction(c(x="logical", y="logical"), "
+#     int nx = LENGTH(x), ny = LENGTH(y), n = nx > ny ? nx : ny;
+#     SEXP ans = PROTECT(allocVector(LGLSXP, n));
+#     int *xp = LOGICAL(x), *yp = LOGICAL(y), *ansp = LOGICAL(ans);
+#     for (int i = 0, ix = 0, iy = 0; i < n; ++i)
+#     {
+#         *ansp++ = xp[ix] || yp[iy];
+#         ix = (++ix == nx) ? 0 : ix;
+#         iy = (++iy == ny) ? 0 : iy;
+#     }
+#     UNPROTECT(1);
+#     return ans;
+# ")
 
 
 #create matrix of warnings so they are added to the specified XML node 
