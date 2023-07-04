@@ -1371,8 +1371,9 @@ set_data_type <- function(data_df, control_data_type){
   
     grandparent <- as.character(sys.call(sys.parent()))[1]
     parent <- as.character(match.call())[1]
+    indexes <- (1:length(coerced_na))
     warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have had value(s) coerced to NA:",
-                     paste( data_df[coerced_na, 1], collapse = ", "), "and the following indexes", paste( 1:length(coerced_na)[coerced_na, 1], collapse = ", "))
+                     paste(data_df[coerced_na, 1], collapse = ", "), "and the following indexes", paste(indexes[coerced_na], collapse = ", "))
     message(warning)
     
     # Append the warning to an existing matrix 
@@ -1421,10 +1422,7 @@ match_vector_entries <- function(current_vec, target_vec, control_data_type = NU
   
   out <- tryCatch(
     {
-    
-      # current_vec <- current_col_names
-      # target_vec <- legacy_col_names
-
+  
       # clean vector entries for easy comparison. The cleaning is done in this 
       # specific order to remove characters such as '.' that appear after
       # removing spaces or specific character from text in a CSV. 
@@ -1567,15 +1565,7 @@ match_vector_entries <- function(current_vec, target_vec, control_data_type = NU
       } else if (correct_order & is_not_matching_entries){
         current_vec <- current_vec[correct_order_indices]
       } 
-      
-      # Indices should be unique and not NA. Check multiple columns weren't 
-      # matched to the same column. The appropriate cut off distance may need 
-      # to be tweaked overtime. For metadata report.
-      duplicate_column_indices <- duplicated(current_vec)
-      is_matching_indices_unique <- !any(duplicated(closest_matching_indices))
-      is_column_name_na <- any(is.na(current_vec))
-      
-      
+    
       # finds the target entries that have not been mapped or matched and 
       # creates a warning 
       nonmatched_target_entries <- target_vec[which(!(target_vec %in% intersect(current_vec, target_vec)))]
