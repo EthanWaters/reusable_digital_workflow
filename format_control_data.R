@@ -197,8 +197,8 @@ add_required_columns <- function(control_data_type, has_authorative_ID){
   
 verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_type, section, is_new){
   
-  new_data_df <- Updated_data_format
-  legacy_data_df <- legacy_df
+  # new_data_df <- Updated_data_format
+  # legacy_data_df <- legacy_df
   
   ID_col <- colnames(new_data_df)[1]
   
@@ -281,7 +281,7 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
     # as legitimate duplicates would come from the same source and uploaded at 
     # the same time.
     new_entries$Identifier <- apply(new_entries[,2:ncol(new_entries)], 1, function(row) paste(row, collapse = "_"))
-    new_entries$error_flag <- ifelse(!duplicated(new_entries$Identifier), 0, 1)
+    new_entries$error_flag <- ifelse(duplicated(new_entries$Identifier), 1, new_entries$error_flag)
     perfect_duplicates$Identifier <- apply(perfect_duplicates[,2:ncol(perfect_duplicates)], 1, function(row) paste(row, collapse = "_"))
     new_entries$error_flag <- ifelse(new_entries$Identifier %in% perfect_duplicates$Identifier, 1, new_entries$error_flag)
     
@@ -813,18 +813,21 @@ verify_tow_date <- function(data_df){
   if (any(dated_estimated | na_present)) {
     grandparent <- as.character(sys.call(sys.parent()))[1]
     parent <- as.character(match.call())[1]
+    warning <- c()
     if (any(dated_estimated)) {
       warning1 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have their tow date estimated from their vessel",
                        toString(data_df[dated_estimated , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[dated_estimated]))
       message(warning1)
+      warning <- c(warning, warning1)
     }
     if (any(na_present)) {
       warning2 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have no tow date",
                         toString(data_df[dated_estimated , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[dated_estimated]))
       message(warning2)
+      warning <- c(warning, warning2)
     }  
     # Append the warning to an existing matrix 
-    warning_matrix <- t(matrix(c(warning1, warning2)))
+    warning_matrix <- t(matrix(c(warning)))
     contribute_to_metadata_report(control_data_type, warning_matrix)
     
   }
@@ -1100,18 +1103,21 @@ verify_voyage_dates <- function(data_df){
   if (any(dated_estimated | na_present)) {
     grandparent <- as.character(sys.call(sys.parent()))[1]
     parent <- as.character(match.call())[1]
-    if (any(dated_estimated)) {
+    warning <- c()
+    if (any(dated_estimated) & !any(na_present)) {
       warning1 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have their voyage dates estimated from their vessel",
                         toString(data_df[dated_estimated , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[dated_estimated]))
       message(warning1)
+      warning <- c(warning, warning1)
     }
     if (any(na_present)) {
       warning2 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have voyage dates",
                         toString(data_df[dated_estimated , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[dated_estimated]))
       message(warning2)
+      warning <- c(warning, warning2)
     }  
     # Append the warning to an existing matrix 
-    warning_matrix <- t(matrix(c(warning1, warning2)))
+    warning_matrix <- t(matrix(warning))
     contribute_to_metadata_report(control_data_type, warning_matrix)
     
   }
