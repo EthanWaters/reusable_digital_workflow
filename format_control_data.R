@@ -735,18 +735,18 @@ verify_lat_lng <- function(data_df, max_val, min_val, columns, ID_col){
   for (col in columns) {
     if (col %in% colnames(data_df)) {
       values <- data_df[[col]]
-      if (!all(is.numeric(values))) {
-        warning(paste("Column", col, "is not numeric. Skipping..."))
-        next
-      }
       out_of_range <- values < min_val | values > max_val
+      
+      # Set any NA values to TRUE as the check was unable to be completed 
+      # correctly
+      out_of_range <- ifelse(is.na(out_of_range),TRUE,out_of_range)
       data_df[["error_flag"]] <- data_df[["error_flag"]] | out_of_range
       
       if (any(out_of_range)) {
         grandparent <- as.character(sys.call(sys.parent()))[1]
         parent <- as.character(match.call())[1]
         warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have inappropriate LatLong coordinates:", 
-                         toString(data_df[out_of_range, 1]), "and the following indexes", toString(1:nrow(data_df)[out_of_range]))
+                         toString(data_df[out_of_range, 1]), "and the following indexes", toString((1:nrow(data_df))[out_of_range]))
         message(warning)
         
         # Append the warning to an existing matrix 
@@ -771,7 +771,7 @@ verify_scar <- function(data_df) {
     grandparent <- as.character(sys.call(sys.parent()))[1]
     parent <- as.character(match.call())[1]
     warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid COTS scar:",
-                     toString(data_df[!check_valid_scar , 1]), "Their respective row indexes are:", toString(1:nrow(data_df)[!check_valid_scar ]))
+                     toString(data_df[!check_valid_scar , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[!check_valid_scar ]))
     message(warning)
     
     # Append the warning to an existing matrix 
@@ -794,7 +794,7 @@ verify_tow_date <- function(data_df){
       data_df_filtered <- data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),]
       is_any_voyage_date_correct <- any(!is.na(data_df_filtered$`Tow date`))
       if(is_any_voyage_date_correct){
-        correct_date <- data_df_filtered[!(is.na(data_df_filtered$`Tow date`) | is.null(data_df_filtered$`Tow date`) | data_df_filtered$`Tow date` == ""),][1,"Tow date"]
+        correct_date <- data_df_filtered[!(is.na(data_df_filtered$`Tow date`) | is.null(data_df_filtered$`Tow date`)),][1,"Tow date"]
         data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Tow date`)), "Tow date"] <- correct_date
       } else if(!is_any_voyage_date_correct & !is_any_survey_date_correct) {
         data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Tow date`)), c("error_flag")] <- 1
@@ -807,20 +807,20 @@ verify_tow_date <- function(data_df){
   
   
   post_estimation_tow_dates <- data_df[["Tow date"]]
-  na_present <- (is.na(post_estimation_tow_dates) | is.null(post_estimation_tow_dates) | post_estimation_tow_dates == "") & (is.na(tow_date) | is.null(tow_date) | tow_date == "")
-  dated_estimated <- !(is.na(post_estimation_tow_dates) | is.null(post_estimation_tow_dates) | post_estimation_tow_dates == "") & (is.na(tow_date) | is.null(tow_date) | tow_date == "")
+  na_present <- (is.na(post_estimation_tow_dates) | is.null(post_estimation_tow_dates)) & (is.na(tow_date) | is.null(tow_date))
+  dated_estimated <- !(is.na(post_estimation_tow_dates) | is.null(post_estimation_tow_dates)) & (is.na(tow_date) | is.null(tow_date))
   
   if (any(dated_estimated | na_present)) {
     grandparent <- as.character(sys.call(sys.parent()))[1]
     parent <- as.character(match.call())[1]
     if (any(dated_estimated)) {
       warning1 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have their tow date estimated from their vessel",
-                       toString(data_df[dated_estimated , 1]), "Their respective row indexes are:", toString(1:nrow(data_df)[dated_estimated]))
+                       toString(data_df[dated_estimated , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[dated_estimated]))
       message(warning1)
     }
     if (any(na_present)) {
       warning2 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have no tow date",
-                        toString(data_df[dated_estimated , 1]), "Their respective row indexes are:", toString(1:nrow(data_df)[dated_estimated]))
+                        toString(data_df[dated_estimated , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[dated_estimated]))
       message(warning2)
     }  
     # Append the warning to an existing matrix 
@@ -848,6 +848,7 @@ verify_RHISS <- function(data_df) {
   check_descriptive_bleach_severity <- rowSums(is_valid_descriptive_bleach_severity) > 0
   
   bleached_severity <- data_df$`Bleached Average Severity Index (calculated via matrix)`
+  bleached_severity <- ifelse(is.na(bleached_severity),TRUE,bleached_severity)
   check_bleach_severity <- bleached_severity >= 1 & bleached_severity <= 8
   
   check <- !check_tide | check_macroalgae | !check_bleach_severity | check_descriptive_bleach_severity
@@ -856,22 +857,22 @@ verify_RHISS <- function(data_df) {
     parent <- as.character(match.call())[1]
     if (any(!check_tide)) {
       warning1 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid tide values:",
-                       toString(data_df[!check_tide , 1]), "Their respective row indexes are:", toString(1:nrow(data_df)[!check_tide]))
+                       toString(data_df[!check_tide , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[!check_tide]))
       message(warning1)
     }
     if (any(check_macroalgae)) {
       warning2 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid macroalgae values:",
-                       toString(data_df[check_macroalgae, 1]), "Their respective row indexes are:", toString(1:nrow(data_df)[check_macroalgae]))
+                       toString(data_df[check_macroalgae, 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[check_macroalgae]))
       message(warning2)
     }
     if (any(!check_bleach_severity)) {
       warning3 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid bleach severity values:",
-                       toString(data_df[!check_bleach_severity, 1]), "Their respective row indexes are:", toString(1:nrow(data_df)[!check_bleach_severity]))
+                       toString(data_df[!check_bleach_severity, 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[!check_bleach_severity]))
       message(warning3)
     }
     if (any(check_descriptive_bleach_severity)) {
       warning4 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid descriptive beach severity:",
-                       toString(data_df[check_descriptive_bleach_severity , 1]), "Their respective row indexes are:", toString(1:nrow(data_df)[check_descriptive_bleach_severity ]))
+                       toString(data_df[check_descriptive_bleach_severity , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[check_descriptive_bleach_severity ]))
       message(warning4)
     }
     
@@ -894,12 +895,13 @@ verify_percentages <- function(data_df) {
     perc_cols_vals <- data_df[, perc_cols]
     col_check <- apply(perc_cols_vals, 2, function(x) x < 0 | x > 100)
     check <- rowSums(col_check) > 0
+    check <- ifelse(is.na(check),TRUE,check)
     data_df[["error_flag"]] <- data_df[["error_flag"]] | check
     if (any(check)) {
       grandparent <- as.character(sys.call(sys.parent()))[1]
       parent <- as.character(match.call())[1]
       warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have percentages in an invalid format:",
-                       toString(data_df[check , 1]), "Their respective row indexes are:", toString(1:nrow(data_df)[check]))
+                       toString(data_df[check , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[check]))
       message(warning)
       
       # Append the warning to an existing matrix 
@@ -920,12 +922,13 @@ verify_na_null <- function(data_df, control_data_type, ID_col) {
   exempt_cols <- which(names(data_df) %in% c("error_flag", ID_col, add_required_columns(control_data_type, has_authorative_ID)))
   na_present <- apply(data_df[, -exempt_cols], 2, function(x) is.na(x) | is.null(x) | x == "")
   check <- rowSums(na_present) > 0
+  check <- ifelse(is.na(check),TRUE,check)
   data_df[["error_flag"]] <- data_df[["error_flag"]] | check
   if (any(check)) {
     grandparent <- as.character(sys.call(sys.parent()))[1]
     parent <- as.character(match.call())[1]
     warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have missing data:",
-                     toString(data_df[check , 1]), "Their respective row indexes are:", toString(1:nrow(data_df)[check]))
+                     toString(data_df[check , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[check]))
     message(warning)
     
     # Append the warning to an existing matrix 
@@ -946,13 +949,14 @@ verify_integers_positive <- function(data_df) {
     if(any(is_integer)){
       col_check <- apply(data_df[,is_integer], 2, function(x) x < 0)
       check <- rowSums(col_check) > 0
+      check <- ifelse(is.na(check),TRUE,check)
       data_df[, "error_flag"] <- data_df[, "error_flag"] | check
      
       if (any(check)) {
         grandparent <- as.character(sys.call(sys.parent()))[1]
         parent <- as.character(match.call())[1]
         warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have non-positive integer values:",
-                         toString(data_df[check , 1]), "Their respective row indexes are:", toString(1:nrow(data_df)[check]))
+                         toString(data_df[check , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[check]))
         message(warning)
         
         # Append the warning to an existing matrix 
@@ -1011,7 +1015,7 @@ verify_coral_cover <- function(data_df) {
     grandparent <- as.character(sys.call(sys.parent()))[1]
     parent <- as.character(match.call())[1]
     warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid coral cover values:",
-                     toString(data_df[error , 1]), "Their respective row indexes are:", toString(1:nrow(data_df)[error]))
+                     toString(data_df[error , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[error]))
     message(warning)
     
     # Append the warning to an existing matrix 
@@ -1044,7 +1048,7 @@ verify_reef <- function(data_df){
     grandparent <- as.character(sys.call(sys.parent()))[1]
     parent <- as.character(match.call())[1]
     warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid Reef IDs:",
-                     toString(data_df[!correct_reef_id_format , 1]), "Their respective row indexes are:", toString(1:nrow(data_df)[!correct_reef_id_format]))
+                     toString(data_df[!correct_reef_id_format , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[!correct_reef_id_format]))
     message(warning)
     
     # Append the warning to an existing matrix 
@@ -1072,16 +1076,16 @@ verify_voyage_dates <- function(data_df){
       is_any_survey_date_correct <- any(!is.na(data_df_filtered$`Survey Date`))
       if(is_any_voyage_date_correct){
         correct_dates <- data_df_filtered[!is.na(data_df_filtered),][1,c("Voyage Start", "Voyage End")]
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage Start`) | (data_df$`Voyage Start` == "")), "Voyage Start"] <- correct_dates[1]
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage End`) | (data_df$`Voyage End` == "")), "Voyage End"] <- correct_dates[2]
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage Start`)), "Voyage Start"] <- correct_dates[1]
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage End`)), "Voyage End"] <- correct_dates[2]
       } else if(!is_any_voyage_date_correct & is_any_survey_date_correct){
         incomplete_date_rows_filtered <- incomplete_date_rows[(incomplete_date_rows$Vessel == vessel_voyage[i,1]) & (incomplete_date_rows$Voyage == vessel_voyage[i,2]),]
         estimate_start <- min(incomplete_date_rows_filtered$`Survey Date`)
         estimate_end <- min(incomplete_date_rows_filtered$`Survey Date`)
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage Start`) | (data_df$`Voyage Start` == "")), c("Voyage Start")] <-  estimate_start
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage End`) | (data_df$`Voyage End` == "")), c("Voyage End")] <-  estimate_end
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage Start`)), c("Voyage Start")] <-  estimate_start
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage End`)), c("Voyage End")] <-  estimate_end
       } else if(!is_any_voyage_date_correct & !is_any_survey_date_correct) {
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage Start`) | (data_df$`Voyage Start` == "") | is.na(data_df$`Voyage End`) | (data_df$`Voyage End` == "")), "error_flag"] <- 1
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage Start`) | is.na(data_df$`Voyage End`)), "error_flag"] <- 1
       }
     }
    
@@ -1090,20 +1094,20 @@ verify_voyage_dates <- function(data_df){
   
   post_voyage_start <- data_df[["Voyage Start"]]
   post_voyage_end <- data_df[["Voyage End"]]
-  na_present <- ((is.na(post_voyage_start) | is.null(post_voyage_start) | post_voyage_start == "") | (is.na(post_voyage_end) | is.null(post_voyage_end) | post_voyage_end == "")) & ((is.na(voyage_start) | is.null(voyage_start) | voyage_start == "") | (is.na(voyage_end) | is.null(voyage_end) | voyage_end == ""))
-  dated_estimated <- !((is.na(post_voyage_start) | is.null(post_voyage_start) | post_voyage_start == "") | (is.na(post_voyage_end) | is.null(post_voyage_end) | post_voyage_end == "")) & ((is.na(voyage_start) | is.null(voyage_start) | voyage_start == "") | (is.na(voyage_end) | is.null(voyage_end) | voyage_end == ""))
+  na_present <- ((is.na(post_voyage_start) | is.null(post_voyage_start)) | (is.na(post_voyage_end) | is.null(post_voyage_end))) & ((is.na(voyage_start) | is.null(voyage_start)) | (is.na(voyage_end) | is.null(voyage_end)))
+  dated_estimated <- !((is.na(post_voyage_start) | is.null(post_voyage_start)) | (is.na(post_voyage_end) | is.null(post_voyage_end))) & ((is.na(voyage_start) | is.null(voyage_start)) | (is.na(voyage_end) | is.null(voyage_end)))
   
   if (any(dated_estimated | na_present)) {
     grandparent <- as.character(sys.call(sys.parent()))[1]
     parent <- as.character(match.call())[1]
     if (any(dated_estimated)) {
       warning1 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have their voyage dates estimated from their vessel",
-                        toString(data_df[dated_estimated , 1]), "Their respective row indexes are:", toString(1:nrow(data_df)[dated_estimated]))
+                        toString(data_df[dated_estimated , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[dated_estimated]))
       message(warning1)
     }
     if (any(na_present)) {
       warning2 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have voyage dates",
-                        toString(data_df[dated_estimated , 1]), "Their respective row indexes are:", toString(1:nrow(data_df)[dated_estimated]))
+                        toString(data_df[dated_estimated , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[dated_estimated]))
       message(warning2)
     }  
     # Append the warning to an existing matrix 
