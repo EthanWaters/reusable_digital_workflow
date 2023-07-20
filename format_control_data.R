@@ -197,8 +197,8 @@ add_required_columns <- function(control_data_type, has_authorative_ID){
   
 verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_type, section, is_new){
   
-  # new_data_df <- Updated_data_format
-  # legacy_data_df <- legacy_df
+  new_data_df <- Updated_data_format
+  legacy_data_df <- legacy_df
   
   ID_col <- colnames(new_data_df)[1]
   
@@ -227,11 +227,18 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
   # If there is a unique ID then perfect duplicates can easily be removed.
   if(has_authorative_ID){
     
-    # Update IDs that are NA from powerBI export based on perfect duplicates. 
     # Find close matches of rows left without an ID and no perfect duplicates. 
     # Rows with a single close match will be considered a discrepancy and then
     # the ID checked against the all the IDs in legacy_data_df to ensure it does 
     # not already exist.
+    
+    # Although this system is capable of handling information without an 
+    # authoritative ID it is bad practice to attempt to update or alter any
+    # authoritative Ids as there is no way of guaranteeing that the ID is being 
+    # assigned to the correct data entry. Therefore, the system will use data 
+    # with no entries until the next database export where all data without IDs 
+    # will be removed. This ensures that the authoritative IDs remain 
+    # authoritative. 
     if(any(is.na(legacy_data_df[ID_col]))){
       legacy_data_df <- update_IDs(new_data_df, legacy_data_df, control_data_type)
       # create new dataframe without rows that have NA ID so that they can
@@ -281,7 +288,9 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
     # as legitimate duplicates would come from the same source and uploaded at 
     # the same time.
     new_entries$Identifier <- apply(new_entries[,2:ncol(new_entries)], 1, function(row) paste(row, collapse = "_"))
-    new_entries$error_flag <- ifelse(duplicated(new_entries$Identifier), 1, new_entries$error_flag)
+    duplicates <- duplicated(new_entries$Identifier)
+    counts <- ave(duplicates, new_entries$Identifier, FUN = sum)
+    new_entries$error_flag <- ifelse(counts >= 3 & duplicates, 1, new_entries$error_flag)
     perfect_duplicates$Identifier <- apply(perfect_duplicates[,2:ncol(perfect_duplicates)], 1, function(row) paste(row, collapse = "_"))
     new_entries$error_flag <- ifelse(new_entries$Identifier %in% perfect_duplicates$Identifier, 1, new_entries$error_flag)
     
