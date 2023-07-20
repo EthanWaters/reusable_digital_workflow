@@ -240,7 +240,6 @@ verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_t
     # will be removed. This ensures that the authoritative IDs remain 
     # authoritative. 
     if(any(is.na(legacy_data_df[ID_col]))){
-      legacy_data_df <- update_IDs(new_data_df, legacy_data_df, control_data_type)
       # create new dataframe without rows that have NA ID so that they can
       # be passed through the check functions as new row entries. 
       legacy_data_df <- legacy_data_df[is.na(legacy_data_df[ID_col]),]
@@ -739,7 +738,6 @@ verify_entries <- function(data_df, control_data_type, ID_col){
   return(data_df)
 }
 
-
 verify_lat_lng <- function(data_df, max_val, min_val, columns, ID_col){
   for (col in columns) {
     if (col %in% colnames(data_df)) {
@@ -1190,49 +1188,6 @@ rec_group <- function(m2m_split, groups, group){
   } else {
     return(groups)
   }
-}
-
-
-update_IDs <- function(new_data_df, legacy_data_df, control_data_type){
-  # Attempt to update the IDs of the legacy data if the previous processing 
-  # utilised data from a powerBI export and therefore will have IDs of NA. This 
-  # will find perfect matches (distance of zero).
-  
-  # This is very similar code to the find_close_match function. To ensure that
-  # IDs found are appended to the correct entry with the least risk two minor 
-  # adjustments have been made that are only suitable in this scenario. 
-  # The original dataframes are iterated over to be confident the correct index
-  # is known. If the ID of a Row is not NA then it will be skipped. Comparisons 
-  # are made between the two original dataframes where the ID column is removed.
-  legacy_data_without_ID_df <- legacy_data_df[ , -which(names(missing_id_rows) %in% c("ID", "error_flag"))]
-  new_data_without_ID_df <- new_data_df[ , -which(names(new_data_df) %in% c("ID", "error_flag"))]
-  
-  matches <- lapply(1:nrow(legacy_data_df), function(z){ 
-    if(is.na(legacy_data_df$ID[z])){
-      for(i in 1:nrow(new_data_df)){ 
-        if(length(na.omit(match(legacy_data_without_ID_df[z,], new_data_without_ID_df[i,]))) == length(new_data_without_ID_df[i,])){
-          c(z, i)
-        }
-      }
-    }
-  })
-  
-  # Once matches are found, IDs can then be altered. If there are multiple 
-  # matches then they are left as is. Ultimately this means they will be treated
-  # as a new entry. 
-  legacy_IDs <- legacy_data_df$ID
-  for(x in filtered_matches){
-    if(length(x) == 1){
-      new_ID <- new_data_df[x[[1]][2],which(names(new_data_df) %in% c("ID"))]
-      if(!new_ID %in% legacy_IDs){
-        legacy_data_df[x[[1]][1],which(names(legacy_data_df) %in% c("ID"))] <- new_ID
-      }
-    }
-  }
-  
-  remaining_non_ID <- nrow(legacy_data_df[is.na(legacy_data_df$ID),])
-  contribute_to_metadata_report(control_data_type, "Update ID", remaining_non_ID)
-  return(legacy_data_df)
 }
 
 # Re-write base operator %in% faster

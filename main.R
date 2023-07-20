@@ -27,12 +27,16 @@ library("lubridate")
 library("rlang")
 library("inline")
 
-main <- function(leg_path, leg_sheet_index ,new_path, control_data_type, geospatial_sites, nearest_site_algorithm, has_authorative_ID){
+main <- function(leg_sheet_index , control_data_type, geospatial_sites, nearest_site_algorithm){
 
 
 # Initialize -------------------------------------------------------------
-  
-assign("has_authorative_ID", has_authorative_ID, envir = .GlobalEnv) 
+leg_path <- file.choose()
+new_path <- file.choose()
+
+control_data_options_list <- c("cull", "manta_tow", "RHISS")
+control_data_type_choice <- menu(control_data_options_list, title = "Select control data type:")
+control_data_type <- control_data_options_list[control_data_type_choice]
 
 # Create new report. If the file cannot be created due to file name issues a new
 # file name will be created.
@@ -62,6 +66,12 @@ if("error_flag" %in% colnames(legacy_df)){
   is_new <- 1
   legacy_df["error_flag"] <- 0
 }
+
+# Check if the new data has an authoritative ID. All rows of a database export 
+# will have one and no rows from a powerBI export will. There should be no 
+# scenario where only a portion of rows have IDs
+has_authorative_ID <-  !any(is.na(new_data_df[,1]))
+assign("has_authorative_ID", has_authorative_ID, envir = .GlobalEnv) 
 
 # Format Dataframe Columns ------------------------------------------------
 
