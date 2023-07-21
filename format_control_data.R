@@ -512,21 +512,18 @@ vectorised_seperate_close_matches <- function(close_match_rows){
       incorrect_many_to_many <- new_many_to_many[new_many_to_many %fin% too_few_matches_indices | new_many_to_many %fin% too_many_matches_indices]
       correct_many_to_many <- new_many_to_many[!(new_many_to_many %fin% too_few_matches_indices | new_many_to_many %fin% too_many_matches_indices)]
       
+      # update the relevant matrices if matches are found. The indices with 
+      # multiple perfect matches may also have other matches that are nonperfect 
+      # and therefore need to be filtered again to ensure only perfect is 
+      # considered
       
-    # }
-    # update the relevant matrices if matches are found. The indices with 
-    # multiple perfect matches may also have other matches that are nonperfect 
-    # and therefore need to be filtered again to ensure only perfect is 
-    # considered
-      
-      # mistake_duplicate_manye_indices <- unique(c(which((many_to_many_e[,y_df_col] %fin% too_many_matches_indices)), which((many_to_many_e[,y_df_col] %fin% too_few_matches_indices)), which((many_to_many_e[,y_df_col] %fin% incorrect_freq_indices))))
-      # mistake_duplicate_close_match_rows_indices <- unique(c(which((close_match_rows_updated[,y_df_col] %fin% too_many_matches_indices)), which((close_match_rows_updated[,y_df_col] %fin% too_few_matches_indices)), which((close_match_rows_updated[,y_df_col] %fin% incorrect_freq_indices))))
-    
-      
-      mistake_duplicate_manye_indices <- which(many_to_many_e %fin% incorrect_many_to_many)
+      mistake_duplicate_manye_indices <- which(many_to_many_e[,y_df_col] %fin% incorrect_many_to_many)
+      mistake_duplicate_close_match_rows_indices <- which(close_match_rows_updated[,y_df_col] %fin% incorrect_many_to_many)
       many_to_many_e <- many_to_many_e[-mistake_duplicate_manye_indices,]
-      many_to_many_indices <- unique(c(which(close_match_rows_updated[,y_df_col] %fin% correct_freq_indices)))
+      many_to_many_indices <- which(close_match_rows_updated[,y_df_col] %fin% correct_many_to_many)
       
+      }
+    
       one_to_many_indices <- unique(c(which(close_match_rows_updated[,y_df_col] %fin% one_to_many_e[,y_df_col]), which(close_match_rows_updated[,x_df_col] %fin% one_to_many_e[,x_df_col])))
       x_dup_one_to_many_indices <- (duplicated(one_to_many_e[,x_df_col])|duplicated(one_to_many_e[,x_df_col], fromLast=TRUE))
       y_dup_one_to_many_indices <- (duplicated(one_to_many_e[,y_df_col])|duplicated(one_to_many_e[,y_df_col], fromLast=TRUE))
@@ -540,7 +537,7 @@ vectorised_seperate_close_matches <- function(close_match_rows){
       
       # remove rows that have already been handled to prevent double handling.
       close_match_rows_updated <- close_match_rows_updated[-unique(c(one_to_one_indices, one_to_many_indices, many_to_many_indices, mistake_duplicate_close_match_rows_indices)),]
-    }
+    # }
   }
   
   ### ---------- 
