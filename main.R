@@ -27,7 +27,7 @@ library("lubridate")
 library("rlang")
 library("inline")
 
-main <- function(leg_sheet_index , control_data_type, geospatial_sites, nearest_site_algorithm){
+main <- function(){
 
 
 # Initialize -------------------------------------------------------------
@@ -37,6 +37,10 @@ new_path <- file.choose()
 control_data_options_list <- c("cull", "manta_tow", "RHISS")
 control_data_type_choice <- menu(control_data_options_list, title = "Select control data type:")
 control_data_type <- control_data_options_list[control_data_type_choice]
+leg_sheet_index <- control_data_type_choice + 1
+
+skip_descrepancies_check_options_list <- c("No", "Yes")
+skip_descrepancies_check <- menu(skip_descrepancies_check_options_list, title = "Skip checking discrepancies?")
 
 # Create new report. If the file cannot be created due to file name issues a new
 # file name will be created.
@@ -67,6 +71,7 @@ if("error_flag" %in% colnames(legacy_df)){
   legacy_df["error_flag"] <- 0
 }
 
+
 # Check if the new data has an authoritative ID. All rows of a database export 
 # will have one and no rows from a powerBI export will. There should be no 
 # scenario where only a portion of rows have IDs
@@ -84,8 +89,28 @@ legacy_df <- set_data_type(legacy_df, control_data_type)
 
 # Find Row Discrepancies --------------------------------------------------
 
-# Finds discrepancies in previously processed data and the new data input and handles them appropriately. 
-verified_data_df <- verify_control_dataframe(Updated_data_format, legacy_df, control_data_type, section, is_new)
+# If this is the first time processing the data it will require an export 
+# directly from the GBRMPA database to ensure that IDs are correct. This will 
+# then need to check every single entry to ensure it meets the requirements. 
+# Ultimately it is not possible to definitively know if a change / discrepancy 
+# was intentional or not, therefore both new and change entries will pass
+# through the same validation checks and if passed will be accepted as 
+# usable. Identifying discrepancies does not alter the checking process, it 
+# just offers the opportunity to ensure that a correct record wasn't 
+# mistakenly changed. For first time processing any error flagged entries can 
+# be compared to the legacy data set in an iterative process without checking 
+# IDs to find likely matches. 
+
+ID_col <- colnames(Updated_data_format)[1]
+verified_data_df <- verify_entries(new_data_df, control_data_type, ID_col)
+if(is_new){
+  legacy_df <- verify_entries(legacy_df, control_data_type, ID_col) 
+}
+
+# separate entries and update any rows that were changed on accident. 
+if(!skip_descrepancies_check){
+  verified_data_df <- separate_control_dataframe(verified_data_df, legacy_df, control_data_type, section)
+}
 
 
 # Assign Nearest Sites ----------------------------------------------------

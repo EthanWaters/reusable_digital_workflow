@@ -195,34 +195,16 @@ add_required_columns <- function(control_data_type, has_authorative_ID){
 }
   
   
-verify_control_dataframe <- function(new_data_df, legacy_data_df, control_data_type, section, is_new){
+separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data_type, section){
   
-  new_data_df <- Updated_data_format
-  legacy_data_df <- legacy_df
+  # new_data_df <- Updated_data_format
+  # legacy_data_df <- legacy_df
   
   ID_col <- colnames(new_data_df)[1]
   
   column_names <- colnames(legacy_data_df)
   verified_data_df <- data.frame(matrix(ncol = length(column_names), nrow = 0))
   colnames(verified_data_df) <- column_names 
-
-  # If this is the first time processing the data it will require an export 
-  # directly from the GBRMPA database to ensure that IDs are correct. This will 
-  # then need to check every single entry to ensure it meets the requirements. 
-  # Ultimately it is not possible to definitively know if a change / discrepancy 
-  # was intentional or not, therefore both new and change entries will pass
-  # through the same validation checks and if passed will be accepted as 
-  # usable. Identifying discrepancies does not alter the checking process, it 
-  # just offers the opportunity to ensure that a correct record wasn't 
-  # mistakenly changed. For first time processing any error flagged entries can 
-  # be compared to the legacy data set in an iterative process without checking 
-  # IDs to find likely matches. 
-  
-  #verify data and flag if there are any errors 
-  if(is_new){
-    legacy_data_df <- verify_entries(legacy_data_df, control_data_type, ID_col) 
-  }
-  new_data_df <- verify_entries(new_data_df, control_data_type, ID_col)
   
   # If there is a unique ID then perfect duplicates can easily be removed.
   if(has_authorative_ID){
@@ -428,7 +410,7 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   perfect_one_to_many <- !(y_updated_dup_indices & x_updated_dup_indices) & (y_updated_dup_indices | x_updated_dup_indices) & (close_match_rows_updated[,3] == 0)
   
   # Only select one match for a row
-  perfect_one_to_many_matches <- close_match_rows_updated[perfect_one_to_many,]
+  perfect_one_to_many_matches <- close_match_rows_updated[perfect_one_to_many,, drop = FALSE]
   x_indices <- perfect_one_to_many_matches[,x_df_col]
   y_indices <- perfect_one_to_many_matches[,y_df_col]
   x_dup_indices <- (duplicated(x_indices)|duplicated(x_indices, fromLast=TRUE))
@@ -449,6 +431,12 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   ### ---------- 
   #many-many perfect matches
   
+  # initialize variables
+  one_to_one_indices <- c()
+  one_to_many_indices <- c()
+  many_to_many_indices<- c()
+  mistake_duplicates_indices <- c()
+  
   # Boolean logic to subset many-many perfect matches from the `close_match_rows`
   # matrix
   is_perfect_match <- close_match_rows_updated[,3] == 0
@@ -466,7 +454,7 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   # All scenarios need to be checked against.
   if(any(many_to_many_with_perfect_match)){
     
-    many_to_many_with_perfect_match_entries <- close_match_rows_updated[many_to_many_with_perfect_match,]
+    many_to_many_with_perfect_match_entries <- close_match_rows_updated[many_to_many_with_perfect_match,, drop = FALSE]
     
     x_dup_indices <- (duplicated(many_to_many_with_perfect_match_entries[,x_df_col])|duplicated(many_to_many_with_perfect_match_entries[,x_df_col], fromLast=TRUE))
     y_dup_indices <- (duplicated(many_to_many_with_perfect_match_entries[,y_df_col])|duplicated(many_to_many_with_perfect_match_entries[,y_df_col], fromLast=TRUE))
@@ -476,10 +464,10 @@ vectorised_seperate_close_matches <- function(close_match_rows){
     one_to_many_i <- !(x_dup_indices & y_dup_indices) & (y_dup_indices | x_dup_indices)
     one_to_one_i <- !(x_dup_indices | y_dup_indices)
     
-    
-    many_to_many_e <- many_to_many_with_perfect_match_entries[many_to_many_i,]
-    one_to_many_e <- many_to_many_with_perfect_match_entries[one_to_many_i,]
-    one_to_one_e <- many_to_many_with_perfect_match_entries[one_to_one_i,]
+    # argument , drop = FALSE keeps as a matrix even if it is only a single row. 
+    many_to_many_e <- many_to_many_with_perfect_match_entries[many_to_many_i,, drop = FALSE]
+    one_to_many_e <- many_to_many_with_perfect_match_entries[one_to_many_i,, drop = FALSE]
+    one_to_one_e <- many_to_many_with_perfect_match_entries[one_to_one_i,, drop = FALSE]
     
     # separate groups of many to many matches. There should not be one to many 
     # relationship of perfect matches, if there is there are a combination of 
@@ -512,35 +500,36 @@ vectorised_seperate_close_matches <- function(close_match_rows){
       incorrect_many_to_many <- new_many_to_many[new_many_to_many %fin% too_few_matches_indices | new_many_to_many %fin% too_many_matches_indices]
       correct_many_to_many <- new_many_to_many[!(new_many_to_many %fin% too_few_matches_indices | new_many_to_many %fin% too_many_matches_indices)]
       
-      
-    # }
-    # update the relevant matrices if matches are found. The indices with 
-    # multiple perfect matches may also have other matches that are nonperfect 
-    # and therefore need to be filtered again to ensure only perfect is 
-    # considered
-      
-      # mistake_duplicate_manye_indices <- unique(c(which((many_to_many_e[,y_df_col] %fin% too_many_matches_indices)), which((many_to_many_e[,y_df_col] %fin% too_few_matches_indices)), which((many_to_many_e[,y_df_col] %fin% incorrect_freq_indices))))
-      # mistake_duplicate_close_match_rows_indices <- unique(c(which((close_match_rows_updated[,y_df_col] %fin% too_many_matches_indices)), which((close_match_rows_updated[,y_df_col] %fin% too_few_matches_indices)), which((close_match_rows_updated[,y_df_col] %fin% incorrect_freq_indices))))
-    
-      
-      mistake_duplicate_manye_indices <- which(many_to_many_e %fin% incorrect_many_to_many)
+      mistake_duplicate_manye_indices <- which(many_to_many_e[,y_df_col] %fin% incorrect_many_to_many)
+      mistake_duplicates <- many_to_many_e[mistake_duplicate_manye_indices,]
+      mistake_duplicates_indices <- unique(c(which(close_match_rows_updated[,y_df_col] %fin% mistake_duplicates[,y_df_col]), which(close_match_rows_updated[,x_df_col] %fin% mistake_duplicates[,x_df_col])))
       many_to_many_e <- many_to_many_e[-mistake_duplicate_manye_indices,]
-      many_to_many_indices <- unique(c(which(close_match_rows_updated[,y_df_col] %fin% correct_freq_indices)))
+      many_to_many_indices <- unique(c(which(close_match_rows_updated[,y_df_col] %fin% many_to_many_e[,y_df_col]), which(close_match_rows_updated[,x_df_col] %fin% many_to_many_e[,x_df_col])))
       
+    }
+  
+    if(nrow(many_to_many_e) > 0){ 
       one_to_many_indices <- unique(c(which(close_match_rows_updated[,y_df_col] %fin% one_to_many_e[,y_df_col]), which(close_match_rows_updated[,x_df_col] %fin% one_to_many_e[,x_df_col])))
       x_dup_one_to_many_indices <- (duplicated(one_to_many_e[,x_df_col])|duplicated(one_to_many_e[,x_df_col], fromLast=TRUE))
       y_dup_one_to_many_indices <- (duplicated(one_to_many_e[,y_df_col])|duplicated(one_to_many_e[,y_df_col], fromLast=TRUE))
       correct_one_to_many_e <- one_to_many_e[!(x_dup_one_to_many_indices | y_dup_one_to_many_indices),]
       incorrect_one_to_many_e <- one_to_many_e[(x_dup_one_to_many_indices | y_dup_one_to_many_indices),]
-      
-      one_to_one_indices <- unique(c(which(close_match_rows_updated[,y_df_col] %fin% one_to_one_e[,y_df_col]), which(close_match_rows_updated[,x_df_col] %fin% one_to_one_e[,x_df_col])))
-      
-      perfect_duplicate_indices <- rbind(perfect_duplicate_indices, one_to_one_e, correct_one_to_many_e, many_to_many_e)
-      error_indices <- rbind(error_indices, mistake_duplicates, incorrect_one_to_many_e)
-      
-      # remove rows that have already been handled to prevent double handling.
-      close_match_rows_updated <- close_match_rows_updated[-unique(c(one_to_one_indices, one_to_many_indices, many_to_many_indices, mistake_duplicate_close_match_rows_indices)),]
     }
+    
+    one_to_one_indices <- unique(c(which(close_match_rows_updated[,y_df_col] %fin% one_to_one_e[,y_df_col]), which(close_match_rows_updated[,x_df_col] %fin% one_to_one_e[,x_df_col])))
+    
+    
+    # update the relevant matrices if matches are found. The indices with 
+    # multiple perfect matches may also have other matches that are nonperfect 
+    # and therefore need to be filtered again to ensure only perfect is 
+    # considered
+    
+    perfect_duplicate_indices <- rbind(perfect_duplicate_indices, one_to_one_e, correct_one_to_many_e, many_to_many_e)
+    error_indices <- rbind(error_indices, mistake_duplicates, incorrect_one_to_many_e)
+    
+    # remove rows that have already been handled to prevent double handling.
+    close_match_rows_updated <- close_match_rows_updated[-unique(c(one_to_one_indices, one_to_many_indices, many_to_many_indices, mistake_duplicates_indices)),]
+
   }
   
   ### ---------- 
