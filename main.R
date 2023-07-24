@@ -42,6 +42,12 @@ leg_sheet_index <- control_data_type_choice + 1
 skip_descrepancies_check_options_list <- c("No", "Yes")
 skip_descrepancies_check <- menu(skip_descrepancies_check_options_list, title = "Skip checking discrepancies?")
 
+if(skip_descrepancies_check == "No"){
+  skip_descrepancies_check <- 1
+} else {
+  skip_descrepancies_check <- 0
+}
+
 # Create new report. If the file cannot be created due to file name issues a new
 # file name will be created.
 file_count <- 1
@@ -101,15 +107,33 @@ legacy_df <- set_data_type(legacy_df, control_data_type)
 # be compared to the legacy data set in an iterative process without checking 
 # IDs to find likely matches. 
 
+# Although this system is capable of handling information without an 
+# authoritative ID it is bad practice to attempt to update or alter any
+# authoritative Ids as there is no way of guaranteeing that the ID is being 
+# assigned to the correct data entry. Therefore, the system will use data 
+# with no entries until the next database export where all data without IDs 
+# will be removed. This ensures that the authoritative IDs remain 
+# authoritative. 
+
 ID_col <- colnames(Updated_data_format)[1]
-verified_data_df <- verify_entries(new_data_df, control_data_type, ID_col)
+
+if(any(is.na(legacy_df[ID_col]))){
+  # create new dataframe without rows that have NA ID so that they can
+  # be passed through the check functions as new row entries. 
+  legacy_df <- legacy_df[is.na(legacy_df[ID_col]),]
+}
+
+verified_data_df <- verify_entries(Updated_data_format, control_data_type, ID_col)
 if(is_new){
   legacy_df <- verify_entries(legacy_df, control_data_type, ID_col) 
 }
 
+# flag non-genuine duplicates that are mistakes
+verified_data_df <- flag_duplicates(verified_data_df)
+
 # separate entries and update any rows that were changed on accident. 
 if(!skip_descrepancies_check){
-  verified_data_df <- separate_control_dataframe(verified_data_df, legacy_df, control_data_type, section)
+  verified_data_df <- separate_control_dataframe(verified_data_df, legacy_df, control_data_type)
 }
 
 

@@ -195,7 +195,7 @@ add_required_columns <- function(control_data_type, has_authorative_ID){
 }
   
   
-separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data_type, section){
+separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data_type){
   
   # new_data_df <- Updated_data_format
   # legacy_data_df <- legacy_df
@@ -213,20 +213,6 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
     # Rows with a single close match will be considered a discrepancy and then
     # the ID checked against the all the IDs in legacy_data_df to ensure it does 
     # not already exist.
-    
-    # Although this system is capable of handling information without an 
-    # authoritative ID it is bad practice to attempt to update or alter any
-    # authoritative Ids as there is no way of guaranteeing that the ID is being 
-    # assigned to the correct data entry. Therefore, the system will use data 
-    # with no entries until the next database export where all data without IDs 
-    # will be removed. This ensures that the authoritative IDs remain 
-    # authoritative. 
-    if(any(is.na(legacy_data_df[ID_col]))){
-      # create new dataframe without rows that have NA ID so that they can
-      # be passed through the check functions as new row entries. 
-      legacy_data_df <- legacy_data_df[is.na(legacy_data_df[ID_col]),]
-      
-    }
     
     # Determine additional columns required by the new data format and remove 
     # from comparison
@@ -258,35 +244,6 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
     non_discrepancy_indices <- c(perfect_duplicates[[ID_col]], new_entries[[ID_col]])
     discrepancies_new <- new_data_df[!(new_data_df[[ID_col]] %in% non_discrepancy_indices),]
     discrepancies_legacy <- legacy_data_df[!(legacy_data_df[[ID_col]] %in% non_discrepancy_indices),]
-  
-    # New entries need to be checked for duplicates. If there is more than one
-    # duplicate it can be assumed to be an error and the error flag set. This 
-    # will use a similar identifier new_entries df. This will only flag the 
-    # duplicate versions of the row as an error as it still contains new 
-    # information there has just been multiple instances of data entry. 
-    # Additionally no new entry should be a duplicate of any "perfect duplicate" 
-    # as legitimate duplicates would come from the same source and uploaded at 
-    # the same time.
-    new_entries$Identifier <- apply(new_entries[,2:ncol(new_entries)], 1, function(row) paste(row, collapse = "_"))
-    duplicates <- duplicated(new_entries$Identifier)
-    counts <- ave(duplicates, new_entries$Identifier, FUN = sum)
-    new_entries$error_flag <- ifelse(counts >= 3 & duplicates, 1, new_entries$error_flag)
-    perfect_duplicates$Identifier <- apply(perfect_duplicates[,2:ncol(perfect_duplicates)], 1, function(row) paste(row, collapse = "_"))
-    new_entries$error_flag <- ifelse(new_entries$Identifier %in% perfect_duplicates$Identifier, 1, new_entries$error_flag)
-    
-    new_entries$Identifier <- NULL
-    perfect_duplicates$Identifier <- NULL
-    
-    # Check that no IDs have changed. 
-    if(!(length(discrepancies_new) == length(discrepancies_legacy))){
-      # This would imply entries with tempory IDs have been previously processed 
-      # and have now been updated. This will require an iterative process to 
-      # find the closest matching record. This will be required for any
-      # situation without an ID.
-      FAILURE <- TRUE
-      contribute_to_metadata_report(control_data_type, "Check ID Change", FAILURE)
-      
-    }
       
   } else {
   
@@ -326,6 +283,25 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
   # merge the verified dataset
   return(verified_data_df)
   
+}
+
+
+flag_duplicates <- function(new_data_df){
+  # New entries need to be checked for duplicates. If there is more than one
+  # duplicate it can be assumed to be an error and the error flag set. This 
+  # will use a similar identifier new_entries df. This will only flag the 
+  # duplicate versions of the row as an error as it still contains new 
+  # information there has just been multiple instances of data entry. 
+  # Additionally no new entry should be a duplicate of any "perfect duplicate" 
+  # as legitimate duplicates would come from the same source and uploaded at 
+  # the same time.
+  
+  new_data_df$Identifier <- apply(new_data_df[,2:ncol(new_data_df)], 1, function(row) paste(row, collapse = "_"))
+  duplicates <- duplicated(new_data_df$Identifier)
+  counts <- ave(duplicates, new_data_df$Identifier, FUN = sum)
+  new_data_df$error_flag <- ifelse(counts >= 3 & duplicates, 1, new_data_df$error_flag)
+  new_data_df$Identifier <- NULL
+  return(new_data_df)
 }
 
 
@@ -668,7 +644,7 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   return(output)
 }
 
-check_for_mistake <- function(discrepancies_indices, perfect_duplicate_indices, error_indices, check_indices){
+check_for_mistake <- function(){
   x_df_col <- 1
   y_df_col <- 2
   duplicated_vec <- base::Vectorize(duplicated)
