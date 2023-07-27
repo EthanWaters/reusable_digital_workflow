@@ -367,7 +367,6 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   discrepancies_indices <<- matrix(,ncol=3, nrow =0)
   perfect_duplicate_indices <<- matrix(,ncol=3, nrow =0)
   error_indices <<- matrix(,ncol=3, nrow =0)
-  check_indices <<- matrix(,ncol=3, nrow =0)
   
 
   
@@ -395,7 +394,7 @@ vectorised_seperate_close_matches <- function(close_match_rows){
   non_dup_indices <- !dup_indices
   
   perfect_duplicate_indices <- rbind(perfect_duplicate_indices, perfect_one_to_many_matches[non_dup_indices,])
-  check_indices <- rbind(check_indices, perfect_one_to_many_matches[dup_indices,])
+  error_indices <- rbind(error_indices, perfect_one_to_many_matches[dup_indices,])
   
   # remove checked rows
   close_match_rows_updated <- close_match_rows_updated[-unique(c(which(close_match_rows_updated[,x_df_col] %fin% x_indices), which(close_match_rows_updated[,y_df_col] %fin% y_indices))),]
@@ -528,7 +527,7 @@ vectorised_seperate_close_matches <- function(close_match_rows){
       match_x_dup_indices <- (duplicated(matches[,x_df_col])|duplicated(matches[,x_df_col], fromLast=TRUE))
       match_y_dup_indices <- (duplicated(matches[,y_df_col])|duplicated(matches[,y_df_col], fromLast=TRUE))
       discrepancies_indices <- rbind(discrepancies_indices, matches[!(match_y_dup_indices | match_x_dup_indices),])
-      check_indices <- rbind(check_indices, matches[(match_y_dup_indices | match_x_dup_indices),])
+      error_indices <- rbind(error_indices, matches[(match_y_dup_indices | match_x_dup_indices),])
       
       # remove checked rows and any that have already been matched. 
       close_match_rows_updated <- close_match_rows_updated[-unique(c(which(close_match_rows_updated[,x_df_col] %fin% matches[,x_df_col]), which(close_match_rows_updated[,y_df_col] %fin% matches[,y_df_col]))),]
@@ -573,7 +572,7 @@ vectorised_seperate_close_matches <- function(close_match_rows){
         one_to_one_indices <- unique(c(which(close_match_rows_updated[,y_df_col] %fin% one_to_one_e[,y_df_col]), which(close_match_rows_updated[,x_df_col] %fin% one_to_one_e[,x_df_col])))
         
         perfect_duplicate_indices <- rbind(perfect_duplicate_indices, one_to_one_e)
-        check_indices <- rbind(check_indices, one_to_many_e, many_to_many_e)
+        error_indices <- rbind(error_indices, one_to_many_e, many_to_many_e)
         
         # remove rows that have already been handled to prevent double handling.
         close_match_rows_updated <- close_match_rows_updated[-unique(c(one_to_one_indices, one_to_many_indices, many_to_many_indices)),]
@@ -611,7 +610,7 @@ vectorised_seperate_close_matches <- function(close_match_rows){
         match_x_dup_indices <- (duplicated(matches[,x_df_col])|duplicated(matches[,x_df_col], fromLast=TRUE))
         match_y_dup_indices <- (duplicated(matches[,y_df_col])|duplicated(matches[,y_df_col], fromLast=TRUE))
         discrepancies_indices <- rbind(discrepancies_indices, matches[!(match_y_dup_indices | match_x_dup_indices),])
-        check_indices <- rbind(check_indices, matches[(match_y_dup_indices | match_x_dup_indices),])
+        error_indices <- rbind(error_indices, matches[(match_y_dup_indices | match_x_dup_indices),])
         
         # remove checked rows and any that have already been matched. 
         close_match_rows_updated <- close_match_rows_updated[-unique(c(which(close_match_rows_updated[,x_df_col] %fin% matches[,x_df_col]), which(close_match_rows_updated[,y_df_col] %fin% matches[,y_df_col]))),]
@@ -629,7 +628,7 @@ vectorised_seperate_close_matches <- function(close_match_rows){
     
   }
   
-  output <- list(discrepancies_indices, perfect_duplicate_indices, error_indices, check_indices)
+  output <- list(discrepancies_indices, perfect_duplicate_indices, error_indices)
   names(output) <- c("discrepancies", "perfect", "error", "check") 
   return(output)
 }
@@ -640,17 +639,31 @@ check_for_mistake <- function(){
   duplicated_vec <- base::Vectorize(duplicated)
   
   # Check that there are no duplicates between data frames
-  x_indices_intersecting <- Reduce(intersect, list(discrepancies_indices[,x_df_col], perfect_duplicate_indices[,x_df_col], error_indices[,x_df_col], check_indices[,x_df_col]))
-  y_indices_intersecting <- Reduce(intersect, list(discrepancies_indices[,y_df_col], perfect_duplicate_indices[,y_df_col], error_indices[,y_df_col], check_indices[,y_df_col]))
+  x_indices_intersecting <- Reduce(intersect, list(discrepancies_indices[,x_df_col], perfect_duplicate_indices[,x_df_col], error_indices[,x_df_col]))
+  y_indices_intersecting <- Reduce(intersect, list(discrepancies_indices[,y_df_col], perfect_duplicate_indices[,y_df_col], error_indices[,y_df_col]))
   
   # Check each column contains no duplicates 
   discrepancies_indices_dup <- (duplicated_vec(t(discrepancies_indices))|duplicated_vec(t(discrepancies_indices), fromLast=TRUE))
   perfect_duplicate_indices_dup <- (duplicated_vec(t(perfect_duplicate_indices))|duplicated_vec(t(perfect_duplicate_indices), fromLast=TRUE))
   error_indices_dup <- (duplicated_vec(t(error_indices))|duplicated_vec(t(error_indices), fromLast=TRUE))
-  check_indices_dup <- (duplicated_vec(t(check_indices))|duplicated_vec(t(check_indices), fromLast=TRUE))
   
   is_intersecting_dups <- (length(y_indices_intersecting) == 0) & (length(x_indices_intersecting == 0))
-  return(c(is_intersecting_dups, discrepancies_indices_dup, perfect_duplicate_indices_dup, error_indices_dup, check_indices_dup))
+  
+  if (any(c(is_intersecting_dups, discrepancies_indices_dup, perfect_duplicate_indices_dup, error_indices_dup))) {
+    grandparent <- as.character(sys.call(sys.parent()))[1]
+    parent <- as.character(match.call())[1]
+    warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have inappropriate LatLong coordinates:", 
+                     toString(data_df[out_of_range, 1]), "and the following indexes", toString((1:nrow(data_df))[out_of_range]))
+    message(warning)
+    
+    # Append the warning to an existing matrix 
+    warning_matrix <- matrix(warning)
+    contribute_to_metadata_report(control_data_type, warning_matrix)
+    
+  }
+  
+  
+  return(c(is_intersecting_dups, discrepancies_indices_dup, perfect_duplicate_indices_dup, error_indices_dup))
   
 }
 
