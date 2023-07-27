@@ -261,13 +261,10 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
     close_match_rows <- matrix_close_matches_vectorised(temp_legacy_df, temp_new_df, distance)
     
     # There can be many to many perfect matches. This means that there will be 
-    # multiple indices referring to the same row. unique() should be utilised when
-    # subsetting the input dataframes.
+    # multiple indices referring to the same row for perfect duplicates. 
+    # unique() should be utilised when subsetting the input dataframes.
     seperated_close_matches <- vectorised_seperate_close_matches(close_match_rows)
-    
     perfect_duplicates <- new_data_df[unique(seperated_close_matches$perfect[,2]),]
-    discrepancies_legacy <- legacy_data_df[unique(seperated_close_matches$discrepancies[,1]),]
-    discrepancies_new <- new_data_df[unique(seperated_close_matches$discrepancies[,2]),]
     new_entries_i <- unique(c(seperated_close_matches$discrepancies[,2],seperated_close_matches$perfect[,2]))
     
     # This will contain any new entries and any rows that could not be separated
@@ -282,7 +279,7 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
   # discrepancies will check the original legacy entry, which if failed will 
   # be left as is. 
  
-  verified_discrepancies <- compare_discrepancies(discrepancies_new, discrepancies_legacy, control_data_type, ID_col)
+  verified_discrepancies <- compare_discrepancies(new_data_df, legacy_data_df, seperated_close_matches$discrepancies, ID_col)
   verified_data_df <- rbind(verified_data_df, verified_discrepancies)
   verified_data_df <- rbind(verified_data_df, new_entries)
   
@@ -311,28 +308,19 @@ flag_duplicates <- function(new_data_df){
 }
 
 
-compare_discrepancies <- function(discrepancies_new, discrepancies_legacy, control_data_type, ID_col){
+compare_discrepancies <- function(new_data_df, legacy_data_df, discrepancies , ID_col){
   # compare the rows identified as discrepancies from the new and legacy 
   # dataframes. Most changes should be QA and either still meet the requirements 
   # or now meet the requirements and hence will not be flagged as an error. 
   # However a minor number of cases a row is mistakingly changed to no longer be
   # useable, when this occurs the original row will be used implace of the new 
-  # one
-  if(has_authorative_ID){
-    
-    correct_new_entry_IDs <- discrepancies_new[discrepancies_new$error_flag == 0, ID_col]
-    output <- discrepancies_new[discrepancies_new[[ID_col]] %in% correct_new_entry_IDs,]
-    discrepancies_new <- discrepancies_new[!(discrepancies_new[[ID_col]] %in% correct_new_entry_IDs),]
-    discrepancies_legacy <- discrepancies_legacy[!(discrepancies_legacy[[ID_col]] %in% correct_new_entry_IDs),]
-    
-    correct_legacy_entry_IDs <- discrepancies_new[discrepancies_legacy$error_flag == 0, ID_col]
-    output <- rbind(output, discrepancies_legacy[discrepancies_legacy[[ID_col]] %in% correct_legacy_entry_IDs,])
-    discrepancies_new <- discrepancies_new[!(discrepancies_new[[ID_col]] %in% correct_legacy_entry_IDs),]
-    discrepancies_legacy <- discrepancies_legacy[!(discrepancies_legacy[[ID_col]] %in% correct_legacy_entry_IDs),]
-    output <- rbind(output, discrepancies_new)
-  } else {
-    
-  }
+  # one. 
+  
+  legacy_error_flag <- legacy_data_df[discrepancies[,1], "error_flag"]
+  new_error_flag <- new_data_df[discrepancies[,2], "error_flag"]
+  
+  output <- ifelse((new_error_flag == 1) & (legacy_error_flag == 0), legacy_data_df[discrepancies[,1],], new_data_df[discrepancies[,2],])
+
   return(output)
   
 }
