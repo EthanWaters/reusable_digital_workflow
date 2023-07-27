@@ -26,6 +26,7 @@ library("fastmatch")
 library("lubridate")
 library("rlang")
 library("inline")
+library("purrr")
 
 main <- function(){
 

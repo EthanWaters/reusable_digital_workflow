@@ -196,9 +196,9 @@ add_required_columns <- function(control_data_type, has_authorative_ID){
   
   
 separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data_type){
-  
-  new_data_df <- verified_data_df
-  legacy_data_df <- legacy_df
+  # 
+  # new_data_df <- verified_data_df
+  # legacy_data_df <- legacy_df
   
   ID_col <- colnames(new_data_df)[1]
   
@@ -265,7 +265,7 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
     perfect_duplicates <- new_data_df[seperated_close_matches$perfect[,2],]
     discrepancies_legacy <- legacy_data_df[seperated_close_matches$discrepancies[,1],]
     discrepancies_new <- new_data_df[seperated_close_matches$discrepancies[,2],]
-    new_entries <- rbind(new_data_df[seperated_close_matches$new[,2],], new_data_df[seperated_close_matches$check[,2],])
+    new_entries <- rbind(new_data_df[seperated_close_matches$new[,2],], new_data_df[seperated_close_matches$error[,2],])
     verified_data_df <- rbind(verified_data_df, perfect_duplicates)
   }
   
@@ -621,39 +621,31 @@ vectorised_seperate_close_matches <- function(close_match_rows){
     }
   }
   # check for mistakes 
-  is_mistake_present <- check_for_mistake()
-  
-  #INCLUDE METHOD TO FIX PROBLEM HERE 
-  if(is_mistake_present){
-    
-  }
-  
+  is_mistake_present <- check_for_mistake(control_data_type)
+
   output <- list(discrepancies_indices, perfect_duplicate_indices, error_indices)
-  names(output) <- c("discrepancies", "perfect", "error", "check") 
+  names(output) <- c("discrepancies", "perfect", "error") 
   return(output)
 }
 
-check_for_mistake <- function(){
+check_for_mistake <- function(control_data_type){
   x_df_col <- 1
   y_df_col <- 2
-  duplicated_vec <- base::Vectorize(duplicated)
   
   # Check that there are no duplicates between data frames
-  x_indices_intersecting <- Reduce(intersect, list(discrepancies_indices[,x_df_col], perfect_duplicate_indices[,x_df_col], error_indices[,x_df_col]))
-  y_indices_intersecting <- Reduce(intersect, list(discrepancies_indices[,y_df_col], perfect_duplicate_indices[,y_df_col], error_indices[,y_df_col]))
+  elements_count_x <- table(c(unique(discrepancies_indices[,x_df_col]),unique(perfect_duplicate_indices[,x_df_col]),unique(error_indices[,x_df_col])))
+  common_x_values <- names(common_x_values[common_x_values >= 2])
   
-  # Check each column contains no duplicates 
-  discrepancies_indices_dup <- (duplicated_vec(t(discrepancies_indices))|duplicated_vec(t(discrepancies_indices), fromLast=TRUE))
-  perfect_duplicate_indices_dup <- (duplicated_vec(t(perfect_duplicate_indices))|duplicated_vec(t(perfect_duplicate_indices), fromLast=TRUE))
-  error_indices_dup <- (duplicated_vec(t(error_indices))|duplicated_vec(t(error_indices), fromLast=TRUE))
+  elements_count_y <- table(c(unique(discrepancies_indices[,y_df_col]),unique(perfect_duplicate_indices[,y_df_col]),unique(error_indices[,y_df_col])))
+  common_y_values <- names(elements_count_y[elements_count_y >= 2])
   
-  is_intersecting_dups <- (length(y_indices_intersecting) == 0) & (length(x_indices_intersecting == 0))
+  is_intersecting_dups <- (length(common_y_values) == 0) & (length(common_x_values == 0))
   
-  if (any(c(is_intersecting_dups, discrepancies_indices_dup, perfect_duplicate_indices_dup, error_indices_dup))) {
+  if (is_intersecting_dups) {
     grandparent <- as.character(sys.call(sys.parent()))[1]
     parent <- as.character(match.call())[1]
-    warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have inappropriate LatLong coordinates:", 
-                     toString(data_df[out_of_range, 1]), "and the following indexes", toString((1:nrow(data_df))[out_of_range]))
+    warning <- paste("Warning in", parent , "within", grandparent, "- The rows were not correctly separated and the following row indexes were labeled as a `Perfect Duplicate`, `Discrepancy` and/or an `Error`:", 
+                     "New Data Indices (Y):", toString(common_y_values), "Legacy Data Indices (X):", toString(common_x_values))
     message(warning)
     
     # Append the warning to an existing matrix 
@@ -661,10 +653,6 @@ check_for_mistake <- function(){
     contribute_to_metadata_report(control_data_type, warning_matrix)
     
   }
-  
-  
-  return(c(is_intersecting_dups, discrepancies_indices_dup, perfect_duplicate_indices_dup, error_indices_dup))
-  
 }
 
 verify_entries <- function(data_df, control_data_type, ID_col){
@@ -1320,32 +1308,6 @@ set_data_type <- function(data_df, control_data_type){
   return(output_df)
 } 
 
-
-# Custom Boolean Or function written in C for speed. Works exactly the same as 
-# base R operator | however NA is considered TRUE. 
-
-#REMOVED TEMPORARILY TO UNTIL FUNCTION IS MORE STABLE
-
-# or4 <- cfunction(c(x="logical", y="logical"), "
-#     int nx = LENGTH(x), ny = LENGTH(y), n = nx > ny ? nx : ny;
-#     SEXP ans = PROTECT(allocVector(LGLSXP, n));
-#     int *xp = LOGICAL(x), *yp = LOGICAL(y), *ansp = LOGICAL(ans);
-#     for (int i = 0, ix = 0, iy = 0; i < n; ++i)
-#     {
-#         *ansp++ = xp[ix] || yp[iy];
-#         ix = (++ix == nx) ? 0 : ix;
-#         iy = (++iy == ny) ? 0 : iy;
-#     }
-#     UNPROTECT(1);
-#     return ans;
-# ")
-
-
-#create matrix of warnings so they are added to the specified XML node 
-# in the metadata report in a vectorised manor. 
-# warnings <- names(warnings())
-# warnings_matrix <- matrix(warnings, 1,length(warnings))
-# contribute_to_metadata_report(control_data_type, paste("Set Data Type", i), warnings_matrix)
 
 match_vector_entries <- function(current_vec, target_vec, control_data_type = NULL, check_mapped = FALSE, correct_order = FALSE){
   # Compare any form two vectors and identify matching entries. There are a 
