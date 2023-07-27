@@ -260,12 +260,18 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
     temp_legacy_df <- legacy_data_df[ , -which(names(legacy_data_df) %in% required_columns)]
     close_match_rows <- matrix_close_matches_vectorised(temp_legacy_df, temp_new_df, distance)
     
+    # There can be many to many perfect matches. This means that there will be 
+    # multiple indices referring to the same row. unique() should be utilised when
+    # subsetting the input dataframes.
     seperated_close_matches <- vectorised_seperate_close_matches(close_match_rows)
     
-    perfect_duplicates <- new_data_df[seperated_close_matches$perfect[,2],]
-    discrepancies_legacy <- legacy_data_df[seperated_close_matches$discrepancies[,1],]
-    discrepancies_new <- new_data_df[seperated_close_matches$discrepancies[,2],]
-    new_entries <- rbind(new_data_df[seperated_close_matches$new[,2],], new_data_df[seperated_close_matches$error[,2],])
+    perfect_duplicates <- new_data_df[unique(seperated_close_matches$perfect[,2]),]
+    discrepancies_legacy <- legacy_data_df[unique(seperated_close_matches$discrepancies[,1]),]
+    discrepancies_new <- new_data_df[unique(seperated_close_matches$discrepancies[,2]),]
+    new_entries_i <- unique(c(seperated_close_matches$discrepancies[,2],seperated_close_matches$perfect[,2]))
+    
+    # This will contain any new entries and any rows that could not be separated
+    new_entries <- new_data_df[-new_entries_i,]
     verified_data_df <- rbind(verified_data_df, perfect_duplicates)
   }
   
@@ -306,7 +312,12 @@ flag_duplicates <- function(new_data_df){
 
 
 compare_discrepancies <- function(discrepancies_new, discrepancies_legacy, control_data_type, ID_col){
-  
+  # compare the rows identified as discrepancies from the new and legacy 
+  # dataframes. Most changes should be QA and either still meet the requirements 
+  # or now meet the requirements and hence will not be flagged as an error. 
+  # However a minor number of cases a row is mistakingly changed to no longer be
+  # useable, when this occurs the original row will be used implace of the new 
+  # one
   if(has_authorative_ID){
     
     correct_new_entry_IDs <- discrepancies_new[discrepancies_new$error_flag == 0, ID_col]
@@ -319,8 +330,9 @@ compare_discrepancies <- function(discrepancies_new, discrepancies_legacy, contr
     discrepancies_new <- discrepancies_new[!(discrepancies_new[[ID_col]] %in% correct_legacy_entry_IDs),]
     discrepancies_legacy <- discrepancies_legacy[!(discrepancies_legacy[[ID_col]] %in% correct_legacy_entry_IDs),]
     output <- rbind(output, discrepancies_new)
+  } else {
+    
   }
-  
   return(output)
   
 }
@@ -634,14 +646,12 @@ check_for_mistake <- function(control_data_type){
   
   # Check that there are no duplicates between data frames
   elements_count_x <- table(c(unique(discrepancies_indices[,x_df_col]),unique(perfect_duplicate_indices[,x_df_col]),unique(error_indices[,x_df_col])))
-  common_x_values <- names(common_x_values[common_x_values >= 2])
+  common_x_values <- names(elements_count_x[elements_count_x >= 2])
   
   elements_count_y <- table(c(unique(discrepancies_indices[,y_df_col]),unique(perfect_duplicate_indices[,y_df_col]),unique(error_indices[,y_df_col])))
   common_y_values <- names(elements_count_y[elements_count_y >= 2])
   
-  is_intersecting_dups <- (length(common_y_values) == 0) & (length(common_x_values == 0))
-  
-  if (is_intersecting_dups) {
+  if (any(common_y_values == 0)| any(common_x_values == 0)) {
     grandparent <- as.character(sys.call(sys.parent()))[1]
     parent <- as.character(match.call())[1]
     warning <- paste("Warning in", parent , "within", grandparent, "- The rows were not correctly separated and the following row indexes were labeled as a `Perfect Duplicate`, `Discrepancy` and/or an `Error`:", 
