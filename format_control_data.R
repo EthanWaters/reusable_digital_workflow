@@ -319,8 +319,9 @@ compare_discrepancies <- function(new_data_df, legacy_data_df, discrepancies , I
   legacy_error_flag <- legacy_data_df[discrepancies[,1], "error_flag"]
   new_error_flag <- new_data_df[discrepancies[,2], "error_flag"]
   
-  output <- ifelse((new_error_flag == 1) & (legacy_error_flag == 0), legacy_data_df[discrepancies[,1],], new_data_df[discrepancies[,2],])
-
+  is_legacy_rows <- ifelse((new_error_flag == 1) & (legacy_error_flag == 0), 1, 0)
+  is_legacy_rows <- as.logical(is_legacy_rows)
+  output <- rbind(new_data_df[discrepancies[!is_legacy_rows,2],], legacy_data_df[discrepancies[is_legacy_rows,1],])
   return(output)
   
 }
