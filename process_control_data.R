@@ -90,9 +90,10 @@ if("error_flag" %in% colnames(legacy_df)){
 has_authorative_ID <-  !any(is.na(new_data_df[,1]))
 assign("has_authorative_ID", has_authorative_ID, envir = .GlobalEnv) 
 
-transformed_df <- transform_data_structure(new_data_df, configuration$mappings$transformations, configuration$mappings$new_fields)
+transformed_data_df <- transform_data_structure(new_data_df, configuration$mappings$transformations, configuration$mappings$new_fields)
+legacy_df <- set_data_type(legacy_df, configuration$mappings$data_type_mappings) 
+formatted_data_df <- set_data_type(transformed_data_df, configuration$mappings$data_type_mappings) 
 
-  
 }
 
 main()

@@ -1294,6 +1294,43 @@ set_data_type <- function(data_df, control_data_type){
   return(output_df)
 } 
 
+set_data_type <- function(data_df, mapping){
+  # sets the data_type of each column of any data frame input based on
+  # configuration file
+  
+  output_df <- data_df
+  for (i in seq_len(nrow(mapping))) {
+    column_name <- mapping$field[i]
+    data_type <- mapping$data_type[i]
+    
+    # Convert the column to the specified data type
+    output_df[[column_name]] <- as(data_df[[column_name]], data_type)
+  }
+  
+  # Identify which rows have been coerced to NA and listed in metadata report. 
+  original_has_na <- apply(data_df, 2, function(x) is.na(x))
+  conversion_has_na <- apply(output_df, 2, function(x) is.na(x))
+  coerced_na <- rowSums(original_has_na) < rowSums(conversion_has_na)
+  
+  if(any(coerced_na)){
+    
+    grandparent <- as.character(sys.call(sys.parent()))[1]
+    parent <- as.character(match.call())[1]
+    indexes <- (1:length(coerced_na))
+    warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have had value(s) coerced to NA:",
+                     paste(data_df[coerced_na, 1], collapse = ", "), "and the following indexes", paste(indexes[coerced_na], collapse = ", "))
+    message(warning)
+    
+    # Append the warning to an existing matrix 
+    warning_matrix <- matrix(warning)
+    contribute_to_metadata_report(control_data_type, warning_matrix)
+  }
+  
+  # remove trailing and leading spaces from strings for comparison. 
+  output_df <- remove_leading_spaces(output_df)
+  return(output_df)
+}
+  
 
 transform_data_structure <- function(data_df, mappings, new_fields){
   
@@ -1302,8 +1339,7 @@ transform_data_structure <- function(data_df, mappings, new_fields){
   transformed_df <- transformed_df[, c(mappings$position, new_fields$position)]
   
   data_colnames <- colnames(data_df)
-  requires_mapping_update <- all(mappings$source_field %in% data_colnames)
-  is_already_mapped <- all(mappings$target_field %in% data_colnames)
+  is_already_mapped <- all(!is.na(match(mappings$target_field, data_colnames)))
   if(is_already_mapped){
     col_indices <- match(data_colnames, mappings$target_fields)
     positions <- mappings$position[col_indices]
@@ -1311,30 +1347,31 @@ transform_data_structure <- function(data_df, mappings, new_fields){
     return(transformed_df)
   }
   
-  if(requires_mapping_update){
-    data_colnames <- get_closest_matches(data_colnames, mappings$source_field)
-    colnames(data_df) <- data_colnames 
-   
+  for (i in seq_len(nrow(new_fields))) {
+    new_field <- new_fields$field[i]
+    default_value <- new_fields$default[i]
+    data_df[[new_field]] <- default_value
   }
+  data_colnames <- get_closest_matches(colnames(data_df), c(mappings$source_field, new_fields$field))
   for (col in data_colnames) {
     index <- match(col, mappings$source_field)
     position <- mappings$position[index]
+    colnames(data_df)[position] <- col 
     transformed_df[, position] <- data_df[[col]]
   }
  
   return(transformed_df)
 }
 
-  
 get_closest_matches <- function(sources, targets){
-  transformed_sources <- c()
-  for(source in sources){
-    levenshtein_distances <- adist(source , targets)
-    closest_match_index <- which.min(levenshtein_distances)
-    transformed_sources <- c(transformed_sources, targets[closest_match_index])
-  }
+  levenshtein_distances <- adist(sources , targets)
+  smallest_values <- apply(levenshtein_distances, 2, min)
+  smallest_indices <- which(rank(smallest_values, ties.method = "min") <= length(targets))
+  transformed_sources <- targets[smallest_indices]
+  
   return(transformed_sources)
 }
+
 
 match_vector_entries <- function(current_vec, target_vec, control_data_type = NULL, check_mapped = FALSE, correct_order = FALSE){
   # Compare any form two vectors and identify matching entries. There are a 

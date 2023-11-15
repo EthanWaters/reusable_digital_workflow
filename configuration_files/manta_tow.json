@@ -3,7 +3,8 @@
       "author": "Ethan Waters",
       "description": "Configuration for manta tow data",
       "created": "2023-11-15",
-      "control_data_type": "manta_data"
+      "control_data_type": "manta_data",
+      "legacy_sheet_index": 4
     },
     "mappings": {
      
@@ -104,6 +105,11 @@
             "field": "Nearest Site",
             "position": 19,
             "default": null
+        },
+        {
+            "field": "error_flag",
+            "position": 20,
+            "default": 0
         }
       ],
       "data_type_mappings": [
