@@ -90,64 +90,9 @@ if("error_flag" %in% colnames(legacy_df)){
 has_authorative_ID <-  !any(is.na(new_data_df[,1]))
 assign("has_authorative_ID", has_authorative_ID, envir = .GlobalEnv) 
 
-# Format Dataframe Columns ------------------------------------------------
+transformed_df <- transform_data_structure(new_data_df, configuration$mappings$transformations, configuration$mappings$new_fields)
 
-# The column formatting of New data will be compared with a legacy data set that 
-# is deemed to be in the ideal target format. Any necessary changes will be made 
-# and recorded. This will be executed irrespective of data set provided.
-
-Updated_data_format <- format_control_data(new_data_df, legacy_df, control_data_type, section)
-legacy_df <- set_data_type(legacy_df, control_data_type) 
-
-# Find Row Discrepancies --------------------------------------------------
-
-# If this is the first time processing the data it will require an export 
-# directly from the GBRMPA database to ensure that IDs are correct. This will 
-# then need to check every single entry to ensure it meets the requirements. 
-# Ultimately it is not possible to definitively know if a change / discrepancy 
-# was intentional or not, therefore both new and change entries will pass
-# through the same validation checks and if passed will be accepted as 
-# usable. Identifying discrepancies does not alter the checking process, it 
-# just offers the opportunity to ensure that a correct record wasn't 
-# mistakenly changed. For first time processing any error flagged entries can 
-# be compared to the legacy data set in an iterative process without checking 
-# IDs to find likely matches. 
-
-# Although this system is capable of handling information without an 
-# authoritative ID it is bad practice to attempt to update or alter any
-# authoritative Ids as there is no way of guaranteeing that the ID is being 
-# assigned to the correct data entry. Therefore, the system will use data 
-# with no entries until the next database export where all data without IDs 
-# will be removed. This ensures that the authoritative IDs remain 
-# authoritative. 
-
-ID_col <- colnames(Updated_data_format)[1]
-
-if(any(is.na(legacy_df[ID_col]))){
-  # create new dataframe without rows that have NA ID so that they can
-  # be passed through the check functions as new row entries. 
-  legacy_df <- legacy_df[is.na(legacy_df[ID_col]),]
-}
-
-verified_data_df <- verify_entries(Updated_data_format, control_data_type, ID_col)
-if(is_new){
-  legacy_df <- verify_entries(legacy_df, control_data_type, ID_col) 
-}
-
-# flag non-genuine duplicates that are mistakes
-verified_data_df <- flag_duplicates(verified_data_df)
-
-# separate entries and update any rows that were changed on accident. 
-if(!skip_descrepancies_check){
-  verified_data_df <- separate_control_dataframe(verified_data_df, legacy_df, control_data_type)
-}
-
-
-# Assign Nearest Sites ----------------------------------------------------
-verified_data_df <- assign_nearest_sites(geospatial_sites, nearest_site_algorithm, verified_data_df)
-
-export(verified_data_df)
-
+  
 }
 
 main()

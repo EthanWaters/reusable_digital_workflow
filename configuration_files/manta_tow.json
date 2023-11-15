@@ -1,0 +1,187 @@
+{
+    "metadata": {
+      "author": "Ethan Waters",
+      "description": "Configuration for manta tow data",
+      "created": "2023-11-15",
+      "control_data_type": "manta_data"
+    },
+    "mappings": {
+     
+      "transformations": [
+        {
+          "target_field": "ID",
+          "source_field": "COTS Surveillance Id",
+          "position": 1
+        },
+        {
+          "target_field": "Tow date",
+          "source_field": "Tow time",
+          "position": 2
+        },
+        {
+          "target_field": "Vessel",
+          "source_field": "Vessel",
+          "position": 4
+        },
+        {
+          "target_field": "Voyage",
+          "source_field": "Voyage",
+          "position": 5
+        },
+        {
+          "target_field": "Reef ID",
+          "source_field": "Reef label",
+          "position": 6
+        },
+        {
+          "target_field": "Reef",
+          "source_field": "Reef name",
+          "position": 7
+        },
+        {
+          "target_field": "Start Lat",
+          "source_field": "Start lat",
+          "position": 8
+        },
+        {
+          "target_field": "Start Lng",
+          "source_field": "Start long",
+          "position": 9
+        },
+        {
+          "target_field": "End Lat",
+          "source_field": "End lat",
+          "position": 10
+        },
+        {
+          "target_field": "End Lng",
+          "source_field": "End long",
+          "position": 11
+        },
+        {
+          "target_field": "Distance (metres)",
+          "source_field": "Distance (m)",
+          "position": 12
+        },
+        {
+          "target_field": "Average Speed (km/h)",
+          "source_field": "Average speed (km/h)",
+          "position": 13
+        },
+        {
+          "target_field": "COTS Observed",
+          "source_field": "COTS observed",
+          "position": 14
+        },
+        {
+          "target_field": "Feeding Scars",
+          "source_field": "Feeding scars",
+          "position": 15
+        },
+        {
+          "target_field": "Hard Coral",
+          "source_field": "Hard coral",
+          "position": 16
+        },
+        {
+          "target_field": "Soft Coral",
+          "source_field": "Soft coral",
+          "position": 17
+        },
+        {
+          "target_field": "Recently Dead Coral",
+          "source_field": "Dead coral",
+          "position": 18
+        }
+      ],
+      "new_fields": [
+        {
+            "field": "Tow Time",
+            "position": 3,
+            "default": "12:00:00"
+        },
+        {
+            "field": "Nearest Site",
+            "position": 19,
+            "default": null
+        }
+      ],
+      "data_type_mappings": [
+        {
+          "field": "Reef ID",
+          "data_type": "Character"
+        },
+        {
+          "field": "ID",
+          "data_type": "Integer"
+        },
+        {
+          "field": "Tow date",
+          "data_type": "Date"
+        },
+        {
+          "field": "Tow Time",
+          "data_type": "Time"
+        },
+        {
+          "field": "Vessel",
+          "data_type": "Character"
+        },
+        {
+          "field": "Voyage",
+          "data_type": "Character"
+        },
+        {
+          "field": "Reef",
+          "data_type": "Character"
+        },
+        {
+          "field": "Start Lat",
+          "data_type": "Numeric"
+        },
+        {
+          "field": "Start Lng",
+          "data_type": "Numeric"
+        },
+        {
+          "field": "End Lat",
+          "data_type": "Numeric"
+        },
+        {
+          "field": "End Lng",
+          "data_type": "Numeric"
+        },
+        {
+          "field": "Distance (metres)",
+          "data_type": "Numeric"
+        },
+        {
+          "field": "Average Speed (km/h)",
+          "data_type": "Numeric"
+        },
+        {
+          "field": "COTS Observed",
+          "data_type": "Integer"
+        },
+        {
+          "field": "Feeding Scars",
+          "data_type": "Character"
+        },
+        {
+          "field": "Hard Coral",
+          "data_type": "Character"
+        },
+        {
+          "field": "Soft Coral",
+          "data_type": "Character"
+        },
+        {
+          "field": "Recently Dead Coral",
+          "data_type": "Character"
+        }
+      ]
+      
+    }
+  }
+
+  

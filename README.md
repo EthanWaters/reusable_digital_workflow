@@ -7,13 +7,16 @@ The overall purpose of this workflow is to clean and wrangle control program dat
 
 The four major steps in this process are as follows:
 
-  - Acquire control data
-  - Convert data to standard legacy format 
-  - Assign nearest site to manta tow data
-  - Perform required mathematical operation
+  1. `Data Transformation` to legacy format .
+  2. Perform `Error Checking & Processing`.
+  3. Perform `Site Assignment` to control data if applicable.
+  4. `Export` 
+
+## 1 Data Transformation
+
+While an ideal scenario would involve a fully dynamic system capable of automatically determining mapping transformations from one version of a data set to the next, this proved unattainable due to the overlapping use of names in the new GBRMPA database with the old data set in a different context. To address this challenge, a compromise between modularity and robustness was sought. Instead of hard-coding numerous transformations, a solution was implemented using JSON configuration files to specify transformations which are then checked against the input with NLP techniques and dynamically changed to ensure semantic differences can still be effectively mapped. This approach allows for flexibility in handling future datasets. The configuration files mean that any dataset can specify a configuration file and then utilise the work flow to ensure consistent data output. 
 
 For further information see Reusable Digital Workflows Systems Diagrams and Reusable Digital Workflows Psudo Code Systems Diagrams
-
 
 
 #### Function: `main(leg_path, new_cull, new_manta_tow, geospatial_sites, nearest_site_algorithm, is_powerBI_export)`

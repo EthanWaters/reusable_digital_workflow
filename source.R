@@ -4,9 +4,7 @@
 import_data <- function(data, control_data_type, has_authorative_ID, sheet=1){
     out <- tryCatch(
       {
-        # Could assign the control_data_type as the file name. Yet to implement 
-        # this effectively
-        
+
         file_name <- tools::file_path_sans_ext(basename(data))
        
         # Opens file and stores information into dataframe. Different file types
@@ -27,17 +25,6 @@ import_data <- function(data, control_data_type, has_authorative_ID, sheet=1){
         column_names <- gsub("\\.", " ", column_names)
         column_names <- gsub("\\s+", " ", column_names)
         colnames(data_df) <- column_names
-        
-        # remove rows containing mostly NA, "" or NULL values 
-        data_df <- data_df[rowSums(is.na(data_df) | data_df == "" | is.null(data_df)) < (ncol(data_df) - 2), ]
-        
-        # create matrix of warnings so they are added to the specified XML node 
-        # in the metadata report in a vectorised mannor. 
-       
-        # warnings <- names(warnings())
-        # warnings_matrix <- matrix(warnings, 1,length(warnings))
-        # contribute_to_metadata_report(control_data_type, "Import", warnings_matrix)
-        
         
         return(data_df)
       },
@@ -1318,6 +1305,47 @@ set_data_type <- function(data_df, control_data_type){
   return(output_df)
 } 
 
+
+transform_data_structure <- function(data_df, mappings, new_fields){
+  
+  transformed_df <- data.frame(matrix(ncol = nrow(mappings) + nrow(new_fields), nrow = nrow(data_df)))
+  colnames(transformed_df) <- c(mappings$target_field, new_fields$field)
+  transformed_df <- transformed_df[, c(mappings$position, new_fields$position)]
+  
+  data_colnames <- colnames(data_df)
+  requires_mapping_update <- all(mappings$source_field %in% data_colnames)
+  is_already_mapped <- all(mappings$target_field %in% data_colnames)
+  if(is_already_mapped){
+    col_indices <- match(data_colnames, mappings$target_fields)
+    positions <- mappings$position[col_indices]
+    transformed_df <- data_df[,positions]
+    return(transformed_df)
+  }
+  
+  if(requires_mapping_update){
+    data_colnames <- get_closest_matches(data_colnames, mappings$source_field)
+    colnames(data_df) <- data_colnames 
+   
+  }
+  for (col in data_colnames) {
+    index <- match(col, mappings$source_field)
+    position <- mappings$position[index]
+    transformed_df[, position] <- data_df[[col]]
+  }
+ 
+  return(transformed_df)
+}
+
+  
+get_closest_matches <- function(sources, targets){
+  transformed_sources <- c()
+  for(source in sources){
+    levenshtein_distances <- adist(source , targets)
+    closest_match_index <- which.min(levenshtein_distances)
+    transformed_sources <- c(transformed_sources, targets[closest_match_index])
+  }
+  return(transformed_sources)
+}
 
 match_vector_entries <- function(current_vec, target_vec, control_data_type = NULL, check_mapped = FALSE, correct_order = FALSE){
   # Compare any form two vectors and identify matching entries. There are a 
