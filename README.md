@@ -14,7 +14,7 @@ The four major steps in this process are as follows:
   4. `Export` 
 
 ## Installation & Requirements
-The system was developed with the following:
+The system was developed with the following. See environment log for details of all packages installed in dev environment.
 
 #### R Environment Information
 
@@ -24,7 +24,7 @@ The system was developed with the following:
 - Timezone: Australia/Brisbane
 - Date: Thu Nov 16 12:57:30 2023
 
-#### Installed Packages
+#### Required Packages
 
 | Package       | Version   |
 | ------------- | --------- |
