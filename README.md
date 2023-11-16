@@ -26,6 +26,7 @@ The system was developed with the following. See environment log for details of 
 
 #### Required Packages
 
+
 | Package       | Version   |
 | ------------- | --------- |
 | tools         | 4.2.1     |
@@ -44,6 +45,22 @@ The system was developed with the following. See environment log for details of 
 | inline        | 0.3.19    |
 | purrr         | 0.3.4     |
 | jsonlite      | 1.8.7     |
+| sf            | 1.0-14    |
+| sp            | 1.5-0     |
+| leaflet       | 2.1.2     |
+| rgdal         | 1.6-7     |
+| parallel      | 4.2.1     |
+| raster        | 3.6-23    |
+| terra         | 1.7-39    |
+| units         | 0.8-0     |
+| tidyverse     | 1.3.2     |
+| tictoc        | 1.1       |
+| tidyr         | 1.2.0     |
+| ggplot2       | 3.4.2     |
+| lwgeom        | 0.2-13    |
+| stars         | 0.6-4     |
+| stringr       | 1.4.1     |
+| fasterize     | 1.0.4     |
 
 
 `install.packages("tools", version = "4.2.1")`  
@@ -62,7 +79,23 @@ The system was developed with the following. See environment log for details of 
 `install.packages("inline", version = "0.3.19")`  
 `install.packages("purrr", version = "0.3.4")`  
 `install.packages("jsonlite", version = "1.8.7")`  
-
+`install.packages("sf", version = "1.0-14")`
+`install.packages("sp", version = "1.5-0")`
+`install.packages("leaflet", version = "2.1.2")`
+`install.packages("rgdal", version = "1.6-7")`
+`install.packages("parallel", version = "4.2.1")`
+`install.packages("raster", version = "3.6-23")`
+`install.packages("terra", version = "1.7-39")`
+`install.packages("dplyr", version = "1.0.10")`
+`install.packages("units", version = "0.8-0")`
+`install.packages("tidyverse", version = "1.3.2")`
+`install.packages("tictoc", version = "1.1")`
+`install.packages("tidyr", version = "1.2.0")`
+`install.packages("ggplot2", version = "3.4.2")`
+`install.packages("lwgeom", version = "0.2-13")`
+`install.packages("stars", version = "0.6-4")`
+`install.packages("stringr", version = "1.4.1")`
+`install.packages("fasterize", version = "1.0.4")`
 
 ## 3.1 Data Transformation
 

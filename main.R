@@ -37,7 +37,7 @@ main <- function(){
 leg_path <- file.choose()
 new_path <- file.choose()
 
-json_file <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\configuration_files\\manta_tow.json"
+configuration_path <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\configuration_files\\manta_tow.json"
 configuration <- fromJSON(json_file)
 
 control_data_options_list <- c("cull", "manta_tow", "RHISS")

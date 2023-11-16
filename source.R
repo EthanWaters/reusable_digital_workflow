@@ -1580,6 +1580,243 @@ match_vector_entries <- function(current_vec, target_vec, control_data_type = NU
 }
 
 
+assign_nearest_method_c <- function(kml_data, data_df, layer_names_vec, crs, raster_size=0.0005, x_closest=1, is_standardised=1, save_rasters=1){
+  # Assign nearest sites to manta tows with method developed by Cameron Fletcher
+  
+  sf_use_s2(FALSE)
+  pts <- get_centroids(data_df, crs)
+  kml_data_simplified <- simplify_reef_polyogns_rdp(kml_data)
+  site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
+  
+  tryCatch({
+    if(save_rasters){
+      for(i in 1:length(site_regions)){
+        file_name <- names(site_regions[i])
+        modified_file_name <- gsub("/", "_", file_name)
+        writeRaster(site_regions[[i]], filename = paste("Cameron Method\\",raster_size,"\\",modified_file_name,".tif", sep=""), format = "GTiff", overwrite = TRUE)
+      }
+    }
+  }, error = function(e) {
+    cat("An error occurred while saving", modified_file_name, "\n")
+  })
+  
+  updated_pts <- pts
+  for(i in 1:length(site_regions)){
+    is_contained <- sapply(pts$`Reef Number`, function(str) grepl(str, names(site_regions[i])))
+    if(any(is_contained) == FALSE){
+      next
+    }
+    reef_pts <- pts[is_contained,]
+    nearest_site_manta_data <- raster::extract(site_regions[[i]], reef_pts)
+    updated_pts[is_contained, "Nearest Site"] <- nearest_site_manta_data
+  }
+  return(updated_pts)
+}
+
+
+
+get_centroids <- function(data_df, crs, precision=0){
+  # Determine the centroid of the manta tow and create geospatial points
+  
+  data_df <- data_df %>%
+    mutate(
+      mean_lat = (`Start Lat` + `End Lat`) / 2,
+      mean_long = (`Start Lng` + `End Lng`) / 2
+    )
+  
+  if(precision != 0){
+    data_df <- data_df %>%
+      mutate_at(vars(`Start lat`, `Start long`, `End lat`, `End long`, `mean_lat`, `mean_long`), ~ round(., precision))
+  }
+  
+  #create manta_tow points
+  is_coord_na <- !is.na(data_df$mean_lat) & !is.na(data_df$mean_long)
+  data_filtered <- data_df[is_coord_na, ]
+  pts <- st_as_sf(data_filtered, coords=c("mean_long", "mean_lat"), crs=crs)
+  return(pts)
+}
+
+
+
+
+assign_raster_pixel_to_sites <- function(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0){
+  # This is a method of assigning sites to manta tows that was initially 
+  # implemented in Mathmatica by Dr Cameron Fletcher. A set of rasters are 
+  # created slightly larger than the bounding box of each layer in the KML file.
+  # The rasters are convereted into a matrix of geospatial "POINTS" to compare 
+  # the distance between each point and the sites on the corresponding layer. 
+  # Each raster pixel will then be assigned a value corresponding with the 
+  # nearest site (geodesic distance) 
+  
+  if(is_standardised){
+    expanded_extent <- standardise_extents(kml_data)
+  } else {
+    expanded_extent <- list()
+    for(i in 1:length(kml_data)) {
+      expanded_extent[[i]] <- extent(kml_data[[i]])
+    }
+  }
+  
+  # Define the increase amount in both x and y directions. 
+  increase_amount <- 0.003
+  expanded_bboxs <- setNames(lapply(expanded_extent, function(i) {
+    
+    original_extent <- i
+    # Increase the extent by the specified amount
+    expanded_bboxs <- extent(original_extent[1] - increase_amount,
+                             original_extent[2] + increase_amount,
+                             original_extent[3] - increase_amount,
+                             original_extent[4] + increase_amount)
+    
+  }), layer_names_vec)
+  
+  # Create an empty raster based on the bounding box, cell size, and projection
+  rasters <- create_raster_templates(expanded_bboxs, layer_names_vec, crs, raster_size)
+  
+  # The original script in mathmatica utilised a function "RegionDistance". This 
+  # finds the Euclidean distance between the polygon and a point and does not
+  # consider the curviture of the earth. 
+  site_regions <- setNames(vector("list", length=length(rasters)),layer_names_vec)
+  
+  for (i in seq_along(rasters)) {
+    raster <- rasters[[i]]
+    site_poly <- kml_data[[i]]
+    
+    # set all values of the raster layer so every pixel can be exported to a 
+    # dataframe and then converted to points 
+    values(raster) <- 1
+    pixel_coords <- rasterToPoints(raster)
+    pixel_coords <- pixel_coords[,1:2]
+    raster_points <- pixel_coords |> as.matrix() |> st_multipoint() |> st_sfc() |> st_cast('POINT')
+    st_crs(raster_points) <- crs
+    
+    # Get site numbers
+    site_names <- site_poly$Name
+    site_numbers <- site_names_to_numbers(site_names)
+    
+    # Can determine the Euclidean and geodesic distance (st_distance)
+    distances <- st_distance(site_poly, raster_points)
+    if (dim(distances)[1] != 1){
+      
+      distances <- apply(distances, 2, as.numeric)
+      min_distances_list <- apply(distances, 2, xth_smallest, x_values=x_closest)
+      min_distances_df <- do.call(rbind, min_distances_list)
+      min_distance_site_numbers <- site_numbers[as.vector(min_distances_df$`Nearest Site`)]
+      min_distances <- min_distances_df$`distance`
+      
+    } else {
+      min_distances <- drop_units(distances)
+      min_distance_site_numbers <- rep(site_numbers, length(min_distances))
+    }
+    
+    # Set site numbers to NA if they are more than 300m away. 
+    is_within_300 <- min_distances > 300
+    min_distance_site_numbers[is_within_300] <- 0
+    min_distances[is_within_300] <- 0
+    values(raster) <- min_distance_site_numbers
+    names(raster) <- c("Nearest Site")
+    
+    site_regions[[i]] <- raster
+  }
+  
+  return(site_regions)
+}
+
+site_names_to_numbers <- function(site_names){
+  return(as.numeric(sub(".+_(\\d+)$", "\\1", site_names)))
+}
+
+
+simplify_reef_polyogns_rdp <- function(kml_data){
+  # simplify all reef polygons stored in a list that was retrieved from the kml
+  # file with the Ramer-Douglas-Peucker algorithm
+  
+  simplified_kml_data <- kml_data
+  for (j in 1:length(kml_data)){
+    reef_geometries <- kml_data[[j]][[3]]
+    reef_geometries_updated <- reef_geometries
+    for(i in 1:length(reef_geometries)){
+      # A vast majority of reef_geometries at this level are polygons but 
+      # occasionally they are geometrycollections and require iteration. 
+      
+      site_polygon <- reef_geometries[[i]]
+      if (class(site_polygon[[2]])[2] == "GEOMETRYCOLLECTION"){
+        for(k in 1:length(site_polygon[[2]])){
+          polygon_points <- site_polygon[[2]][[k]][[1]]
+          approx_polygon_points <- polygon_rdp(polygon_points)
+          site_polygon[[2]][[k]][[1]] <- approx_polygon_points
+        }
+      } else {
+        polygon_points <- site_polygon[[2]][[1]]
+        approx_polygon_points <- polygon_rdp(polygon_points)
+        site_polygon[[2]][[1]] <- approx_polygon_points
+      }
+      reef_geometries_updated[[i]] <- site_polygon
+    }
+    simplified_kml_data[[j]][[3]] <- reef_geometries_updated
+    
+  }
+  return(simplified_kml_data)
+}
+
+polygon_rdp <- function(polygon_points, epsilon=0.00001) {
+  # adaptation of the Ramer-Douglas-Peucker algorithm. The original algorithm 
+  # was developed for a use with a line not a ploygon. Remove the last point 
+  # temporarily, perform the algorithm and then return the value.
+  
+  line_points <- polygon_points[1:nrow(polygon_points)-1,]
+  approx_line_points <- rdp(line_points, epsilon)
+  polygon <- rbind(approx_line_points, approx_line_points[1,])
+  return(polygon)
+}
+
+rdp <- function(points, epsilon=0.00001) {
+  # Ramer-Douglas-Peucker algorithm s
+  if (nrow(points) <= 2) {
+    return(points)
+  }
+  
+  dmax <- 0
+  index <- 0
+  end <- nrow(points)
+  
+  # Find the point with the maximum distance
+  for (i in 2:(end - 1)) {
+    d <- perpendicularDistance(points[i,], points[1,], points[end,])
+    if (d > dmax) {
+      index <- i
+      dmax <- d
+    }
+  }
+  
+  
+  result <- matrix(nrow = 0, ncol = ncol(points))
+  # If max distance is greater than epsilon, recursively simplify
+  if (dmax > epsilon) {
+    recursive1 <- rdp(points[1:index,], epsilon)
+    recursive2 <- rdp(points[(index):end,], epsilon)
+    result <- rbind(result, rbind(recursive1[1:nrow(recursive1) - 1,], recursive2))
+  } else {
+    result <- rbind(points[1,], points[end,])
+  }
+  
+  return(result)
+}
+
+# Calculate perpendicular distance of a point p from a line segment AB
+perpendicularDistance <- function(p, A, B) {
+  numerator <- abs((B[2] - A[2]) * p[1] - (B[1] - A[1]) * p[2] + B[1] * A[2] - B[2] * A[1])
+  denominator <- sqrt((B[2] - A[2])^2 + (B[1] - A[1])^2)
+  result <- (numerator / denominator)
+  return(result)
+}
+
+
+
+
+
+
+
 
 
 
