@@ -98,3 +98,11 @@ formatted_data_df <- set_data_type(transformed_data_df, configuration$mappings$d
 
 main()
 
+
+
+
+
+
+
+
+

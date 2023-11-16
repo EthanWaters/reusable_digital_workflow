@@ -1350,25 +1350,45 @@ transform_data_structure <- function(data_df, mappings, new_fields){
   for (i in seq_len(nrow(new_fields))) {
     new_field <- new_fields$field[i]
     default_value <- new_fields$default[i]
-    data_df[[new_field]] <- default_value
+    position <- new_fields$position[i]
+    transformed_df[, position] <- default_value
+    colnames(transformed_df)[position] <- new_field
+    
   }
-  data_colnames <- get_closest_matches(colnames(data_df), c(mappings$source_field, new_fields$field))
-  for (col in data_colnames) {
-    index <- match(col, mappings$source_field)
+  closest_matches <- get_closest_matches(colnames(data_df), mappings$source_field)
+  for (i in seq_len(ncol(closest_matches))) {
+    index <- match(closest_matches[2,i], mappings$source_field)
     position <- mappings$position[index]
-    colnames(data_df)[position] <- col 
-    transformed_df[, position] <- data_df[[col]]
+    colnames(transformed_df)[position] <- closest_matches[2,i] 
+    transformed_df[, position] <- data_df[[closest_matches[1,i]]]
   }
+  
  
   return(transformed_df)
 }
 
+
 get_closest_matches <- function(sources, targets){
+    
+  # perform swap to ensure that sources is longer than targets
+  is_targets_longer <- length(targets) > length(sources)
+  if(is_targets_longer){
+    temp <- targets
+    targets <- sources
+    sources <- temp
+  }  
+
+  transformed_sources <- matrix(0, nrow = 2, ncol = min(length(sources), length(targets)))
   levenshtein_distances <- adist(sources , targets)
-  smallest_values <- apply(levenshtein_distances, 2, min)
-  smallest_indices <- which(rank(smallest_values, ties.method = "min") <= length(targets))
-  transformed_sources <- targets[smallest_indices]
+  smallest_source_distances <- apply(levenshtein_distances, 1, min)
+  smallest_source_indices <- which(rank(smallest_source_distances, ties.method = "min") <= length(targets))
+  smallest_target_indices <- apply(levenshtein_distances, 1, which.min)
+  transformed_sources[1,] <- sources[smallest_source_indices]
+  transformed_sources[2,] <- targets[smallest_target_indices[smallest_source_indices]]
   
+  if(is_targets_longer){
+    transformed_sources[c(1, 2), ] <- transformed_sources[c(2, 1), ]
+  }  
   return(transformed_sources)
 }
 
