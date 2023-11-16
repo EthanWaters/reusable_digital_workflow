@@ -4,7 +4,8 @@
       "description": "Configuration for manta tow data",
       "created": "2023-11-15",
       "control_data_type": "manta_data",
-      "legacy_sheet_index": 4
+      "legacy_sheet_index": 4,
+      "ID_col": "ID"
     },
     "mappings": {
      

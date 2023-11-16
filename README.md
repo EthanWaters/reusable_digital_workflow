@@ -13,21 +13,72 @@ The four major steps in this process are as follows:
   3. Perform `Site Assignment` to control data if applicable.
   4. `Export` 
 
-## 2.1 Data Transformation
+## Installation & Requirements
+The system was developed with the following:
+
+#### R Environment Information
+
+- R version: 4.2.1 (2022-06-23 ucrt)
+- Platform: x86_64-w64-mingw32
+- Locale: LC_COLLATE=English_Australia.utf8;LC_CTYPE=English_Australia.utf8;LC_MONETARY=English_Australia.utf8;LC_NUMERIC=C;LC_TIME=English_Australia.utf8
+- Timezone: Australia/Brisbane
+- Date: Thu Nov 16 12:57:30 2023
+
+#### Installed Packages
+
+| Package       | Version   |
+| ------------- | --------- |
+| tools         | 4.2.1     |
+| installr      | 0.23.4    |
+| readxl        | 1.4.1     |
+| sets          | 1.0-21    |
+| XML           | 3.99-0.13 |
+| methods       | 4.2.1     |
+| xml2          | 1.3.3     |
+| rio           | 0.5.29    |
+| dplyr         | 1.0.10    |
+| stringr       | 1.4.1     |
+| fastmatch     | 1.1-3     |
+| lubridate     | 1.8.0     |
+| rlang         | 1.1.0     |
+| inline        | 0.3.19    |
+| purrr         | 0.3.4     |
+| jsonlite      | 1.8.7     |
+
+
+`install.packages("tools", version = "4.2.1")`
+`install.packages("installr", version = "0.23.4")`
+`install.packages("readxl", version = "1.4.1")`
+`install.packages("sets", version = "1.0-21")`
+`install.packages("XML", version = "3.99-0.13")`
+`install.packages("methods", version = "4.2.1")`
+`install.packages("xml2", version = "1.3.3")`
+`install.packages("rio", version = "0.5.29")`
+`install.packages("dplyr", version = "1.0.10")`
+`install.packages("stringr", version = "1.4.1")`
+`install.packages("fastmatch", version = "1.1-3")`
+`install.packages("lubridate", version = "1.8.0")`
+`install.packages("rlang", version = "1.1.0")`
+`install.packages("inline", version = "0.3.19")`
+`install.packages("purrr", version = "0.3.4")`
+`install.packages("jsonlite", version = "1.8.7")`
+
+
+## 3.1 Data Transformation
 
 While an ideal scenario would involve a fully dynamic system capable of automatically determining mapping transformations from one version of a data set to the next, this proved unattainable due to the overlapping use of names in the new GBRMPA database with the old data set in a different context. To address this challenge, a compromise between modularity and robustness was sought. Instead of hard-coding numerous transformations, a solution was implemented using JSON configuration files to specify transformations which are then checked against the input with NLP techniques and dynamically changed to ensure semantic differences can still be effectively mapped. This approach allows for flexibility in handling future datasets. The configuration files mean that any dataset can specify a configuration file and then utilise the work flow to ensure consistent data output. 
 
-## 2.2 Error Checking & Processing
+## 3.2 Error Checking & Processing
 
 
-## 2.3 Site Assignment
+## 3.3 Site Assignment
 
 
-## 2.4 Export Data
+## 3.4 Export Data
 
 For further information see Reusable Digital Workflows Systems Diagrams and Reusable Digital Workflows Psudo Code Systems Diagrams
 
-## 3.0 Code Documentation
+## 4.0 Code Documentation
 
 #### Function: `main(leg_path, new_cull, new_manta_tow, geospatial_sites, nearest_site_algorithm, is_powerBI_export)`
 

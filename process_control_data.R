@@ -45,8 +45,6 @@ control_data_type_choice <- menu(control_data_options_list, title = "Select cont
 control_data_type <- control_data_options_list[control_data_type_choice]
 leg_sheet_index <- control_data_type_choice + 1
 
-skip_descrepancies_check_options_list <- c("No", "Yes")
-skip_descrepancies_check <- menu(skip_descrepancies_check_options_list, title = "Skip checking discrepancies?")
 
 if(skip_descrepancies_check == "No"){
   skip_descrepancies_check <- 1
@@ -93,6 +91,22 @@ assign("has_authorative_ID", has_authorative_ID, envir = .GlobalEnv)
 transformed_data_df <- transform_data_structure(new_data_df, configuration$mappings$transformations, configuration$mappings$new_fields)
 legacy_df <- set_data_type(legacy_df, configuration$mappings$data_type_mappings) 
 formatted_data_df <- set_data_type(transformed_data_df, configuration$mappings$data_type_mappings) 
+
+verified_data_df <- verify_entries(formatted_data_df, configuration)
+if(is_new){
+  legacy_df <- verify_entries(legacy_df, configuration) 
+}
+
+# flag non-genuine duplicates that are mistakes
+verified_data_df <- flag_duplicates(verified_data_df)
+
+# separate entries and update any rows that were changed on accident. 
+if(!skip_descrepancies_check){
+  verified_data_df <- separate_control_dataframe(verified_data_df, legacy_df, configuration$metadata$control_data_type)
+}
+
+
+
 
 }
 

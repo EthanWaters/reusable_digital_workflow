@@ -641,7 +641,10 @@ check_for_mistake <- function(control_data_type){
   }
 }
 
-verify_entries <- function(data_df, control_data_type, ID_col){
+verify_entries <- function(data_df, configuration){
+  ID_col <- configuration$metadata$ID_col
+  control_data_type <- configuration$metadata$control_data_type
+    
   data_df <- verify_integers_positive(data_df)
   data_df <- verify_reef(data_df)
   data_df <- verify_percentages(data_df)
