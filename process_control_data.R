@@ -114,7 +114,9 @@ main <- function(new_path, configuration_path, kml_path, leg_path = NULL) {
     print(paste("Error assigning sites:", conditionMessage(e)))
   })
   
-  
+  # extract non-spatial attributes and export them 
+  verified_data_df <- as.data.frame(verified_data_df)
+  write.csv(verified_data_df, paste("Output\\",configuration$metadata$control_data_type,"_", Sys.Date(), ".csv", sep = ""), row.names = FALSE)
   
 }
 
