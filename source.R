@@ -1,7 +1,7 @@
 # Format the new control data into the stardard legacy format 
 
 
-import_data <- function(data, control_data_type, has_authorative_ID, sheet=1){
+import_data <- function(data, configuration){
     out <- tryCatch(
       {
 
@@ -11,7 +11,7 @@ import_data <- function(data, control_data_type, has_authorative_ID, sheet=1){
         # require different functions to read data
         file_extension <- file_ext(data)
         if (file_extension == 'xlsx'){
-          data_tibble <- read_xlsx(data, sheet = sheet)
+          data_tibble <- read_xlsx(data, sheet = configuration$metadata$legacy_sheet_index)
           data_tibble_colnames <- colnames(data_tibble)
           data_df <- data.frame(data_tibble)
           colnames(data_df) <- data_tibble_colnames
