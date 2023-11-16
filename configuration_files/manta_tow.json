@@ -115,75 +115,75 @@
       "data_type_mappings": [
         {
           "field": "Reef ID",
-          "data_type": "Character"
+          "data_type": "character"
         },
         {
           "field": "ID",
-          "data_type": "Integer"
+          "data_type": "integer"
         },
         {
           "field": "Tow date",
-          "data_type": "Date"
+          "data_type": "date"
         },
         {
           "field": "Tow Time",
-          "data_type": "Time"
+          "data_type": "date"
         },
         {
           "field": "Vessel",
-          "data_type": "Character"
+          "data_type": "character"
         },
         {
           "field": "Voyage",
-          "data_type": "Character"
+          "data_type": "character"
         },
         {
           "field": "Reef",
-          "data_type": "Character"
+          "data_type": "character"
         },
         {
           "field": "Start Lat",
-          "data_type": "Numeric"
+          "data_type": "numeric"
         },
         {
           "field": "Start Lng",
-          "data_type": "Numeric"
+          "data_type": "numeric"
         },
         {
           "field": "End Lat",
-          "data_type": "Numeric"
+          "data_type": "numeric"
         },
         {
           "field": "End Lng",
-          "data_type": "Numeric"
+          "data_type": "numeric"
         },
         {
           "field": "Distance (metres)",
-          "data_type": "Numeric"
+          "data_type": "numeric"
         },
         {
           "field": "Average Speed (km/h)",
-          "data_type": "Numeric"
+          "data_type": "numeric"
         },
         {
           "field": "COTS Observed",
-          "data_type": "Integer"
+          "data_type": "integer"
         },
         {
           "field": "Feeding Scars",
-          "data_type": "Character"
+          "data_type": "character"
         },
         {
           "field": "Hard Coral",
-          "data_type": "Character"
+          "data_type": "character"
         },
         {
           "field": "Soft Coral",
-          "data_type": "Character"
+          "data_type": "character"
         },
         {
           "field": "Recently Dead Coral",
-          "data_type": "Character"
+          "data_type": "character"
         }
       ]
       

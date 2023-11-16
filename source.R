@@ -1304,7 +1304,12 @@ set_data_type <- function(data_df, mapping){
     data_type <- mapping$data_type[i]
     
     # Convert the column to the specified data type
-    output_df[[column_name]] <- as(data_df[[column_name]], data_type)
+    if(tolower(data_type) == "date"){
+      output_df[[column_name]] <- parse_date_time(data_df[[column_name]], orders = c('dmy', 'ymd', '%d/%b/%Y %I:%M:%S %p', '%Y/%b/%d %I:%M:%S %p', '%I:%M:%S'))
+    } else {
+      output_df[[column_name]] <- as(data_df[[column_name]], tolower(data_type))
+    }
+    
   }
   
   # Identify which rows have been coerced to NA and listed in metadata report. 
@@ -1359,7 +1364,8 @@ transform_data_structure <- function(data_df, mappings, new_fields){
   for (i in seq_len(ncol(closest_matches))) {
     index <- match(closest_matches[2,i], mappings$source_field)
     position <- mappings$position[index]
-    colnames(transformed_df)[position] <- closest_matches[2,i] 
+    mapped_name <- mappings$target_field[index]
+    colnames(transformed_df)[position] <- mapped_name 
     transformed_df[, position] <- data_df[[closest_matches[1,i]]]
   }
   
