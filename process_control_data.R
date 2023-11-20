@@ -2,6 +2,7 @@
 main <- function(new_path, configuration_path, kml_path, leg_path = NULL) {
   
   # Initialize -------------------------------------------------------------
+  source("source.R")
   library("tools")
   library("installr")
   library("readxl")
@@ -20,7 +21,6 @@ main <- function(new_path, configuration_path, kml_path, leg_path = NULL) {
   library("jsonlite")
   library("sf")
   library("sp")
-  library("leaflet")
   library("rgdal")
   library("parallel")
   library("raster")

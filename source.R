@@ -1164,6 +1164,9 @@ set_data_type <- function(data_df, mapping){
     # Convert the column to the specified data type
     if(tolower(data_type) == "date"){
       output_df[[column_name]] <- parse_date_time(data_df[[column_name]], orders = c('dmy', 'ymd', '%d/%b/%Y %I:%M:%S %p', '%Y/%b/%d %I:%M:%S %p', '%I:%M:%S'))
+    } else if (tolower(data_type) == "time") {
+      time <- as.POSIXct(data_df[[column_name]], format = "%H:%M:%S")
+      output_df[[column_name]] <- format(time, '%H:%M:%S')
     } else {
       output_df[[column_name]] <- as(data_df[[column_name]], tolower(data_type))
     }
@@ -1210,13 +1213,18 @@ transform_data_structure <- function(data_df, mappings, new_fields){
     return(transformed_df)
   }
   
+  levenshtein_distances <- any(adist(new_field , colnames(data_df)) <= 2)
+  
   for (i in seq_len(nrow(new_fields))) {
     new_field <- new_fields$field[i]
-    default_value <- new_fields$default[i]
     position <- new_fields$position[i]
-    transformed_df[, position] <- default_value
-    colnames(transformed_df)[position] <- new_field
-    
+    colnames(transformed_df)[position] <- new_field 
+    if(!(new_field %in% colnames(data_df))){
+      default_value <- new_fields$default[i]
+      transformed_df[, position] <- default_value
+    } else {
+      transformed_df[, position] <- data_df[[new_field]]
+    }
   }
   closest_matches <- get_closest_matches(colnames(data_df), mappings$source_field)
   for (i in seq_len(ncol(closest_matches))) {

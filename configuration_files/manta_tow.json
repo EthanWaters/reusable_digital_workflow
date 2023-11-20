@@ -130,7 +130,7 @@
         },
         {
           "field": "Tow Time",
-          "data_type": "date"
+          "data_type": "time"
         },
         {
           "field": "Vessel",
