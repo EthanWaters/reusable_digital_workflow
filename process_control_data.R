@@ -131,6 +131,3 @@ main(new_path, configuration_path, kml_path, leg_path)
 
 
 
-
-
-
