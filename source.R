@@ -203,8 +203,8 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
     
     # Determine additional columns required by the new data format and remove 
     # from comparison
-    required_columns <- add_required_columns(control_data_type, has_authorative_ID)
-   
+    
+    required_columns <- intersect(configuration$mappings$new_fields$field, names(new_data_df))
     # save original dataframes for legacy and new data so it can be manipulated
     # without loosing data. Columns will be removed that are not going to be  
     # compared for similarity. A unique identifier for each row will be created 
@@ -228,16 +228,15 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
     new_entries <- anti_join(new_data_df, legacy_data_df, by=ID_col)
     
     # Determine discrepancies and store both versions of the entries
-    non_discrepancy_indices <- c(perfect_duplicates[[ID_col]], new_entries[[ID_col]])
-    discrepancies_new <- new_data_df[!(new_data_df[[ID_col]] %in% non_discrepancy_indices),]
-    discrepancies_legacy <- legacy_data_df[!(legacy_data_df[[ID_col]] %in% non_discrepancy_indices),]
+    non_discrepancy_ids <- c(perfect_duplicates[[ID_col]], new_entries[[ID_col]])
+    discrepancies_new <- new_data_df[!(new_data_df[[ID_col]] %in% non_discrepancy_ids),]
+    discrepancies_legacy <- legacy_data_df[!(legacy_data_df[[ID_col]] %in% non_discrepancy_ids),]
       
   } else {
   
     # Determine additional columns required by the new data format and remove 
     # from comparison
-    required_columns <- add_required_columns(control_data_type, has_authorative_ID)
-    required_columns <- c(required_columns, ID_col)
+    required_columns <- intersect(c(configuration$mappings$new_fields$field, ID_col), names(new_data_df))
     
     # find close matching rows (distance of two) based on all columns except ID. ID is not 
     # because it will always be null if the data is exported from powerBI. 
@@ -287,7 +286,7 @@ flag_duplicates <- function(new_data_df){
   # the same time.
   
   new_data_df$Identifier <- apply(new_data_df[,2:ncol(new_data_df)], 1, function(row) paste(row, collapse = "_"))
-  duplicates <- duplicated(new_data_df$Identifier)
+  duplicates <- duplicated(new_data_df$Identifier)|duplicated(new_data_df$Identifier, fromLast=TRUE)
   counts <- ave(duplicates, new_data_df$Identifier, FUN = sum)
   new_data_df$error_flag <- ifelse(counts >= 3 & duplicates, 1, new_data_df$error_flag)
   new_data_df$Identifier <- NULL
