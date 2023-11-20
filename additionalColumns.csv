@@ -1,6 +1,0 @@
-addition,type,is_mandatory,default
-Nearest Site,manta_tow,1,
-Tow Time,manta_tow,1,0:00:00
-error_flag,manta_tow,1,0
-error_flag,cull,1,0
-error_flag,RHISS,1,0
