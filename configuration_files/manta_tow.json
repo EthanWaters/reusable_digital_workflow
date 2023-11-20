@@ -187,6 +187,10 @@
         {
           "field": "Recently Dead Coral",
           "data_type": "character"
+        },
+        {
+          "field": "error_flag",
+          "data_type": "numeric"
         }
       ]
       

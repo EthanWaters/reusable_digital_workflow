@@ -668,7 +668,7 @@ verify_entries <- function(data_df, configuration){
     data_df <- verify_RHISS(data_df)
     
   } 
-  data_df <- verify_na_null(data_df, control_data_type, ID_col)
+  data_df <- verify_na_null(data_df, configuration)
   data_df$error_flag <- as.integer(data_df$error_flag)
   return(data_df)
 }
@@ -706,21 +706,31 @@ verify_lat_lng <- function(data_df, max_val, min_val, columns, ID_col){
 verify_scar <- function(data_df) {
   # check that columns in RHISS data contain expected values according to metadata
   valid_scar <- c("a", "p", "c")
-  check_valid_scar <- data_df$`Feeding Scars` %in% valid_scar
   
-  data_df[["error_flag"]] <- data_df[["error_flag"]] | !check_valid_scar 
-  if (any(!check_valid_scar )) {
-    grandparent <- as.character(sys.call(sys.parent()))[1]
-    parent <- as.character(match.call())[1]
-    warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid COTS scar:",
-                     toString(data_df[!check_valid_scar , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[!check_valid_scar ]))
-    message(warning)
+  tryCatch({
+    check_valid_scar <- data_df$`Feeding Scars` %in% valid_scar
+    data_df[["error_flag"]] <- data_df[["error_flag"]] | !check_valid_scar 
     
-    # Append the warning to an existing matrix 
-    warning_matrix <- matrix(warning)
-    contribute_to_metadata_report(control_data_type, warning_matrix)
     
-  }
+    if (any(!check_valid_scar )) {
+      grandparent <- as.character(sys.call(sys.parent()))[1]
+      parent <- as.character(match.call())[1]
+      warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid COTS scar:",
+                       toString(data_df[!check_valid_scar , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[!check_valid_scar ]))
+      message(warning)
+      
+      # Append the warning to an existing matrix 
+      warning_matrix <- matrix(warning)
+      contribute_to_metadata_report(control_data_type, warning_matrix)
+      
+    }
+    
+  }, error = function(e) {
+    print(paste("Error validating scars:", conditionMessage(e)))
+    data_df[["error_flag"]] <- 1 
+  })
+  
+  
   return(data_df)
 }
 
@@ -826,9 +836,9 @@ verify_RHISS <- function(data_df) {
     contribute_to_metadata_report(control_data_type, warning_matrix)
     
   }
-  
-  
   data_df[["error_flag"]] <- data_df[["error_flag"]] | check 
+  
+  
   return(data_df)
 }
 
@@ -859,12 +869,14 @@ verify_percentages <- function(data_df) {
 }
 
 
-verify_na_null <- function(data_df, control_data_type, ID_col) {
+verify_na_null <- function(data_df, configuration) {
   # check if there are any values that are NA or NULL and flag those rows as an 
   # error. This does not include new additional columns as they are assigned a
   # default value at the end of the verification process or ID column.
+  ID_col <- configuration$metadata$ID_col
+  control_data_type <- configuration$metadata$control_data_type
   
-  exempt_cols <- which(names(data_df) %in% c("error_flag", ID_col, add_required_columns(control_data_type, has_authorative_ID)))
+  exempt_cols <- intersect(c(configuration$mappings$new_fields$field, ID_col), names(data_df))
   na_present <- apply(data_df[, -exempt_cols], 2, function(x) is.na(x) | is.null(x) | x == "")
   check <- rowSums(na_present) > 0
   check <- ifelse(is.na(check),TRUE,check)
