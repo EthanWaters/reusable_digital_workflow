@@ -63,7 +63,6 @@ main <- function(new_path, configuration_path, kml_path, leg_path = NULL) {
   # to a CSV, XLSX or TXT file. This can be adapted to use an explorer to choose 
   # the file. The sheet index variable refer to the sheet the data is located on
   # in the XLSX files and is irrelevant for CSV as it is considered "Flat". 
-  #Defaults to sheet index 1. 
   
   new_data_df <- import_data(new_path, configuration)
   if(is_legacy_data_available){
@@ -77,8 +76,10 @@ main <- function(new_path, configuration_path, kml_path, leg_path = NULL) {
   }
   # Check if the new data has an authoritative ID. All rows of a database export 
   # will have one and no rows from a powerBI export will. There should be no 
-  # scenario where only a portion of rows have IDs
-  
+  # scenario where only a portion of rows have IDs. Even if an ID is present it 
+  # should be ensured that it is authoritative before altering the configuration 
+  # files to preference the use of the ID for separation rather than checking 
+  # for differences manually. 
   
   has_authorative_ID <-  !any(is.na(new_data_df[[configuration$metadata$ID_col]])) & configuration$metadata$is_ID_preferred
   assign("has_authorative_ID", has_authorative_ID, envir = .GlobalEnv) 

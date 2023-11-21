@@ -200,9 +200,9 @@ flag_duplicates <- function(new_data_df){
   # the same time.
   
   new_data_df$Identifier <- apply(new_data_df[,2:ncol(new_data_df)], 1, function(row) paste(row, collapse = "_"))
-  duplicates <- duplicated(new_data_df$Identifier)|duplicated(new_data_df$Identifier, fromLast=TRUE)
+  duplicates <- duplicated(new_data_df$Identifier)
   counts <- ave(duplicates, new_data_df$Identifier, FUN = sum)
-  new_data_df$error_flag <- ifelse(counts >= 3 & duplicates, 1, new_data_df$error_flag)
+  new_data_df$error_flag <- ifelse(counts >= 2 & duplicates, 1, new_data_df$error_flag)
   new_data_df$Identifier <- NULL
   return(new_data_df)
 }
