@@ -143,6 +143,7 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
     - None
 - **Description:**
     - This function creates an empty XML file for to later document metadata and warnings surrounding the pipeline.
+    
 #### Function: `contribute_to_metadata_report(data, key="Warning")`
 - **Input:**
     - `data`: Matrix or dataframe containing strings that describe the location and warning/error that occurred
@@ -151,16 +152,6 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
     - None
 - **Description:**
     - This function adds information to the XML metadata report from the information obtained in the previously executed function to the desired control data node.
-
-#### Function: `outersect(x, y)`
-
-- **Input:**
-    - `x`: first vector
-    - `y`: second vector
-- **Output:**
-    - elements of both vectors that are not in both of them
-- **Description:**
-    - This function returns the elements of two vectors that are not in both of them.
 
 #### Function: `map_column_names(column_names)`
 
@@ -171,51 +162,18 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
 - **Description:**
     - This function maps column names from one format to another. It uses a lookup table to map the column names.
 
-#### Function: `add_required_columns(control_data_type, is_powerBI_export)`
 
-- **Input:**
-    - `control_data_type`: a string representing the type of control data contained within the dataframe
-    - `is_powerBI_export`: a boolean indicating whether the file is a PowerBI export
-- **Output:**
-    - column names required for the control data
-- **Description:**
-    - This function adds any required columns to a dataframe. It uses input parameters to add any required columns to the dataframe.
-
-#### Function: `verify_control_dataframe(new_data_df, legacy_data_df, control_data_type, ID_col, section, is_new)`
-
-- **Input:**
-    - `new_data_df`: dataframe containing new data
-    - `legacy_data_df`: dataframe containing legacy data
-    - `control_data_type`: a string representing the type of control data contained within the dataframe
-    - `ID_col`: the name of the column containing unique IDs
-    - `section`: a string representing the section of the control data being formatted
-    - `is_new`: indicates if data is new or legacy
-- **Output:**
-    - verified dataframe
-- **Description:**
-    - This function finds discrepancies between new data and legacy data and handles them appropriately. It returns a verified dataframe.
-
-
-#### Function: `set_data_type()`
+#### Function: `set_data_type(data_df, mapping)`
 - **Inputs:**
   - `data_df`: A data frame to be updated.
-  - `control_data_type`: The type of control data.
+  - `mapping`: dataframe that specifies a columns required data type. 
 - **Outputs:**
   - `data_df`: The updated data frame.
 - **Description:**
-    - This function sets the data type of each column of a data frame based on a lookup table stored in a CSV file. It returns the updated data frame.
+    - This function sets the data type of each column of a data frame based on mapping in a JSON file. It returns the updated data frame.
     
-#### Function: `update_IDs()`
-- **Inputs:**
-  - `new_data_df`: new data to be matched against
-  - `legacy_data_df`: legacy data to be updated
-  - `control_data_type`: the type of control data being processed
-- **Outputs:**
-  - Updated `legacy_data_df` with updated IDs
-- **Description:**
-  - This function attempts to update the IDs of the legacy data where the previous processing utilised data from a PowerBI export and therefore will have IDs of NA. This will find perfect matches (distance of zero) between the legacy data and new data, and alter the IDs accordingly. Once matches are found, IDs can then be altered. If there are multiple matches then they are left as is. Ultimately this means they will be treated as a new entry.
-
-#### Function: `matrix_close_matches_vectorised()`
+  
+#### Function: `matrix_close_matches_vectorised(x, y, distance)`
 - **Inputs:**
   - `x`: data frame to search in
   - `y`: data frame to search against
@@ -226,33 +184,8 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
     - `Y_index` - the index of the row in `y` that matched
     - `Distance` - the distance between the matched rows
 - **Description:**
-  - This is a function that takes two matrices or data frames x and y and a distance value, and returns a matrix match_indices containing the indices of the rows in x and y that have non-perfect matches within the specified distance. The function first pre-allocates memory for the match_indices matrix assuming the worst-case scenario of y_rows * x_rows possible matches. If this allocation fails due to insufficient memory, it tries again with a smaller allocation of 10,000,000 rows. Then, the function iterates through each row in x and compares it to every row in y. For each value in the row of x, the function evaluates whether it matches the corresponding value in the row of y. These logical values are then appended to the matches matrix. After iterating over every column, there will be a matrix of size (y_rows, x_cols), where each row represents a row in y and each column represents a column in x. A perfect matching row in y will have a corresponding row in matches exclusively containing TRUE. Given that TRUE is equivalent to 1, the rowSums function is used to determine the number of non-perfect matches. If this number is less than or equal to the specified distance, the row index, column index and distance from perfect match are stored in match_indices. The function uses a custom vectorised function store_index_vec to append matches to match_indices. Finally, the na.omit function is used to remove rows with NA values from match_indices before it is returned.
+  - This is a function that takes two matrices or data frames (x and y), and a distance value. The process returns a matrix `match_indices` containing the indices of the rows in x and y that have non-perfect matches within the specified distance. The function first pre-allocates memory for the match_indices matrix assuming the worst-case scenario of y_rows * x_rows possible matches. If this allocation fails due to insufficient memory, it tries again with a smaller allocation of 10,000,000 rows. Then, the function iterates through each row in x and compares it to every row in y in a vectoried manner. For each value in the row of x, the function evaluates whether it matches the corresponding value in the row of y. These logical values are then appended to the matches matrix. After iterating over every column, there will be a matrix of size (y_rows, x_cols), where each row represents a row in y and each column represents a column in x. A perfect matching row in y will have a corresponding row in matches exclusively containing TRUE. Given that TRUE is equivalent to 1, the rowSums function is used to determine the number of non-perfect matches. If this number is less than or equal to the specified distance, the row index, column index and distance from perfect match are stored in match_indices. The function uses a custom vectorised function store_index_vec to append matches to match_indices. Finally, the na.omit function is used to remove rows with NA values from match_indices before it is returned.
   
-#### Function: `match_vector_entries()`
-- **Inputs:**
-  - `current_vec`: vector to search in
-  - `target_vec`: vector to search against
-  - `section`: section of metadata report to write to
-  - `check_mapped`: whether to check for pre-defined column name mappings
-  - `correct_order`: whether to return vectors in the same order
-- **Outputs:**
-  - A list containing:
-      - `current_vec` - The vector of strings that has been updated to include matches from the input `target_vec` 
-      - `correct_order_indices` - a vector indicating the correct order of the input vector if needed at a later date
-      - `original_order_indices` - a vector indicating the original order of the input vector
-      - `metadata` - data frame containing information for the metadata report  
-- **Description:**
-  - This is a function in R that is designed to compare any two vectors and identify matching entries. The function takes in two vectors, current_vec and target_vec, and a few optional arguments. The first two arguments are mandatory, and they contain the two vectors that the function will compare. The check_mapped argument is a logical value that defaults to FALSE, and it controls whether the function should check for pre-defined mappings between column names or not. If check_mapped is TRUE, the function will use the map_column_names function to map non-matching column names to pre-defined column names. The correct_order argument is another logical value that defaults to FALSE, and it controls whether the function should return the matching entries in the order they appear in current_vec.The function first cleans the vector entries for easy comparison. It removes characters such as punctuation and spaces and converts all the text to lowercase. It then collects some metadata about the vectors, such as their length and whether their entries match. The function then sets a maximum distance for fuzzy string matching and identifies the current column names and indices that match a column name in the legacy format. It does this by comparing the cleaned vectors and counting how many matches there are.If the check_mapped argument is TRUE, the function checks for pre-defined mappings between column names. If there is a pre-defined mapping for a non-matching column name, the function uses it to update the column name. If there is no pre-defined mapping, the function finds the closest match within a specified distance with Levenshtein distances or by matching partial strings contained within column names. Finally, the function returns some metadata about the matching entries, including whether they are unique, whether there are any non-matching column names, and whether any column names are NA. The function also returns the matching entries, and if the correct_order argument is TRUE, it returns them in the order they appear in current_vec.
- 
-#### Function: `or4()`
-- **Inputs:**
-  - `x`: logical value or size n vector of logical values 
-  - `y`: logical value or size n vector of logical values 
-- **Outputs:**
-  - A logical value or size n vector of logical values
-- **Description:**
-  - This is a custom Boolean OR function written in C for speed that works the same as the base R operator "|", with the exception that NA values are considered as TRUE. The function is called "or4", and it takes two logical vectors x and y as inputs. It first determines the length of the two vectors and assigns the larger length to the variable "n". It then allocates a new logical vector "ans" of length "n" using the "allocVector" function. The function then creates pointers to the logical values of vectors x, y, and the new vector "ans" using the "LOGICAL" macro. It then iterates through the "ans" vector, setting each element to the result of the OR operation between the corresponding elements of vectors x and y. The function also includes some logic to handle cases where the lengths of the input vectors are not equal. Specifically, it uses the variables "ix" and "iy" to keep track of the current index of vectors x and y, respectively. When the end of either vector is reached, the index is reset to 0, allowing the function to cycle through the values of the shorter vector again. Finally, the function unprotects the "ans" vector and returns it.
-
 #### Operator: `%fin%`
 - **Inputs:**
   - `x`: size n*m vector 
@@ -262,7 +195,7 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
 - **Description:**
   - This is a faster implementation of the %in% operator that uses the fastmatch package. The fastmatch function is used to match the values in x to the values in table, and the resulting index is compared to 0. If it is greater than 0, then the value is found in the table and the function returns TRUE. If not, the function returns FALSE.
   
-#### Function: `vectorised_separate_close_matches()`
+#### Function: `vectorised_separate_close_matches(close_match_rows)`
 - **Inputs:**
   - `close_match_rows`: A data frame containing the close matches between two data sets. It has 3 columns, where the first and second columns contain the row indices from the two data sets, and the third column contains the distances between these rows.
 - **Outputs:**
@@ -291,84 +224,82 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
   - This function is designed to group sets of perfect matching rows from dataframe x and dataframe y to determine if they are mistakes or coincidental duplicates. It recursively groups data by iteratively adding the matching rows to a list of matrices (groups). The function returns the list of grouped matrices once all matching rows have been added to groups. The stack vector contains the data to be grouped, and the m2m_split list contains the index of the matching rows. The groups list of matrices contains the grouped data, and the group integer is used to keep track of the current group number.
 
   
-### Function: `verify_RHISS()`
+### Function: `verify_RHISS(data_df)`
 
 - **Inputs:**
-    - `data_df`: a data frame
+    - `data_df`: a data frame containing control data 
 - **Outputs:**
-    - `data_df` (data frame) after altering a column called "error_flag"
+    - `data_df` dataframe with updated column "error_flag"
 - **Description:**
     - This function verifies that the data in the tide, bleaching and macroalgae columns of the data frame are valid. The function returns the input data frame `data_df` after altering a column called "error_flag"
 
-### Function: `verify_percentages()`
+### Function: `verify_percentages(data_df)`
 
 - **Inputs:**
-    - `data_df`: a data frame
+    - `data_df`: a data frame containing control data 
 - **Outputs:**
-    - `data_df` (data frame) after altering a column called "error_flag"
+    - `data_df` dataframe with updated column "error_flag"
 - **Description:**
     - This function verifies that all percentage values in the data frame are between 0 and 100. The function returns the input data frame `data_df` after altering a column called "error_flag"
 
-### Function: `verify_na_null()`
+### Function: `verify_na_null(data_df)`
 
 - **Inputs:**
-    - `data_df`: a data frame
+    - `data_df`: a data frame containing control data 
 - **Outputs:**
-    - `data_df` (data frame) after altering a column called "error_flag"
+    - `data_df` dataframe with updated column "error_flag"
 - **Description:**
     - This function checks if any values in `data_df` are NA or NULL, and flags those rows as invalid by adding a "TRUE" value to the "error_flag" column. 
     
-### Function: `verify_integers_positive()`
+### Function: `verify_integers_positive(data_df)`
 
 - **Inputs:**
-    - `data_df`: a data frame
-    - `cols`: a vector of column names
+    - `data_df`: a data frame containing control data 
 - **Outputs:**
-    - `data_df` (data frame) after altering a column called "error_flag"
+    - `data_df` dataframe with updated column "error_flag"
 - **Description:**
     - This function verifies that all values in specified integer columns are positive integers.  The function returns the input data frame `data_df` after altering a column called "error_flag"
 
-### Function: `remove_leading_spaces()`
+### Function: `remove_leading_spaces(data_df)`
 
 - **Inputs:**
-    - `data_df`: a data frame
-    - `cols`: a vector of column names
+    - `data_df`: a data frame containing control data 
 - **Outputs:**
-    - `data_df` modified
+    - `data_df` modified dataframe
 - **Description:**
     - This function removes leading and trailing spaces from all entries in the specified data frame columns. The function returns the modified data frame.
 
-### Function: `verify_coral_cover()`
+### Function: `verify_coral_cover(data_df)`
 
 - **Inputs:**
-    - `data_df`: a data frame
+    - `data_df`: a data frame containing control data 
 - **Outputs:**
-    - `data_df` (data frame) after altering a column called "error_flag"
+    - `data_df` dataframe with updated column "error_flag"
 - **Description:**
     - This function verifies that all values in the "Hard Coral", "Soft Coral", and "Recently Dead Coral" columns of the data frame are valid coral cover descriptors ("1-", "2-", "3-", "4-", "5-", "1+", "2+", "3+", "4+", or "5+"). The function returns the input data frame `data_df` after altering a column called "error_flag"
 
-### Function: `verify_cots_scars()`
+### Function: `verify_cots_scars(data_df)`
 
 - **Inputs:**
     - `data_df`: a data frame
 - **Outputs:**
-    - `data_df` (data frame) after altering a column called "error_flag"
+    - `data_df` dataframe with updated column "error_flag"
 - **Description:**
     - This function verifies that all values in the "COTS Scars" column of the data frame are valid ("a", "p", or "c"). The function returns the input data frame `data_df` after altering a column called "error_flag"
 
-### Function: `verify_cohort_count()`
+### Function: `verify_cohort_count(data_df)`
 
 - **Inputs:**
     - `data_df`: a data frame
 - **Outputs:**
-    - `data_df` (data frame) after altering a column called "error_flag"
+    - `data_df` dataframe with updated column "error_flag"
 - **Description:**
     - This function verifies that all values in the "Cohort Count" column of the data frame are valid integers. The function returns the input data frame `data_df` after altering a column called "error_flag"
 
-### Function: `find_one_to_one_matches()`
+### Function: `find_one_to_one_matches(close_match_rows)`
 
 - **Inputs:**
-    - `close_match_rows`: a data frame with columns "x_index", "y_index" and "difference"
+    - `close_match_rows`: a data frame or matrix with columns "x_index", "y_index" and "difference". This is the output of function `matrix_close_matches_vectorised`.
       - "x_index" is the row index of the row from dataframe x that has a close match to a row in dataframe y indicated by "y_index" with a distance of "distance"
       - "y_index" is the row index of the row from dataframe y that has a close match to a row in dataframe x indicated by "x_index" with a distance of "distance"
 - **Outputs:**
