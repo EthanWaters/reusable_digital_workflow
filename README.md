@@ -152,6 +152,19 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
     - None
 - **Description:**
     - This function adds information to the XML metadata report from the information obtained in the previously executed function to the desired control data node.
+    
+#### Function: `separate_control_dataframe(new_data_df, legacy_data_df, control_data_type)`
+- **Input:**
+    - `new_data_df`: New control data exported from GBRMPA
+    - `legacy_data_df`: Control data that most recently passed through workflow. In legacy format.
+    - `control_data_type`: Key word that specifies type of control data. Options: "manta_tow", "cull" or "RHISS" 
+- **Output:**
+    - None
+- **Description:**
+    - Separates the incoming control data into three categories, new, perfect duplicate and discrepancy. Can be done with the authoritative ID or without depending on its reliability. 
+        - Separation assuming the ID is authoritative utilises identifiers that are constructed from the data within the rows and table joins to conclusivley separate all data. 
+        - Separation assuming non-authoritative ID utilises `matrix_close_matches_vectorised` & `vectorised_separate_close_matches` to determine the number of variations in a row from the original legacy output compared with the new input. Most likely matches are then determined based on number of variations. 
+        Given that it is not possible to definitively know if a change / discrepancy was intentional or not both new and change entries will pass through the same validation checks and if passed will be accepted as usable and assumed to be. If failed, assumed to be a QA change. If failed, the data will be flagged. Failed discrepancies will check the original legacy entry, which if failed will be left as is.
 
 #### Function: `map_column_names(column_names)`
 
@@ -222,7 +235,6 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
   - A list of matrices containing grouped data
 - **Description**:
   - This function is designed to group sets of perfect matching rows from dataframe x and dataframe y to determine if they are mistakes or coincidental duplicates. It recursively groups data by iteratively adding the matching rows to a list of matrices (groups). The function returns the list of grouped matrices once all matching rows have been added to groups. The stack vector contains the data to be grouped, and the m2m_split list contains the index of the matching rows. The groups list of matrices contains the grouped data, and the group integer is used to keep track of the current group number.
-
   
 ### Function: `verify_RHISS(data_df)`
 
@@ -233,7 +245,25 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
 - **Description:**
     - This function verifies that the data in the tide, bleaching and macroalgae columns of the data frame are valid. The function returns the input data frame `data_df` after altering a column called "error_flag"
 
+### Function: `verify_voyage_dates(data_df)`
+
+- **Inputs:**
+    - `data_df`: a data frame containing control data 
+- **Outputs:**
+    - `data_df` dataframe with updated column "error_flag"
+- **Description:**
+    - Check that voyage dates of observation are within in voyage dates and that none of the dates are NA. If Voyage dates are NA set start and end to min and max observation date. Check that voyage dates associated with a vessels voyage are unique (There should only be on departure and return date)
+
+### Function: `
 ### Function: `verify_percentages(data_df)`
+
+- **Inputs:**
+    - `data_df`: a data frame containing control data 
+- **Outputs:**
+    - `data_df` dataframe with updated column "error_flag"
+- **Description:**
+    - This function verifies that all percentage values in the data frame are between 0 and 100. The function returns the input data frame `data_df` after altering a column called "error_flag"
+(data_df)`
 
 - **Inputs:**
     - `data_df`: a data frame containing control data 

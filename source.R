@@ -99,16 +99,8 @@ contribute_to_metadata_report <- function(data, key = "Warning"){
   write_xml(xml_file_data, file = xml_file, options =c("format", "no_declaration"))
 }
 
-outersect <- function(x, y) {
-  sort(c(x[!x%in%y],
-         y[!y%in%x]))
-}
-
 separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data_type){
-  # 
-  # new_data_df <- verified_data_df
-  # legacy_data_df <- legacy_df
-  
+
   ID_col <- colnames(new_data_df)[1]
   
   column_names <- colnames(legacy_data_df)
@@ -171,9 +163,9 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
     # There can be many to many perfect matches. This means that there will be 
     # multiple indices referring to the same row for perfect duplicates. 
     # unique() should be utilised when subsetting the input dataframes.
-    seperated_close_matches <- vectorised_seperate_close_matches(close_match_rows)
-    perfect_duplicates <- new_data_df[unique(seperated_close_matches$perfect[,2]),]
-    new_entries_i <- unique(c(seperated_close_matches$discrepancies[,2],seperated_close_matches$perfect[,2]))
+    separated_close_matches <- vectorised_separate_close_matches(close_match_rows)
+    perfect_duplicates <- new_data_df[unique(separated_close_matches$perfect[,2]),]
+    new_entries_i <- unique(c(separated_close_matches$discrepancies[,2],separated_close_matches$perfect[,2]))
     
     # This will contain any new entries and any rows that could not be separated
     new_entries <- new_data_df[-new_entries_i,]
@@ -187,7 +179,7 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
   # discrepancies will check the original legacy entry, which if failed will 
   # be left as is. 
  
-  verified_discrepancies <- compare_discrepancies(new_data_df, legacy_data_df, seperated_close_matches$discrepancies, ID_col)
+  verified_discrepancies <- compare_discrepancies(new_data_df, legacy_data_df, separated_close_matches$discrepancies, ID_col)
   verified_data_df <- rbind(verified_data_df, verified_discrepancies)
   verified_data_df <- rbind(verified_data_df, new_entries)
   
@@ -235,7 +227,7 @@ compare_discrepancies <- function(new_data_df, legacy_data_df, discrepancies , I
 }
 
 
-vectorised_seperate_close_matches <- function(close_match_rows){
+vectorised_separate_close_matches <- function(close_match_rows){
   # Separate the close matching rows with a vectorized process. Duplicates in 
   # columns of `close_match_rows` indicates that there are multiple close 
   # matches between a row(s) in dataframe and and row(s) in y. This process 
