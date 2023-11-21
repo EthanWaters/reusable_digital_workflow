@@ -47,7 +47,7 @@ create_metadata_report <- function(control_data_type){
     #create file name systematically
     date <- as.character(Sys.Date())
     timestamp <- as.character(Sys.time())
-    filename <- paste0(reports_location, "Processed Control Data Report ", date, control_data_type, ".xml", sep="")
+    filename <- paste0(reports_location, "Processed Control Data Report ", date, " ",control_data_type, ".xml", sep="")
     
     #generate template
     template <- xml_new_root("session") 
@@ -58,10 +58,7 @@ create_metadata_report <- function(control_data_type){
 }
 
 
-contribute_to_metadata_report <- function(control_data_type, data, key = "Warning"){
-  # Finds desired control data node and adds a section from the information 
-  # obtained in the previously executed function. 
-
+contribute_to_metadata_report <- function(data, key = "Warning"){
   # finds files with current date in file name and attempts to open xml file
   file_count <- 1
   reports_location <- "reports\\"
@@ -560,7 +557,7 @@ check_for_mistake <- function(control_data_type){
     
     # Append the warning to an existing matrix 
     warning_matrix <- matrix(warning)
-    contribute_to_metadata_report(control_data_type, warning_matrix)
+    contribute_to_metadata_report(warning_matrix)
     
   }
 }
@@ -617,7 +614,7 @@ verify_lat_lng <- function(data_df, max_val, min_val, columns, ID_col){
         
         # Append the warning to an existing matrix 
         warning_matrix <- matrix(warning)
-        contribute_to_metadata_report(control_data_type, warning_matrix)
+        contribute_to_metadata_report(warning_matrix)
         
       }
       
@@ -645,7 +642,7 @@ verify_scar <- function(data_df) {
       
       # Append the warning to an existing matrix 
       warning_matrix <- matrix(warning)
-      contribute_to_metadata_report(control_data_type, warning_matrix)
+      contribute_to_metadata_report( warning_matrix)
       
     }
     
@@ -704,7 +701,7 @@ verify_tow_date <- function(data_df){
     }  
     # Append the warning to an existing matrix 
     warning_matrix <- t(matrix(c(warning)))
-    contribute_to_metadata_report(control_data_type, warning_matrix)
+    contribute_to_metadata_report(warning_matrix)
     
   }
   return(data_df)
@@ -757,7 +754,7 @@ verify_RHISS <- function(data_df) {
     
     # Append the warning to an existing matrix 
     warning_matrix <- t(matrix(c(warning1,warning2,warning3,warning4)))
-    contribute_to_metadata_report(control_data_type, warning_matrix)
+    contribute_to_metadata_report(warning_matrix)
     
   }
   data_df[["error_flag"]] <- data_df[["error_flag"]] | check 
@@ -785,7 +782,7 @@ verify_percentages <- function(data_df) {
       
       # Append the warning to an existing matrix 
       warning_matrix <- matrix(warning)
-      contribute_to_metadata_report(control_data_type, warning_matrix)
+      contribute_to_metadata_report(warning_matrix)
       
     }
   }
@@ -814,7 +811,7 @@ verify_na_null <- function(data_df, configuration) {
     
     # Append the warning to an existing matrix 
     warning_matrix <- matrix(warning)
-    contribute_to_metadata_report(control_data_type, warning_matrix)
+    contribute_to_metadata_report( warning_matrix)
     
   }
   return(data_df)
@@ -842,7 +839,7 @@ verify_integers_positive <- function(data_df) {
         
         # Append the warning to an existing matrix 
         warning_matrix <- matrix(warning)
-        contribute_to_metadata_report(control_data_type, warning_matrix)
+        contribute_to_metadata_report( warning_matrix)
       }
     }
   return(data_df)
@@ -901,7 +898,7 @@ verify_coral_cover <- function(data_df) {
     
     # Append the warning to an existing matrix 
     warning_matrix <- matrix(warning)
-    contribute_to_metadata_report(control_data_type, warning_matrix)
+    contribute_to_metadata_report( warning_matrix)
   }
   return(data_df)
 }
@@ -934,7 +931,7 @@ verify_reef <- function(data_df){
     
     # Append the warning to an existing matrix 
     warning_matrix <- matrix(warning)
-    contribute_to_metadata_report(control_data_type, warning_matrix)
+    contribute_to_metadata_report( warning_matrix)
   }
   return(data_df)
 }
@@ -996,7 +993,7 @@ verify_voyage_dates <- function(data_df){
     }  
     # Append the warning to an existing matrix 
     warning_matrix <- t(matrix(warning))
-    contribute_to_metadata_report(control_data_type, warning_matrix)
+    contribute_to_metadata_report( warning_matrix)
     
   }
   
@@ -1189,7 +1186,7 @@ set_data_type <- function(data_df, mapping){
     
     # Append the warning to an existing matrix 
     warning_matrix <- matrix(warning)
-    contribute_to_metadata_report(control_data_type, warning_matrix)
+    contribute_to_metadata_report( warning_matrix)
   }
   
   # remove trailing and leading spaces from strings for comparison. 
@@ -1213,17 +1210,21 @@ transform_data_structure <- function(data_df, mappings, new_fields){
     return(transformed_df)
   }
   
-  levenshtein_distances <- any(adist(new_field , colnames(data_df)) <= 2)
+ 
   
   for (i in seq_len(nrow(new_fields))) {
     new_field <- new_fields$field[i]
     position <- new_fields$position[i]
     colnames(transformed_df)[position] <- new_field 
-    if(!(new_field %in% colnames(data_df))){
+    levenshtein_distances <- adist(new_field , colnames(data_df))
+    is_new_field_present <- any(levenshtein_distances <= 2)
+    if(!is_new_field_present){
       default_value <- new_fields$default[i]
       transformed_df[, position] <- default_value
     } else {
-      transformed_df[, position] <- data_df[[new_field]]
+      closest_match <- which(levenshtein_distances <= 2)
+      original_field <-  colnames(data_df[[closest_match]])
+      transformed_df[, position] <- data_df[[original_field]]
     }
   }
   closest_matches <- get_closest_matches(colnames(data_df), mappings$source_field)

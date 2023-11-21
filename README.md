@@ -113,64 +113,44 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
 
 ## 4.0 Code Documentation
 
-#### Function: `main(leg_path, new_cull, new_manta_tow, geospatial_sites, nearest_site_algorithm, is_powerBI_export)`
+#### Function: `main(new_path, configuration_path, kml_path, leg_path)`
 
 - **Input:**
     - `leg_path`: path to the legacy data file
-    - `new_cull`: path to the new cull data file
-    - `new_manta_tow`: path to the new manta tow data file
-    - `geospatial_sites`: geospatial site data
-    - `nearest_site_algorithm`: algorithm to assign nearest sites
-    - `is_powerBI_export`: indicates if data was exported from PowerBI
+    - `new_path`: path to the new control data file
+    - `configuration_path`: path to the control data specific configuration file 
+    - `kml_path`: path to kml file containing all cull sites on the reef
 - **Output:**
     - None
 - **Description:**
-    - This function is the main function that runs the data processing pipeline. It takes in several input parameters and uses them to call other functions to import, format, and verify data. It also creates a metadata report to document the data processing pipeline.
+    - This function is the main function that runs the data processing pipeline, creates a metadata report to document noteworthy information, assigns sites to the data if relevent and then exports it for scientific use.
 
 #### Function: `import_data(data, control_data_type, is_powerBI_export, sheet)`
 
 - **Input:**
-  - `data`: file path to the file containing the data
-  - `control_data_type`: a string representing the type of control data contained within the dataframe
-  - `is_powerBI_export`: a boolean indicating whether the file is a PowerBI export
-  - `sheet`: an optional parameter which specifies the sheet number to read in the case of an `.xlsx` file
+  - `data`: file path to the file containing data desired to be in dataframe format
+  - `configuration`: dataframe containing metadata and column mappings for control data 
 - **Output:**
     - dataframe containing imported data
 - **Description:**
-    - This function reads data from a file and returns a dataframe. It determines the file type and reads the file using the appropriate method. It also formats column names to remove special characters and adds any required columns to the dataframe.
+    - This function reads data from a file and returns a dataframe. It determines the file type and reads the file using the appropriate method. 
 
-#### Function: `format_control_data(current_df, legacy_df, control_data_type, section)`
-
-- **Input:**
-    - `current_df`: the data frame containing the data to be formatted
-    - `legacy_df`: the data frame containing the expected legacy format
-    - `control_data_type`: a string representing the type of control data contained within the dataframe
-    - `section`: a string indicating the section of code that is currently being executed. This is utilised to identify when errors occur in the metadata report
-- **Output:**
-    - updated dataframe
-- **Description:**
-    - This function formats column names, order and type of a dataframe to match a legacy dataframe. It generates comments and returns an updated dataframe.
-
-#### Function: `create_metadata_report(count)`
+#### Function: `create_metadata_report(control_data_type)`
 
 - **Input:**
-    - `count`: an integer representing the number of reports generated thus far
+    - `control_data_type`: Specifies the control data for use in file name generation.
 - **Output:**
     - None
 - **Description:**
-    - This function creates a metadata report to document the data processing pipeline. It creates a file name and generates an XML template.
-
-#### Function: `contribute_to_metadata_report(control_data_type, section, data, key)`
-
+    - This function creates an empty XML file for to later document metadata and warnings surrounding the pipeline.
+#### Function: `contribute_to_metadata_report(data, key="Warning")`
 - **Input:**
-    - `control_data_type`: a string representing the type of control data used
-    - `section`: a string representing the section of the control data being formatted 
-    - `data`: the data to add to the control data report
-    - `key`: an optional parameter specifying the key for the data being added
+    - `data`: Matrix or dataframe containing strings that describe the location and warning/error that occurred
+    - `key`: an optional parameter specifying the node to be inserted under. Warning by default, any string is valid.
 - **Output:**
     - None
 - **Description:**
-    - This function adds a section to the metadata report from the information obtained in the previously executed function to the desired control data node.
+    - This function adds information to the XML metadata report from the information obtained in the previously executed function to the desired control data node.
 
 #### Function: `outersect(x, y)`
 
