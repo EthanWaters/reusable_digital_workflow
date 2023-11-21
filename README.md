@@ -356,166 +356,130 @@ For further information see Reusable Digital Workflows Systems Diagrams and Reus
 - **Description:**
     - This function determines one-to-one matches between rows in two data frames, based on the output of the "find_close_matches" function. The function takes as input a data frame with columns "x_index", "y_index" and "difference", and determines which rows have one-to-one matches. A one-to-one match is defined as a row in the x_df data frame that has a single match in the y_df data frame, and vice versa. The function updates two global variables, "perfect_duplicate_indices" and "discrepancies_indices", which are data frames containing the row indices of perfect matches and discrepancies, respectively.
     
-    ### Function: `verify_entries(data_df, configuration)`
-
-**Inputs:**
-- `data_df`: Data frame containing control data to be verified.
-- `configuration`: A configuration object containing metadata required for verification, including `ID_col` and `control_data_type`.
-
-**Outputs:**
-- `data_df`: Updated data frame with error flags added.
-
-**Description:**
-This function verifies the entries in the control data based on the provided configuration. It performs a series of checks on different aspects of the data, such as integers being positive, valid reef entries, valid percentages, latitude and longitude within specified ranges, and additional checks specific to the control data type (manta_tow, cull, or RHISS). Error flags are added to the data frame to indicate any issues found during verification.
+### Function: `verify_entries(data_df, configuration)`
+- **Inputs:**
+  - `data_df`: Data frame containing control data to be verified.
+  - `configuration`: A configuration object containing metadata required for verification, including `ID_col` and `control_data_type`.
+- **Outputs:**
+  - `data_df`: Updated data frame with error flags added.
+- **Description:**
+  - This function verifies the entries in the control data based on the provided configuration. It performs a series of checks on different aspects of the data, such as integers being positive, valid reef entries, valid percentages, latitude and longitude within specified ranges, and additional checks specific to the control data type (manta_tow, cull, or RHISS). Error flags are added to the data frame to indicate any issues found during verification.
 
 ### Function: `verify_lat_lng(data_df, max_val, min_val, columns, ID_col)`
-
-**Inputs:**
-- `data_df`: Data frame containing control data.
-- `max_val`: Maximum value for latitude or longitude.
-- `min_val`: Minimum value for latitude or longitude.
-- `columns`: Columns to verify (e.g., c("Longitude", "Start Lng", "End Lng")).
-- `ID_col`: Identifier column.
-
-**Outputs:**
-- `data_df`: Updated data frame with error flags added.
-
-**Description:**
-This function verifies latitude and longitude values in specified columns of the data frame. It checks if the values are within the specified range. If any values are out of range, error flags are added, and a warning message is generated.
+- **Inputs:**
+  - `data_df`: Data frame containing control data.
+  - `max_val`: Maximum value for latitude or longitude.
+  - `min_val`: Minimum value for latitude or longitude.
+  - `columns`: Columns to verify (e.g., c("Longitude", "Start Lng", "End Lng")).
+  - `ID_col`: Identifier column.
+- **Outputs:**
+  - `data_df`: Updated data frame with error flags added.
+- **Description:**
+  - This function verifies latitude and longitude values in specified columns of the data frame. It checks if the values are within the specified range. If any values are out of range, error flags are added, and a warning message is generated.
 
 ### Function: `verify_scar(data_df)`
-
-**Inputs:**
-- `data_df`: Data frame containing control data.
-
-**Outputs:**
-- `data_df`: Updated data frame with error flags added.
-
-**Description:**
-This function checks for valid feeding scars in the "Feeding Scars" column of the data frame. It compares the values to a predefined set of valid scars ('a', 'p', 'c'). If invalid scars are found, error flags are added, and a warning message is generated.
+- **Inputs:**
+  - `data_df`: Data frame containing control data.
+- **Outputs:**
+  - `data_df`: Updated data frame with error flags added.
+- **Description:**
+  - This function checks for valid feeding scars in the "Feeding Scars" column of the data frame. It compares the values to a predefined set of valid scars ('a', 'p', 'c'). If invalid scars are found, error flags are added, and a warning message is generated.
 
 ### Function: `verify_tow_date(data_df)`
-
-**Inputs:**
+- **Inputs:**
 - `data_df`: Data frame containing control data.
 
-**Outputs:**
-- `data_df`: Updated data frame with error flags added.
-
-**Description:**
-This function approximates tow dates based on vessel and voyage if they do not exist. It identifies incomplete tow dates, estimates missing dates based on the same vessel and voyage, and sets error flags for rows with missing tow dates. Warning messages are generated for tow date estimations and rows with no tow dates.
+- **Outputs:**
+  - `data_df`: Updated data frame with error flags added.
+- **Description:**
+  - This function approximates tow dates based on vessel and voyage if they do not exist. It identifies incomplete tow dates, estimates missing dates based on the same vessel and voyage, and sets error flags for rows with missing tow dates. Warning messages are generated for tow date estimations and rows with no tow dates.
 
 ### Function: `transform_data_structure(data_df, mappings, new_fields)`
-
-**Inputs:**
-- `data_df`: Data frame to be transformed.
-- `mappings`: Data frame specifying mappings for existing columns.
-- `new_fields`: Data frame specifying new fields to be added.
-
-**Outputs:**
-- `transformed_df`: Transformed data frame.
-
-**Description:**
-This function transforms the structure of the input data frame based on provided mappings and new fields. It maps existing columns, adds new fields with default values if necessary, and returns the transformed data frame.
+- **Inputs:**
+  - `data_df`: Data frame to be transformed.
+  - `mappings`: Data frame specifying mappings for existing columns.
+  - `new_fields`: Data frame specifying new fields to be added.
+- **Outputs:**
+  - `transformed_df`: Transformed data frame.
+- **Description:**
+  - This function transforms the structure of the input data frame based on provided mappings and new fields. It maps existing columns, adds new fields with default values if necessary, and returns the transformed data frame.
 
 ### Function: `assign_nearest_method_c(kml_data, data_df, layer_names_vec, crs, raster_size=0.0005, x_closest=1, is_standardised=1, save_rasters=1)`
-
-**Inputs:**
-- `kml_data`: KML data containing reef polygons.
-- `data_df`: Data frame containing manta tow entries.
-- `layer_names_vec`: Vector of layer names.
-- `crs`: Coordinate Reference System.
-- `raster_size`: Size of the raster cells.
-- `x_closest`: Number of closest sites to assign.
-- `is_standardised`: Flag indicating whether to standardize extents.
-- `save_rasters`: Flag indicating whether to save generated rasters.
-
-**Outputs:**
-- `updated_pts`: Updated data frame with the nearest site information added.
-
-**Description:**
-This function assigns nearest sites to manta tow entries using a method developed by Dr. Cameron Fletcher. It generates rasters, assigns nearest sites, and updates the input data frame with the nearest site information.
+- **Inputs:**
+  - `kml_data`: KML data containing reef polygons.
+  - `data_df`: Data frame containing manta tow entries.
+  - `layer_names_vec`: Vector of layer names.
+  - `crs`: Coordinate Reference System.
+  - `raster_size`: Size of the raster cells.
+  - `x_closest`: Number of closest sites to assign.
+  - `is_standardised`: Flag indicating whether to standardize extents.
+  - `save_rasters`: Flag indicating whether to save generated rasters.
+- **Outputs:**
+  - `updated_pts`: Updated data frame with the nearest site information added.
+- **Description:**
+  - This function assigns nearest sites to manta tow entries using a method developed by Dr. Cameron Fletcher. It generates rasters, assigns nearest sites, and updates the input data frame with the nearest site information.
 
 ### Function: `get_centroids(data_df, crs, precision=0)`
-
-**Inputs:**
-- `data_df`: Data frame containing control data.
-- `crs`: Coordinate Reference System.
-- `precision`: Decimal places for rounding coordinates.
-
-**Outputs:**
-- `pts`: Spatial points representing the centroids of manta tows.
-
-**Description:**
-This function determines the centroids of manta tows based on latitude and longitude columns in the data frame. It creates geospatial points and returns them.
+- **Inputs:**
+  - `data_df`: Data frame containing control data.
+  - `crs`: Coordinate Reference System.
+  - `precision`: Decimal places for rounding coordinates.
+- **Outputs:**
+  - `pts`: Spatial points representing the centroids of manta tows.
+- **Description:**
+  - This function determines the centroids of manta tows based on latitude and longitude columns in the data frame. It creates geospatial points and returns them.
 
 ### Function: `assign_raster_pixel_to_sites(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0)`
-
-**Inputs:**
-- `kml_data`: KML data containing reef polygons.
-- `layer_names_vec`: Vector of layer names.
-- `crs`: Coordinate Reference System.
-- `raster_size`: Size of the raster cells.
-- `x_closest`: Number of closest sites to assign.
-- `is_standardised`: Flag indicating whether to standardize extents.
-
-**Outputs:**
-- `site_regions`: List of rasters with assigned nearest site values.
-
-**Description:**
-This function assigns raster pixel values based on the nearest site to manta tow entries. It creates rasters slightly larger than the bounding box of each layer in the KML file, assigns values based on distances to sites, and returns a list of site regions.
+- **Inputs:**
+  - `kml_data`: KML data containing reef polygons.
+  - `layer_names_vec`: Vector of layer names.
+  - `crs`: Coordinate Reference System.
+  - `raster_size`: Size of the raster cells.
+  - `x_closest`: Number of closest sites to assign.
+  - `is_standardised`: Flag indicating whether to standardize extents.
+- **Outputs:**
+  - `site_regions`: List of rasters with assigned nearest site values.
+- **Description:**
+  - This function assigns raster pixel values based on the nearest site to manta tow entries. It creates rasters slightly larger than the bounding box of each layer in the KML file, assigns values based on distances to sites, and returns a list of site regions.
 
 ### Function: `site_names_to_numbers(site_names)`
-
-**Inputs:**
-- `site_names`: Vector of site names.
-
-**Outputs:**
-- Numeric vector representing site numbers.
-
-**Description:**
-This function extracts numeric site numbers from site names.
+- **Inputs:**
+  - `site_names`: Vector of site names.
+- **Outputs:**
+  - Numeric vector representing site numbers.
+- **Description:**
+  - This function extracts numeric site numbers from site names.
 
 ### Function: `simplify_reef_polyogns_rdp(kml_data)`
-
-**Inputs:**
-- `kml_data`: KML data containing reef polygons.
-
-**Outputs:**
-- `simplified_kml_data`: KML data with simplified reef polygons.
-
-**Description:**
-This function simplifies all reef polygons stored in a list retrieved from the KML file using the Ramer-Douglas-Peucker algorithm.
+- **Inputs:**
+  - `kml_data`: KML data containing reef polygons.
+- **Outputs:**
+  - `simplified_kml_data`: KML data with simplified reef polygons.
+- **Description:**
+  - This function simplifies all reef polygons stored in a list retrieved from the KML file using the Ramer-Douglas-Peucker algorithm.
 
 ### Function: `polygon_rdp(polygon_points, epsilon=0.00001)`
-
-**Inputs:**
-- `polygon_points`: Matrix of polygon points.
-- `epsilon`: Tolerance parameter for simplification.
-
-**Outputs:**
-- Simplified polygon matrix.
-
-**Description:**
-This function applies the Ramer-Douglas-Peucker algorithm to simplify a polygon based on a tolerance parameter.
+- **Inputs:**
+  - `polygon_points`: Matrix of polygon points.
+  - `epsilon`: Tolerance parameter for simplification.
+- **Outputs:**
+  - Simplified polygon matrix.
+- **Description:**
+  - This function applies the Ramer-Douglas-Peucker algorithm to simplify a polygon based on a tolerance parameter.
 
 ### Function: `rdp(points, epsilon=0.00001)`
-
-**Inputs:**
-- `points`: Matrix of points.
-- `epsilon`: Tolerance parameter for simplification.
-
-**Outputs:**
-- Simplified matrix of points.
-
-**Description:**
-This function applies the Ramer-Douglas-Peucker algorithm to simplify a line or set of points based on a tolerance parameter.
-
+- **Inputs:**
+  - `points`: Matrix of points.
+  - `epsilon`: Tolerance parameter for simplification.
+- **Outputs:**
+  - Simplified matrix of points.
+- **Description:**
+  - This function applies the Ramer-Douglas-Peucker algorithm to simplify a line or set of points based on a tolerance parameter.
+  
 ### Function: `perpendicularDistance(p, A, B)`
-
-**Inputs:**
-- `p`: Point coordinates.
-- `A`: Start point of a line segment.
-- `B`: End point of a line segment.
-**Description:**
+- **Inputs:**
+  - `p`: Point coordinates.
+  - `A`: Start point of a line segment.
+  - `B`: End point of a line segment.
+- **Description:**
 Calculate perpendicular distance of a point p from a line segment AB for RDP method.

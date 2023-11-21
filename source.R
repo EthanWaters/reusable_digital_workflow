@@ -179,7 +179,7 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
   # discrepancies will check the original legacy entry, which if failed will 
   # be left as is. 
  
-  verified_discrepancies <- compare_discrepancies(new_data_df, legacy_data_df, separated_close_matches$discrepancies, ID_col)
+  verified_discrepancies <- compare_discrepancies(new_data_df, legacy_data_df, separated_close_matches$discrepancies)
   verified_data_df <- rbind(verified_data_df, verified_discrepancies)
   verified_data_df <- rbind(verified_data_df, new_entries)
   
@@ -208,7 +208,7 @@ flag_duplicates <- function(new_data_df){
 }
 
 
-compare_discrepancies <- function(new_data_df, legacy_data_df, discrepancies , ID_col){
+compare_discrepancies <- function(new_data_df, legacy_data_df, discrepancies){
   # compare the rows identified as discrepancies from the new and legacy 
   # dataframes. Most changes should be QA and either still meet the requirements 
   # or now meet the requirements and hence will not be flagged as an error. 
@@ -1116,30 +1116,6 @@ store_index <- function(nonNAvalues, nonNA, z){
   return(match_indices)
 }
 store_index_vec <- base::Vectorize(store_index)
-
-find_previous_process_date <- function(){
-  # finds the dates stored in the metadata report file names with REGEX. 
-  # reports_location is a global variable defined when creating the meta data 
-  # report. 
-  xml_files <- list.files(path= reports_location, pattern = as.character("Processed Control Data Report "))
-  dates <- regmatches(xml_files, regexpr("[0-9-]{10}", xml_files))
-  if(length > 0) {
-    return(max(as.Date(dates)))
-  } else {
-    return(NA)
-  }
- 
-}
-
-get_file_and_line <- function() {
-  # can get the information of where warnings were generated approximately
-  
-  frame <- sys.frame(n = 1)
-  info <- rlang::trace_back(frame, x = FALSE)
-  file <- attr(info, "file")
-  line <- attr(info, "line")
-  return(list(file = file, line = line))
-}
 
 set_data_type <- function(data_df, mapping){
   # sets the data_type of each column of any data frame input based on
