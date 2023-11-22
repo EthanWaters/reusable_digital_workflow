@@ -13,7 +13,17 @@ The four major steps in this process are as follows:
   3. Perform `Site Assignment` to control data if applicable.
   4. `Export` 
 
-## Installation & Requirements
+For further information see Reusable Digital Workflows Systems Diagrams and Reusable Digital Workflows Psudo Code Systems Diagrams
+
+## 1.1 Term Definitions
+This section defines several terms utilized throughout the documentation to ensure clarity. 
+  - `Legacy` or `legacy data`: Refers to data previously processed by this workflow or previous versions of this work flow and is in the "Legacy format".
+  - `New` or `new data`: Refers to new data exported from GBRMPA and is attempting to be processed by this workflow for the first time.
+  - `Match`: A row identified in both `legacy data` and `new data`. This row may have minor changes due to QA or mistakes
+  - `Discrepany`: A match that varies between `legacy` and `new` data.
+  
+  
+## 2.0 Installation & Requirements
 The system was developed with the following. See environment log for details of all packages installed in dev environment.
 
 #### R Environment Information
@@ -100,15 +110,31 @@ The system was developed with the following. See environment log for details of 
 ## 3.1 Data Transformation
 While an ideal scenario would involve a fully dynamic system capable of automatically determining mapping transformations from one version of a data set to the next, this proved unattainable due to the overlapping use of names in the new GBRMPA database with the old data set in a different context. To address this challenge, a compromise between modularity and robustness was sought. Instead of hard-coding numerous transformations, a solution was implemented using JSON configuration files to specify transformations which are then checked against the input with NLP techniques and dynamically changed to ensure semantic differences can still be effectively mapped. This approach allows for flexibility in handling future datasets. The configuration files mean that any dataset can specify a configuration file and then utilise the work flow to ensure consistent data output. 
 
-## 3.2 Error Checking & Processing
+## 3.2 Error Checking & Discrepancy Detection
+Error checking is independent of discrepancy detection. These functions interpret the data and are flagged as errors is they are likely to be inappropriate for use in analysis based on advice from Dr Cameron Fletcher. No data is ever removed. 
 
+Discrepancy Detection provides the opportunity to identify changes in a specific row of data. It is not possible to know if a change is a mistake or QA so any changes that alter an error free data point to one containing an error, the original row will be utilised. In all other situations the new row will be utilised. 
+  
 
 ## 3.3 Site Assignment
+The method traditionally employed for the assignment of control data observations to specific geographical regions was proposed by Dr. Cameron Fletcher at CSIRO. Dr. Fletcher's approach has proven valuable for understanding ecological patterns across various reef environments. However, the method's initial implementation relied on a Mathematica script, which introduced challenges of accessibility due to the proprietary nature of Mathematica software. This limitation not only hindered the wider adoption of the technique but also raised concerns about long-term sustainability and data processing bottlenecks. To overcome these hurdles and enhance the method's usability, we undertook the task of reconstructing Dr. Fletcher's approach using the open-source R programming language. This transformation aims to render the method more accessible, enabling researchers to employ it without the constraints posed by proprietary software. Our reimagined implementation closely follows the original approach, allowing us to efficiently process observations and alleviate potential bottlenecks associated with external dependencies, ensuring a more streamlined data analysis workflow.
+
+#### 3.3.1 Pre-processing
+Reef names and site names, are extracted and formatted for both human-readable and computational purposes. Both reef and site names are compared to previous versions of the KMZ file to identify new and changed reefs. The intention is to avoid performing the computationally expensive spatial analysis where possible. Additional steps were then taken to reduce the computational complexity of the calculations through the simplification of the intricate polygonal shapes. The process implemented Ramer-Douglas-Peucker algorithm to obtain an adaptive approximation of a complex polygons while maintaining their essential characteristics based on a predetermined threshold of $10^{-5}$. 
+
+#### 3.3.2 Spatial Analysis
+The bounding boxes of each reef layer are extended by 0.003 degrees, roughly equivalent to 300 meters. The initial objective is to ensure that the bounding boxes encompass the entirety of the reef polygons, incorporating a buffer zone of suitable dimensions. This buffer serves the purpose of accommodating the meandering trajectory of manta tows, which tend to fluctuate in proximity to the reef margins. Achieving a delicate equilibrium, the buffer must be substantial enough to avoid overlap between reefs and to capture most manta tows, while avoiding computational overload. The approach also seeks to align with the practices of GBRMPA (Great Barrier Reef Marine Park Authority), wherein manta tows are assigned to sites based on proximity conditions. To maintain fidelity with the GBRMPA framework, the buffer is set at 0.003 degrees, a value that ensures consistency in proximity while retaining computational efficiency. 
+
+The expansion of the bounding boxes is coupled with an iterative process of rasterization, resulting in a raster for every reef layer.  These rasters can be used for subsequent spatial analyses if desired. 
+
+To calculate the distance between a point and a polygon, the function `st_distance` from the `sf` package was utilized and can perform the calculation with either Euclidean or great circular distance. Euclidean distance will be utilized for comparison but accuracy can be improved in future implementations with the use of great circular distance. Nothing in the code or documentation indicated that the assignment of a pixel was dependent on the assignment of any other pixel. The assigned rasters undergo a transformation, yielding a set of rasters, each corresponding to a distinct reef.
+
+Manta tow centroids are transformed into point representations. Iterating through the set of rasters, the tow points are filtered based on the reef name of the raster. The value of the raster at each centroid point is extracted and the results merged with the manta tow data input.  
 
 
 ## 3.4 Export Data
 
-For further information see Reusable Digital Workflows Systems Diagrams and Reusable Digital Workflows Psudo Code Systems Diagrams
+
 
 ## 4.0 Code Documentation
 
