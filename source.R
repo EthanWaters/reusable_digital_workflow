@@ -1065,7 +1065,7 @@ matrix_close_matches_vectorised <- function(x, y, distance){
   # would not be possible if this fails and is still faster than 
   # dynamically updating an object. 
   
-  #Pre-allocate variables and memory
+  #Pre-allocate variables and memory 
   x_rows <- nrow(x)
   x_cols <- ncol(x)
   y_rows <- nrow(y)
