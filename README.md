@@ -24,9 +24,30 @@ This section defines several terms utilized throughout the documentation to ensu
   
   
 ## 2.0 Installation & Requirements
-The system was developed with the following. See environment log for details of all packages installed in dev environment.
+Docker is utilised to ensure that the client environment remains consistent with the dev environment, see section 2.1 for instructions. See section 2.2 & 2.3 for details of all packages installed in dev environment.
 
-#### R Environment Information
+### 2.1.1 How to update source code
+```bash
+# Assuming you are in your project directory
+
+# 1. Update source code tag
+git tag -a v1.1 -m "Version 1.1"
+git push origin v1.1
+
+# 2. Commit changes
+git add .
+git commit -m "Update source code for version 1.1"
+git push
+
+# 3. Build and tag the Docker image
+docker build -t your-image-name:v1.1 .
+docker tag your-image-name:v1.1 your-docker-repo/your-image-name:v1.1
+
+# 4. Push the Docker image to a registry (if applicable)
+docker push your-docker-repo/your-image-name:v1.1
+```
+
+#### 2.2 R Environment Information
 
 - R version: 4.2.1 (2022-06-23 ucrt)
 - Platform: x86_64-w64-mingw32
@@ -34,7 +55,7 @@ The system was developed with the following. See environment log for details of 
 - Timezone: Australia/Brisbane
 - Date: Thu Nov 16 12:57:30 2023
 
-#### Required Packages
+#### 2.3 Required Packages
 
 
 | Package       | Version   |
