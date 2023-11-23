@@ -92,8 +92,6 @@ contribute_to_metadata_report <- function(data, key = "Warning"){
     }
     
   }
- 
-  
   write_xml(xml_file_data, file = xml_file, options =c("format", "no_declaration"))
 }
 
