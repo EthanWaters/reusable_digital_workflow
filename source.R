@@ -1162,9 +1162,6 @@ set_data_type <- function(data_df, mapping){
 transform_data_structure <- function(data_df, mappings, new_fields){
   
   transformed_df <- data.frame(matrix(ncol = nrow(mappings) + nrow(new_fields), nrow = nrow(data_df)))
-  colnames(transformed_df) <- c(mappings$target_field, new_fields$field)
-  transformed_df <- transformed_df[, c(mappings$position, new_fields$position)]
-  
   data_colnames <- colnames(data_df)
   is_already_mapped <- all(!is.na(match(mappings$target_field, data_colnames)))
   if(is_already_mapped){
@@ -1173,23 +1170,13 @@ transform_data_structure <- function(data_df, mappings, new_fields){
     transformed_df <- data_df[,positions]
     return(transformed_df)
   }
-  
- 
-  
+
   for (i in seq_len(nrow(new_fields))) {
     new_field <- new_fields$field[i]
+    default_value <- new_fields$default[i]
     position <- new_fields$position[i]
-    colnames(transformed_df)[position] <- new_field 
-    levenshtein_distances <- adist(new_field , colnames(data_df))
-    is_new_field_present <- any(levenshtein_distances <= 2)
-    if(!is_new_field_present){
-      default_value <- new_fields$default[i]
-      transformed_df[, position] <- default_value
-    } else {
-      closest_match <- which(levenshtein_distances <= 2)
-      original_field <-  colnames(data_df[[closest_match]])
-      transformed_df[, position] <- data_df[[original_field]]
-    }
+    transformed_df[, position] <- default_value
+    colnames(transformed_df)[position] <- new_field
   }
   closest_matches <- get_closest_matches(colnames(data_df), mappings$source_field)
   for (i in seq_len(ncol(closest_matches))) {

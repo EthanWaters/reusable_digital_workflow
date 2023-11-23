@@ -21,8 +21,8 @@ main <- function(new_path, configuration_path, kml_path, leg_path = NULL) {
   library("jsonlite")
   library("sf")
   library("sp")
-  library("rgdal")
-  library("parallel")
+  # library("rgdal")
+  # library("parallel")
   library("raster")
   library("terra")
   library("units")
@@ -36,10 +36,10 @@ main <- function(new_path, configuration_path, kml_path, leg_path = NULL) {
   library("fasterize")
     
   # Check if optional_arg is provided
-  if (!missing(leg_path)) {
-    is_legacy_data_available <- 1
-  } else {
+  if (is.null(leg_path)) {
     is_legacy_data_available <- 0
+  } else {
+    is_legacy_data_available <- 1
   }
     
     
@@ -85,7 +85,9 @@ main <- function(new_path, configuration_path, kml_path, leg_path = NULL) {
   assign("has_authorative_ID", has_authorative_ID, envir = .GlobalEnv) 
   
   transformed_data_df <- transform_data_structure(new_data_df, configuration$mappings$transformations, configuration$mappings$new_fields)
-  legacy_df <- set_data_type(legacy_df, configuration$mappings$data_type_mappings) 
+  if(is_legacy_data_available){
+    legacy_df <- set_data_type(legacy_df, configuration$mappings$data_type_mappings) 
+  }
   formatted_data_df <- set_data_type(transformed_data_df, configuration$mappings$data_type_mappings) 
   
   verified_data_df <- verify_entries(formatted_data_df, configuration)

@@ -94,39 +94,41 @@ docker push your-docker-repo/your-image-name:v1.1
 | fasterize     | 1.0.4     |
 
 
-`install.packages("tools", version = "4.2.1")`  
-`install.packages("installr", version = "0.23.4")`  
-`install.packages("readxl", version = "1.4.1")`  
-`install.packages("sets", version = "1.0-21")`  
-`install.packages("XML", version = "3.99-0.13")`  
-`install.packages("methods", version = "4.2.1")`  
-`install.packages("xml2", version = "1.3.3")`  
-`install.packages("rio", version = "0.5.29")`  
-`install.packages("dplyr", version = "1.0.10")`  
-`install.packages("stringr", version = "1.4.1")`  
-`install.packages("fastmatch", version = "1.1-3")`  
-`install.packages("lubridate", version = "1.8.0")`  
-`install.packages("rlang", version = "1.1.0")`  
-`install.packages("inline", version = "0.3.19")`  
-`install.packages("purrr", version = "0.3.4")`  
-`install.packages("jsonlite", version = "1.8.7")`  
-`install.packages("sf", version = "1.0-14")`  
-`install.packages("sp", version = "1.5-0")`  
-`install.packages("leaflet", version = "2.1.2")`  
-`install.packages("rgdal", version = "1.6-7")`  
-`install.packages("parallel", version = "4.2.1")`  
-`install.packages("raster", version = "3.6-23")`  
-`install.packages("terra", version = "1.7-39")`  
-`install.packages("dplyr", version = "1.0.10")`  
-`install.packages("units", version = "0.8-0")`  
-`install.packages("tidyverse", version = "1.3.2")`  
-`install.packages("tictoc", version = "1.1")`  
-`install.packages("tidyr", version = "1.2.0")`  
-`install.packages("ggplot2", version = "3.4.2")`  
-`install.packages("lwgeom", version = "0.2-13")`  
-`install.packages("stars", version = "0.6-4")`  
-`install.packages("stringr", version = "1.4.1")`  
-`install.packages("fasterize", version = "1.0.4")`  
+```R 
+install.packages("tools", version = "4.2.1")  
+install.packages("installr", version = "0.23.4")  
+install.packages("readxl", version = "1.4.1")  
+install.packages("sets", version = "1.0-21")  
+install.packages("XML", version = "3.99-0.13")  
+install.packages("methods", version = "4.2.1")  
+install.packages("xml2", version = "1.3.3")  
+install.packages("rio", version = "0.5.29")  
+install.packages("dplyr", version = "1.0.10")  
+install.packages("stringr", version = "1.4.1")  
+install.packages("fastmatch", version = "1.1-3")  
+install.packages("lubridate", version = "1.8.0")  
+install.packages("rlang", version = "1.1.0")  
+install.packages("inline", version = "0.3.19")  
+install.packages("purrr", version = "0.3.4")  
+install.packages("jsonlite", version = "1.8.7")  
+install.packages("sf", version = "1.0-14")  
+install.packages("sp", version = "1.5-0")  
+install.packages("leaflet", version = "2.1.2")  
+install.packages("rgdal", version = "1.6-7")  
+install.packages("parallel", version = "4.2.1")  
+install.packages("raster", version = "3.6-23")  
+install.packages("terra", version = "1.7-39")  
+install.packages("dplyr", version = "1.0.10")  
+install.packages("units", version = "0.8-0")  
+install.packages("tidyverse", version = "1.3.2")  
+install.packages("tictoc", version = "1.1")  
+install.packages("tidyr", version = "1.2.0")  
+install.packages("ggplot2", version = "3.4.2")  
+install.packages("lwgeom", version = "0.2-13")  
+install.packages("stars", version = "0.6-4")  
+install.packages("stringr", version = "1.4.1")  
+install.packages("fasterize", version = "1.0.4")
+```
 
 ## 3.1 Data Transformation
 While an ideal scenario would involve a fully dynamic system capable of automatically determining mapping transformations from one version of a data set to the next, this proved unattainable due to the overlapping use of names in the new GBRMPA database with the old data set in a different context. To address this challenge, a compromise between modularity and robustness was sought. Instead of hard-coding numerous transformations, a solution was implemented using JSON configuration files to specify transformations which are then checked against the input with NLP techniques and dynamically changed to ensure semantic differences can still be effectively mapped. This approach allows for flexibility in handling future datasets. The configuration files mean that any dataset can specify a configuration file and then utilise the work flow to ensure consistent data output. 
