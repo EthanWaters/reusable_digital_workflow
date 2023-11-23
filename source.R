@@ -1,6 +1,4 @@
 # Format the new control data into the stardard legacy format 
-
-
 import_data <- function(data, configuration){
     out <- tryCatch(
       {
