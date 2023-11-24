@@ -32,20 +32,19 @@ This requires Docker version 24.0.6:https://www.docker.com/products/docker-deskt
 ```bash
 # Assuming you are in your project directory
 
-# Perform changes and COMMIT
+# Perform changes, COMMIT and push
 
 # 1. Update source code tag e.g.
 #SPECIFY DESIRED VERSION BY REPLACEING "latest"
 git tag -a v1.1 -m "Version 1.1"
-git push
+git push origin v1.1
 
 # 3. Build, tag and push the Docker image
 docker build -t reusable_digital_workflow:latest .
-docker tag reusable_digital_workflow:latest ghcr.io/ethanwaters/reusable_digital_workflow:latest
 docker push ghcr.io/ethanwaters/reusable_digital_workflow:latest
 ```
 
-### 2.1.1 How to run code
+### 2.1.2 How to run code
 
 ```bash
 #SPECIFY DESIRED VERSION BY REPLACEING "latest"
@@ -55,6 +54,7 @@ docker run ghcr.io/ethanwaters/reusable_digital_workflow:latest
 ```
 
 #### 2.2 R Environment Information
+This is all taken care of by docker.
 
 - R version: 4.2.1 (2022-06-23 ucrt)
 - Platform: x86_64-w64-mingw32
