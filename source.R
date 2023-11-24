@@ -198,8 +198,22 @@ flag_duplicates <- function(new_data_df){
   new_data_df$Identifier <- apply(new_data_df[,2:ncol(new_data_df)], 1, function(row) paste(row, collapse = "_"))
   duplicates <- duplicated(new_data_df$Identifier)
   counts <- ave(duplicates, new_data_df$Identifier, FUN = sum)
-  new_data_df$error_flag <- ifelse(counts >= 2 & duplicates, 1, new_data_df$error_flag)
+  is_duplicate <- (counts >= 2 & duplicates)
+  new_data_df$error_flag <- ifelse(is_duplicate, 1, new_data_df$error_flag)
   new_data_df$Identifier <- NULL
+  
+  if (any(is_duplicate)) {
+    grandparent <- as.character(sys.call(sys.parent()))[1]
+    parent <- as.character(match.call())[1]
+    warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have been flagged as duplicates", 
+                     toString(data_df[is_duplicate, 1]), "and the following indexes", toString((1:nrow(data_df))[is_duplicate]))
+    message(warning)
+    
+    # Append the warning to an existing matrix 
+    warning_matrix <- matrix(warning)
+    contribute_to_metadata_report(warning_matrix)
+    
+  }
   return(new_data_df)
 }
 
@@ -590,7 +604,7 @@ verify_lat_lng <- function(data_df, max_val, min_val, columns, ID_col){
       
       # Set any NA values to TRUE as the check was unable to be completed 
       # correctly
-      out_of_range <- ifelse(is.na(out_of_range),TRUE,out_of_range)
+      out_of_range <- ifelse(is.na(out_of_range),1,out_of_range)
       data_df[["error_flag"]] <- data_df[["error_flag"]] | out_of_range
       
       if (any(out_of_range)) {
@@ -712,7 +726,7 @@ verify_RHISS <- function(data_df) {
   check_descriptive_bleach_severity <- rowSums(is_valid_descriptive_bleach_severity) > 0
   
   bleached_severity <- data_df$`Bleached Average Severity Index (calculated via matrix)`
-  bleached_severity <- ifelse(is.na(bleached_severity),TRUE,bleached_severity)
+  bleached_severity <- ifelse(is.na(bleached_severity),1,bleached_severity)
   check_bleach_severity <- bleached_severity >= 1 & bleached_severity <= 8
   
   check <- !check_tide | check_macroalgae | !check_bleach_severity | check_descriptive_bleach_severity
@@ -759,7 +773,7 @@ verify_percentages <- function(data_df) {
     perc_cols_vals <- data_df[, perc_cols]
     col_check <- apply(perc_cols_vals, 2, function(x) x < 0 | x > 100)
     check <- rowSums(col_check) > 0
-    check <- ifelse(is.na(check),TRUE,check)
+    check <- ifelse(is.na(check),1,check)
     data_df[["error_flag"]] <- data_df[["error_flag"]] | check
     if (any(check)) {
       grandparent <- as.character(sys.call(sys.parent()))[1]
@@ -786,9 +800,10 @@ verify_na_null <- function(data_df, configuration) {
   control_data_type <- configuration$metadata$control_data_type
   
   exempt_cols <- intersect(c(configuration$mappings$new_fields$field, ID_col), names(data_df))
-  na_present <- apply(data_df[, -exempt_cols], 2, function(x) is.na(x) | is.null(x) | x == "")
+  nonexempt_df <- data_df[, -which(names(data_df) %in% exempt_cols)]
+  na_present <- apply(nonexempt_df, 2, function(x) is.na(x) | is.null(x) | x == "")
   check <- rowSums(na_present) > 0
-  check <- ifelse(is.na(check),TRUE,check)
+  check <- ifelse(is.na(check),1,check)
   data_df[["error_flag"]] <- data_df[["error_flag"]] | check
   if (any(check)) {
     grandparent <- as.character(sys.call(sys.parent()))[1]
@@ -815,7 +830,7 @@ verify_integers_positive <- function(data_df) {
     if(any(is_integer)){
       col_check <- apply(data_df[,is_integer], 2, function(x) x < 0)
       check <- rowSums(col_check) > 0
-      check <- ifelse(is.na(check),TRUE,check)
+      check <- ifelse(is.na(check),1,check)
       data_df[, "error_flag"] <- data_df[, "error_flag"] | check
      
       if (any(check)) {
