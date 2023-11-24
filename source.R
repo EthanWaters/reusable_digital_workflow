@@ -1259,7 +1259,7 @@ assign_nearest_method_c <- function(kml_data, data_df, layer_names_vec, crs, ras
     }
     reef_pts <- pts[is_contained,]
     nearest_site_manta_data <- raster::extract(site_regions[[i]], reef_pts)
-    updated_pts[is_contained, "Nearest Site"] <- nearest_site_manta_data
+    updated_pts[is_contained, c("Nearest Site",  "Distance to Site")] <- nearest_site_manta_data
   }
   return(updated_pts)
 }
@@ -1304,7 +1304,7 @@ assign_raster_pixel_to_sites <- function(kml_data, layer_names_vec, crs, raster_
   }
   
   # Define the increase amount in both x and y directions. 
-  increase_amount <- 0.003
+  increase_amount <- 0.005
   expanded_bboxs <- setNames(lapply(expanded_extent, function(i) {
     
     original_extent <- i
@@ -1348,21 +1348,28 @@ assign_raster_pixel_to_sites <- function(kml_data, layer_names_vec, crs, raster_
       min_distances_list <- apply(distances, 2, xth_smallest, x_values=x_closest)
       min_distances_df <- do.call(rbind, min_distances_list)
       min_distance_site_numbers <- site_numbers[as.vector(min_distances_df$`Nearest Site`)]
-      min_distances <- min_distances_df$`distance`
+      min_distances <- min_distances_df$`Distance to Site`
       
     } else {
       min_distances <- drop_units(distances)
       min_distance_site_numbers <- rep(site_numbers, length(min_distances))
     }
     
-    # Set site numbers to NA if they are more than 300m away. 
-    is_within_300 <- min_distances > 300
-    min_distance_site_numbers[is_within_300] <- 0
-    min_distances[is_within_300] <- 0
+    # Set site numbers to NA if they are more than 300m away.
+    print(class(min_distance_site_numbers))
+    is_within_required_distance <- min_distances > 500
+    min_distance_site_numbers[is_within_required_distance] <- 0
+    min_distances[is_within_required_distance] <- 0
+    print(class(min_distance_site_numbers))
     values(raster) <- min_distance_site_numbers
     names(raster) <- c("Nearest Site")
     
-    site_regions[[i]] <- raster
+    distance_raster <- raster
+    values(distance_raster) <- min_distances
+    names(distance_raster) <- c("Distance to Site")
+    
+    site_region <- brick(raster,distance_raster)
+    site_regions[[i]] <- site_region
   }
   
   return(site_regions)
@@ -1459,7 +1466,141 @@ perpendicularDistance <- function(p, A, B) {
 
 
 
+find_largest_extent <- function(kml_data){
+  num_geometries <- length(kml_data)
+  
+  # Preallocate the data frame
+  result <- data.frame(
+    x_difference = numeric(num_geometries),
+    y_difference = numeric(num_geometries)
+  )
+  
+  for (i in 1:num_geometries) {
+    bbox <- extent(kml_data[[i]])
+    diff_x <- bbox@xmax - bbox@xmin
+    diff_y <- bbox@ymax - bbox@ymin
+    result[i, "x_difference"] <- diff_x
+    result[i, "y_difference"] <- diff_y
+  }
+  
+  colnames(result) <- c("x_difference", "y_difference")
+  largest_extent <- c(max(result$x_difference),max(result$y_difference))
+  names(largest_extent) <- c("x_difference", "y_difference")
+  
+  return(largest_extent)
+}
 
+standardise_extents <- function(kml_data){
+  largest_extent <- find_largest_extent(kml_data)
+  adjusted_extents <- list()
+  for(i in 1:length(kml_data)) {
+    extent <- extent(kml_data[[i]])
+    diff_x <- extent@xmax - extent@xmin
+    diff_y <- extent@ymax - extent@ymin
+    largest_extent_centered <- extent(extent@xmin + diff_x/2 - largest_extent[1]/2,
+                                      extent@xmax - diff_x/2 + largest_extent[1]/2,
+                                      extent@ymin + diff_y/2 - largest_extent[2]/2,
+                                      extent@ymax - diff_y/2 + largest_extent[2]/2
+    )
+    adjusted_extents[[i]] <- largest_extent_centered
+  }
+  return(adjusted_extents)
+}
+
+
+create_raster_templates <- function(extents, layer_names_vec, crs, raster_size=150){
+  
+  # rasterise the bounding boxes 
+  # res <- 0.0005
+  # NN input requires standard image size. 570x550 is approximately a resolution of 0.00045
+  if (raster_size > 50){
+    y_pixel <- raster_size
+    x_pixel <- raster_size
+    rasters <- setNames(lapply(extents, function(i) {
+      raster(ext = i, ncols=x_pixel, nrows=y_pixel, crs = crs)
+    }), layer_names_vec)
+  } else {
+    rasters <- setNames(lapply(extents, function(i) {
+      raster(ext = i, resolution=raster_size, crs = crs)
+    }), layer_names_vec)
+  }
+  return(rasters)
+}
+
+
+rasterise_sites <- function(kml_data, is_standardised=1, raster_size=150){
+  if (is_standardised == 1){
+    extent_data <- standardise_extents(kml_data)
+    location <- "standardised_extent"
+  } else {
+    extent_data <- kml_data
+    location <- "varying_extent"
+  }
+  
+  # res <- 0.0005
+  # NN input requires standard image size. 570x550 is approximately a resolution of 0.00045
+  y_pixel <- raster_size
+  x_pixel <- raster_size
+  for(i in 1:length(kml_data)){
+    site_names <- kml_data[[i]]$Name
+    site_numbers <- site_names_to_numbers(site_names)
+    kml_data[[i]]$site_number <- site_numbers
+    site_raster <- st_rasterize(kml_data[[i]], st_as_stars(st_bbox(extent_data[[i]]), field = "site_number", nx = x_pixel, ny = y_pixel))
+    file_name <- names(kml_data[i])
+    modified_file_name <- gsub("/", "_", file_name)
+    site_raster <- as(site_raster, "Raster")
+    writeRaster(site_raster, filename = paste("CNN\\", raster_size, "\\", location,  "\\sites_as_rasters\\", modified_file_name, sep=""), format = "GTiff", overwrite = TRUE)
+    site_raster <- NA
+  }
+}
+
+
+rasterise_sites_reef_encoded <- function(kml_data, layer_names_vec, is_standardised=1, raster_size=150){
+  
+  if (is_standardised == 1){
+    extent_data <- standardise_extents(kml_data)
+    location <- "standardised_extent"
+  } else {
+    extent_data <- kml_data
+    location <- "varying_extent"
+  }
+  # res <- 0.0005
+  # NN input requires standard image size. 570x550 is approximately a resolution of 0.00045
+  y_pixel <- raster_size
+  x_pixel <- raster_size
+  for(i in 1:length(kml_data)){
+    site_names <- kml_data[[i]]$Name
+    site_numbers <- site_names_to_numbers(site_names)
+    reef_numbers <- as.numeric(gsub("[^0-9.]", "", layer_names_vec[[i]]))
+    encoded_reef_site_numbers <- as.numeric(sapply(site_numbers, function (x) paste(reef_numbers, x, sep = "")))
+    kml_data[[i]]$site_number <- encoded_reef_site_numbers
+    site_raster <- st_rasterize(kml_data[[i]], st_as_stars(st_bbox(extent_data[[i]]), field = "site_number", nx = x_pixel, ny = y_pixel))
+    file_name <- names(kml_data[i])
+    modified_file_name <- gsub("/", "_", file_name)
+    site_raster <- as(site_raster, "Raster")
+    writeRaster(site_raster, filename = paste("CNN\\", raster_size, "\\", location, "\\sites_as_rasters_encoded\\", modified_file_name, sep=""), format = "GTiff", overwrite = TRUE)
+    site_raster <- NA
+  }
+}
+
+
+xth_smallest <- function(x, x_values) {
+  # Function to find the xth smallest value in a vector without sorting. This 
+  # allows for the second closest sites etc to be determined. Likely unnecessary 
+  #in production was used for testing purposes
+  
+  sorted_uniques <- sort(x)
+  xth_smallest_values <- sorted_uniques[x_values]
+  xth_smallest_indices <- which(x %in% xth_smallest_values)
+  if(length(xth_smallest_indices > 1)){
+    xth_smallest_indices <- xth_smallest_indices[1]
+  }
+  output <- data.frame(matrix(ncol = (2*length(x_values))))
+  colnames(output) <- c("Nearest Site", "Distance to Site")
+  output[1,] <- c(xth_smallest_indices, xth_smallest_values)
+  return(output)
+  
+}
 
 
 

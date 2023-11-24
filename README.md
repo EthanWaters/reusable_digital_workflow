@@ -30,21 +30,16 @@ Docker is utilised to ensure that the client environment remains consistent with
 ```bash
 # Assuming you are in your project directory
 
-# 1. Update source code tag
-git tag -a v1.1 -m "Version 1.1"
-git push origin v1.1
+# Perform changes and COMMIT
 
-# 2. Commit changes
-git add .
-git commit -m "Update source code for version 1.1"
+# 1. Update source code tag e.g.
+git tag -a v1.1 -m "Version 1.1"
 git push
 
-# 3. Build and tag the Docker image
-docker build -t your-image-name:v1.1 .
-docker tag your-image-name:v1.1 your-docker-repo/your-image-name:v1.1
-
-# 4. Push the Docker image to a registry (if applicable)
-docker push your-docker-repo/your-image-name:v1.1
+# 3. Build, tag and push the Docker image
+docker build -t reusable_digital_workflow:v1.1 .
+docker tag reusable_digital_workflow:v1.1 ghcr.io/ethanwaters/reusable_digital_workflow:v1.1
+docker push ghcr.io/ethanwaters/reusable_digital_workflow:v1.1
 ```
 
 #### 2.2 R Environment Information
@@ -79,8 +74,6 @@ docker push your-docker-repo/your-image-name:v1.1
 | sf            | 1.0-14    |
 | sp            | 1.5-0     |
 | leaflet       | 2.1.2     |
-| rgdal         | 1.6-7     |
-| parallel      | 4.2.1     |
 | raster        | 3.6-23    |
 | terra         | 1.7-39    |
 | units         | 0.8-0     |
@@ -113,9 +106,7 @@ install.packages("purrr", version = "0.3.4")
 install.packages("jsonlite", version = "1.8.7")  
 install.packages("sf", version = "1.0-14")  
 install.packages("sp", version = "1.5-0")  
-install.packages("leaflet", version = "2.1.2")  
-install.packages("rgdal", version = "1.6-7")  
-install.packages("parallel", version = "4.2.1")  
+install.packages("leaflet", version = "2.1.2")   
 install.packages("raster", version = "3.6-23")  
 install.packages("terra", version = "1.7-39")  
 install.packages("dplyr", version = "1.0.10")  

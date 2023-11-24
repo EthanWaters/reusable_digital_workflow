@@ -107,12 +107,12 @@ main <- function(new_path, configuration_path, kml_path, leg_path = NULL) {
   kml_layers <- st_layers(kml_path)
   layer_names <- kml_layers["name"]
   layer_names_vec <- unlist(kml_layers["name"])
-  kml_data <- setNames(lapply(layer_names_vec, function(i)  st_read(kml_file, layer = i)), layer_names_vec)
+  kml_data <- setNames(lapply(layer_names_vec, function(i)  st_read(kml_path, layer = i)), layer_names_vec)
   crs <- projection(kml_data[[1]])
   
   tryCatch({
     if(configuration$metadata$assign_sites){
-      verified_data_df <- assign_nearest_method_c(kml_data, verified_data_df, layer_names_vec, crs, raster_size=0.0005, x_closest=1, is_standardised=1, save_rasters=0)
+      verified_data_df <- assign_nearest_method_c(kml_data, verified_data_df, layer_names_vec, crs, raster_size=0.0005, x_closest=1, is_standardised=0, save_rasters=0)
     }
   }, error = function(e) {
     print(paste("Error assigning sites:", conditionMessage(e)))
