@@ -26,6 +26,8 @@ This section defines several terms utilized throughout the documentation to ensu
 ## 2.0 Installation & Requirements
 Docker is utilised to ensure that the client environment remains consistent with the dev environment, see section 2.1 for instructions. See section 2.2 & 2.3 for details of all packages installed in dev environment.
 
+This requires Docker version 24.0.6:https://www.docker.com/products/docker-desktop/
+
 ### 2.1.1 How to update source code
 ```bash
 # Assuming you are in your project directory
@@ -33,13 +35,23 @@ Docker is utilised to ensure that the client environment remains consistent with
 # Perform changes and COMMIT
 
 # 1. Update source code tag e.g.
+#SPECIFY DESIRED VERSION BY REPLACEING "latest"
 git tag -a v1.1 -m "Version 1.1"
 git push
 
 # 3. Build, tag and push the Docker image
-docker build -t reusable_digital_workflow:v1.1 .
-docker tag reusable_digital_workflow:v1.1 ghcr.io/ethanwaters/reusable_digital_workflow:v1.1
-docker push ghcr.io/ethanwaters/reusable_digital_workflow:v1.1
+docker build -t reusable_digital_workflow:latest .
+docker tag reusable_digital_workflow:latest ghcr.io/ethanwaters/reusable_digital_workflow:latest
+docker push ghcr.io/ethanwaters/reusable_digital_workflow:latest
+```
+
+### 2.1.1 How to run code
+
+```bash
+#SPECIFY DESIRED VERSION BY REPLACEING "latest"
+docker pull ghcr.io/ethanwaters/reusable_digital_workflow:latest
+docker run ghcr.io/ethanwaters/reusable_digital_workflow:latest
+
 ```
 
 #### 2.2 R Environment Information
