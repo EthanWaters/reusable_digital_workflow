@@ -1253,7 +1253,7 @@ assign_nearest_method_c <- function(kml_data, data_df, layer_names_vec, crs, ras
   
   updated_pts <- pts
   for(i in 1:length(site_regions)){
-    is_contained <- sapply(pts$`Reef Number`, function(str) grepl(str, names(site_regions[i])))
+    is_contained <- sapply(pts$`Reef ID`, function(str) grepl(str, names(site_regions[i])))
     if(any(is_contained) == FALSE){
       next
     }
