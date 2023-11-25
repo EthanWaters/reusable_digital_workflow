@@ -1261,6 +1261,9 @@ assign_nearest_method_c <- function(kml_data, data_df, layer_names_vec, crs, ras
     nearest_site_manta_data <- raster::extract(site_regions[[i]], reef_pts)
     updated_pts[is_contained, c("Nearest Site",  "Distance to Site")] <- nearest_site_manta_data
   }
+  st_drop_geometry(updated_pts)
+  is_nearest_site_has_error <- is.na(updated_pts$`Nearest Site`) | updated_pts$`Nearest Site` == -1
+  updated_pts[,"error_flag"] <- as.integer(updated_pts[,"error_flag"] | is_nearest_site_has_error)
   return(updated_pts)
 }
 
@@ -1358,7 +1361,6 @@ assign_raster_pixel_to_sites <- function(kml_data, layer_names_vec, crs, raster_
     # Set site numbers to NA if they are more than 300m away.
     is_within_required_distance <- min_distances > 500
     min_distance_site_numbers[is_within_required_distance] <- -1
-    min_distances[is_within_required_distance] <- -1
     values(raster) <- min_distance_site_numbers
     names(raster) <- c("Nearest Site")
     
