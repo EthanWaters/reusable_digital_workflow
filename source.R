@@ -198,8 +198,22 @@ flag_duplicates <- function(new_data_df){
   new_data_df$Identifier <- apply(new_data_df[,2:ncol(new_data_df)], 1, function(row) paste(row, collapse = "_"))
   duplicates <- duplicated(new_data_df$Identifier)
   counts <- ave(duplicates, new_data_df$Identifier, FUN = sum)
-  new_data_df$error_flag <- ifelse(counts >= 2 & duplicates, 1, new_data_df$error_flag)
+  is_duplicate <- (counts >= 2 & duplicates)
+  new_data_df$error_flag <- ifelse(is_duplicate, 1, new_data_df$error_flag)
   new_data_df$Identifier <- NULL
+  
+  if (any(is_duplicate)) {
+    grandparent <- as.character(sys.call(sys.parent()))[1]
+    parent <- as.character(match.call())[1]
+    warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have been flagged as duplicates", 
+                     toString(data_df[is_duplicate, 1]), "and the following indexes", toString((1:nrow(data_df))[is_duplicate]))
+    message(warning)
+    
+    # Append the warning to an existing matrix 
+    warning_matrix <- matrix(warning)
+    contribute_to_metadata_report(warning_matrix)
+    
+  }
   return(new_data_df)
 }
 
@@ -590,7 +604,7 @@ verify_lat_lng <- function(data_df, max_val, min_val, columns, ID_col){
       
       # Set any NA values to TRUE as the check was unable to be completed 
       # correctly
-      out_of_range <- ifelse(is.na(out_of_range),TRUE,out_of_range)
+      out_of_range <- ifelse(is.na(out_of_range),1,out_of_range)
       data_df[["error_flag"]] <- data_df[["error_flag"]] | out_of_range
       
       if (any(out_of_range)) {
@@ -712,7 +726,7 @@ verify_RHISS <- function(data_df) {
   check_descriptive_bleach_severity <- rowSums(is_valid_descriptive_bleach_severity) > 0
   
   bleached_severity <- data_df$`Bleached Average Severity Index (calculated via matrix)`
-  bleached_severity <- ifelse(is.na(bleached_severity),TRUE,bleached_severity)
+  bleached_severity <- ifelse(is.na(bleached_severity),1,bleached_severity)
   check_bleach_severity <- bleached_severity >= 1 & bleached_severity <= 8
   
   check <- !check_tide | check_macroalgae | !check_bleach_severity | check_descriptive_bleach_severity
@@ -759,7 +773,7 @@ verify_percentages <- function(data_df) {
     perc_cols_vals <- data_df[, perc_cols]
     col_check <- apply(perc_cols_vals, 2, function(x) x < 0 | x > 100)
     check <- rowSums(col_check) > 0
-    check <- ifelse(is.na(check),TRUE,check)
+    check <- ifelse(is.na(check),1,check)
     data_df[["error_flag"]] <- data_df[["error_flag"]] | check
     if (any(check)) {
       grandparent <- as.character(sys.call(sys.parent()))[1]
@@ -786,9 +800,10 @@ verify_na_null <- function(data_df, configuration) {
   control_data_type <- configuration$metadata$control_data_type
   
   exempt_cols <- intersect(c(configuration$mappings$new_fields$field, ID_col), names(data_df))
-  na_present <- apply(data_df[, -exempt_cols], 2, function(x) is.na(x) | is.null(x) | x == "")
+  nonexempt_df <- data_df[, -which(names(data_df) %in% exempt_cols)]
+  na_present <- apply(nonexempt_df, 2, function(x) is.na(x) | is.null(x) | x == "")
   check <- rowSums(na_present) > 0
-  check <- ifelse(is.na(check),TRUE,check)
+  check <- ifelse(is.na(check),1,check)
   data_df[["error_flag"]] <- data_df[["error_flag"]] | check
   if (any(check)) {
     grandparent <- as.character(sys.call(sys.parent()))[1]
@@ -815,7 +830,7 @@ verify_integers_positive <- function(data_df) {
     if(any(is_integer)){
       col_check <- apply(data_df[,is_integer], 2, function(x) x < 0)
       check <- rowSums(col_check) > 0
-      check <- ifelse(is.na(check),TRUE,check)
+      check <- ifelse(is.na(check),1,check)
       data_df[, "error_flag"] <- data_df[, "error_flag"] | check
      
       if (any(check)) {
@@ -1162,9 +1177,6 @@ set_data_type <- function(data_df, mapping){
 transform_data_structure <- function(data_df, mappings, new_fields){
   
   transformed_df <- data.frame(matrix(ncol = nrow(mappings) + nrow(new_fields), nrow = nrow(data_df)))
-  colnames(transformed_df) <- c(mappings$target_field, new_fields$field)
-  transformed_df <- transformed_df[, c(mappings$position, new_fields$position)]
-  
   data_colnames <- colnames(data_df)
   is_already_mapped <- all(!is.na(match(mappings$target_field, data_colnames)))
   if(is_already_mapped){
@@ -1173,23 +1185,13 @@ transform_data_structure <- function(data_df, mappings, new_fields){
     transformed_df <- data_df[,positions]
     return(transformed_df)
   }
-  
- 
-  
+
   for (i in seq_len(nrow(new_fields))) {
     new_field <- new_fields$field[i]
+    default_value <- new_fields$default[i]
     position <- new_fields$position[i]
-    colnames(transformed_df)[position] <- new_field 
-    levenshtein_distances <- adist(new_field , colnames(data_df))
-    is_new_field_present <- any(levenshtein_distances <= 2)
-    if(!is_new_field_present){
-      default_value <- new_fields$default[i]
-      transformed_df[, position] <- default_value
-    } else {
-      closest_match <- which(levenshtein_distances <= 2)
-      original_field <-  colnames(data_df[[closest_match]])
-      transformed_df[, position] <- data_df[[original_field]]
-    }
+    transformed_df[, position] <- default_value
+    colnames(transformed_df)[position] <- new_field
   }
   closest_matches <- get_closest_matches(colnames(data_df), mappings$source_field)
   for (i in seq_len(ncol(closest_matches))) {
@@ -1236,7 +1238,7 @@ assign_nearest_method_c <- function(kml_data, data_df, layer_names_vec, crs, ras
   pts <- get_centroids(data_df, crs)
   kml_data_simplified <- simplify_reef_polyogns_rdp(kml_data)
   site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
-  
+  assign("site_regions", site_regions, envir = .GlobalEnv)
   tryCatch({
     if(save_rasters){
       for(i in 1:length(site_regions)){
@@ -1251,13 +1253,13 @@ assign_nearest_method_c <- function(kml_data, data_df, layer_names_vec, crs, ras
   
   updated_pts <- pts
   for(i in 1:length(site_regions)){
-    is_contained <- sapply(pts$`Reef ID`, function(str) grepl(str, names(site_regions[i])))
+    is_contained <- sapply(pts$`Reef Number`, function(str) grepl(str, names(site_regions[i])))
     if(any(is_contained) == FALSE){
       next
     }
     reef_pts <- pts[is_contained,]
     nearest_site_manta_data <- raster::extract(site_regions[[i]], reef_pts)
-    updated_pts[is_contained, c("Nearest Site", "Distance to Site")] <- nearest_site_manta_data
+    updated_pts[is_contained, c("Nearest Site",  "Distance to Site")] <- nearest_site_manta_data
   }
   return(updated_pts)
 }
@@ -1302,7 +1304,7 @@ assign_raster_pixel_to_sites <- function(kml_data, layer_names_vec, crs, raster_
   }
   
   # Define the increase amount in both x and y directions. 
-  increase_amount <- 0.003
+  increase_amount <- 0.005
   expanded_bboxs <- setNames(lapply(expanded_extent, function(i) {
     
     original_extent <- i
@@ -1346,16 +1348,17 @@ assign_raster_pixel_to_sites <- function(kml_data, layer_names_vec, crs, raster_
       min_distances_list <- apply(distances, 2, xth_smallest, x_values=x_closest)
       min_distances_df <- do.call(rbind, min_distances_list)
       min_distance_site_numbers <- site_numbers[as.vector(min_distances_df$`Nearest Site`)]
-      min_distances <- min_distances_df$`distance`
+      min_distances <- min_distances_df$`Distance to Site`
       
     } else {
       min_distances <- drop_units(distances)
       min_distance_site_numbers <- rep(site_numbers, length(min_distances))
     }
     
-    # Set site numbers to NA if they are more than 300m away. 
-    is_within_300 <- min_distances > 500
-    min_distance_site_numbers[is_within_300] <- -1
+    # Set site numbers to NA if they are more than 300m away.
+    is_within_required_distance <- min_distances > 500
+    min_distance_site_numbers[is_within_required_distance] <- -1
+    min_distances[is_within_required_distance] <- -1
     values(raster) <- min_distance_site_numbers
     names(raster) <- c("Nearest Site")
     
@@ -1461,7 +1464,140 @@ perpendicularDistance <- function(p, A, B) {
 
 
 
+find_largest_extent <- function(kml_data){
+  num_geometries <- length(kml_data)
+  
+  # Preallocate the data frame
+  result <- data.frame(
+    x_difference = numeric(num_geometries),
+    y_difference = numeric(num_geometries)
+  )
+  
+  for (i in 1:num_geometries) {
+    bbox <- extent(kml_data[[i]])
+    diff_x <- bbox@xmax - bbox@xmin
+    diff_y <- bbox@ymax - bbox@ymin
+    result[i, "x_difference"] <- diff_x
+    result[i, "y_difference"] <- diff_y
+  }
+  
+  colnames(result) <- c("x_difference", "y_difference")
+  largest_extent <- c(max(result$x_difference),max(result$y_difference))
+  names(largest_extent) <- c("x_difference", "y_difference")
+  
+  return(largest_extent)
+}
 
+standardise_extents <- function(kml_data){
+  largest_extent <- find_largest_extent(kml_data)
+  adjusted_extents <- list()
+  for(i in 1:length(kml_data)) {
+    extent <- extent(kml_data[[i]])
+    diff_x <- extent@xmax - extent@xmin
+    diff_y <- extent@ymax - extent@ymin
+    largest_extent_centered <- extent(extent@xmin + diff_x/2 - largest_extent[1]/2,
+                                      extent@xmax - diff_x/2 + largest_extent[1]/2,
+                                      extent@ymin + diff_y/2 - largest_extent[2]/2,
+                                      extent@ymax - diff_y/2 + largest_extent[2]/2
+    )
+    adjusted_extents[[i]] <- largest_extent_centered
+  }
+  return(adjusted_extents)
+}
+
+
+create_raster_templates <- function(extents, layer_names_vec, crs, raster_size=150){
+  
+  # rasterise the bounding boxes 
+  # res <- 0.0005
+  # NN input requires standard image size. 570x550 is approximately a resolution of 0.00045
+  if (raster_size > 50){
+    y_pixel <- raster_size
+    x_pixel <- raster_size
+    rasters <- setNames(lapply(extents, function(i) {
+      raster(ext = i, ncols=x_pixel, nrows=y_pixel, crs = crs)
+    }), layer_names_vec)
+  } else {
+    rasters <- setNames(lapply(extents, function(i) {
+      raster(ext = i, resolution=raster_size, crs = crs)
+    }), layer_names_vec)
+  }
+  return(rasters)
+}
+
+
+rasterise_sites <- function(kml_data, is_standardised=1, raster_size=150){
+  if (is_standardised == 1){
+    extent_data <- standardise_extents(kml_data)
+    location <- "standardised_extent"
+  } else {
+    extent_data <- kml_data
+    location <- "varying_extent"
+  }
+  
+  # res <- 0.0005
+  # NN input requires standard image size. 570x550 is approximately a resolution of 0.00045
+  y_pixel <- raster_size
+  x_pixel <- raster_size
+  for(i in 1:length(kml_data)){
+    site_names <- kml_data[[i]]$Name
+    site_numbers <- site_names_to_numbers(site_names)
+    kml_data[[i]]$site_number <- site_numbers
+    site_raster <- st_rasterize(kml_data[[i]], st_as_stars(st_bbox(extent_data[[i]]), field = "site_number", nx = x_pixel, ny = y_pixel))
+    file_name <- names(kml_data[i])
+    modified_file_name <- gsub("/", "_", file_name)
+    site_raster <- as(site_raster, "Raster")
+    writeRaster(site_raster, filename = paste("CNN\\", raster_size, "\\", location,  "\\sites_as_rasters\\", modified_file_name, sep=""), format = "GTiff", overwrite = TRUE)
+    site_raster <- NA
+  }
+}
+
+
+rasterise_sites_reef_encoded <- function(kml_data, layer_names_vec, is_standardised=1, raster_size=150){
+  
+  if (is_standardised == 1){
+    extent_data <- standardise_extents(kml_data)
+    location <- "standardised_extent"
+  } else {
+    extent_data <- kml_data
+    location <- "varying_extent"
+  }
+  # res <- 0.0005
+  # NN input requires standard image size. 570x550 is approximately a resolution of 0.00045
+  y_pixel <- raster_size
+  x_pixel <- raster_size
+  for(i in 1:length(kml_data)){
+    site_names <- kml_data[[i]]$Name
+    site_numbers <- site_names_to_numbers(site_names)
+    reef_numbers <- as.numeric(gsub("[^0-9.]", "", layer_names_vec[[i]]))
+    encoded_reef_site_numbers <- as.numeric(sapply(site_numbers, function (x) paste(reef_numbers, x, sep = "")))
+    kml_data[[i]]$site_number <- encoded_reef_site_numbers
+    site_raster <- st_rasterize(kml_data[[i]], st_as_stars(st_bbox(extent_data[[i]]), field = "site_number", nx = x_pixel, ny = y_pixel))
+    file_name <- names(kml_data[i])
+    modified_file_name <- gsub("/", "_", file_name)
+    site_raster <- as(site_raster, "Raster")
+    writeRaster(site_raster, filename = paste("CNN\\", raster_size, "\\", location, "\\sites_as_rasters_encoded\\", modified_file_name, sep=""), format = "GTiff", overwrite = TRUE)
+    site_raster <- NA
+  }
+}
+
+xth_smallest <- function(x, x_values) {
+  # Function to find the xth smallest value in a vector without sorting. This 
+  # allows for the second closest sites etc to be determined. Likely unnecessary 
+  #in production was used for testing purposes
+  
+  sorted_uniques <- sort(x)
+  xth_smallest_values <- sorted_uniques[x_values]
+  xth_smallest_indices <- which(x %in% xth_smallest_values)
+  if(length(xth_smallest_indices > 1)){
+    xth_smallest_indices <- xth_smallest_indices[1]
+  }
+  output <- data.frame(matrix(ncol = (2*length(x_values))))
+  colnames(output) <- c("Nearest Site", "Distance to Site")
+  output[1,] <- c(xth_smallest_indices, xth_smallest_values)
+  return(output)
+  
+}
 
 
 
