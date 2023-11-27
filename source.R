@@ -1262,7 +1262,7 @@ assign_nearest_method_c <- function(kml_data, data_df, layer_names_vec, crs, ras
     updated_pts[is_contained, c("Nearest Site",  "Distance to Site")] <- nearest_site_manta_data
   }
   st_drop_geometry(updated_pts)
-  is_nearest_site_has_error <- is.na(updated_pts$`Nearest Site`) | updated_pts$`Nearest Site` == -1
+  is_nearest_site_has_error <- is.na(updated_pts$`Nearest Site`) | ifelse(is.na(check$`Nearest Site` == -1),FALSE,check$`Nearest Site` == -1)
   updated_pts[,"error_flag"] <- as.integer(updated_pts[,"error_flag"] | is_nearest_site_has_error)
   return(updated_pts)
 }
