@@ -128,7 +128,11 @@ args <- commandArgs(trailingOnly = TRUE)
 new_path <- args[1]
 configuration_path <- args[2]
 kml_path <- args[3]
-leg_path <- ifelse(length(args) >= 4, leg_path[4], NULL)
+if(length(args) >= 4){
+  leg_path <- args[4]
+else{
+  leg_path <- NULL
+}
 
 main(new_path, configuration_path, kml_path, leg_path)
 
