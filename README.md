@@ -36,11 +36,11 @@ This requires Docker version 24.0.6:https://www.docker.com/products/docker-deskt
 
 # 1. Update source code tag e.g.
 #SPECIFY DESIRED VERSION BY REPLACEING "latest"
-git tag -a v1.1 -m "Version 1.1"
-git push origin v1.1
+git tag -a vlatest -m "Version latest"
+git push origin vlatest
 
 # 3. Build, tag and push the Docker image
-docker build -t reusable_digital_workflow:latest .
+docker build -t ghcr.io/ethanwaters/reusable_digital_workflow:latest .
 docker push ghcr.io/ethanwaters/reusable_digital_workflow:latest
 ```
 
