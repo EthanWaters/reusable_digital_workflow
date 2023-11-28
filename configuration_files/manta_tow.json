@@ -189,6 +189,10 @@
           "data_type": "character"
         },
         {
+          "field": "Nearest Site",
+          "data_type": "numeric"
+        },
+        {
           "field": "error_flag",
           "data_type": "numeric"
         }

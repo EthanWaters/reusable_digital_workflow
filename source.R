@@ -1231,7 +1231,7 @@ get_closest_matches <- function(sources, targets){
   return(transformed_sources)
 }
 
-assign_nearest_method_c <- function(kml_data, data_df, layer_names_vec, crs, raster_size=0.0005, x_closest=1, is_standardised=1, save_rasters=1){
+assign_nearest_method_c <- function(kml_data, data_df, layer_names_vec, crs, configuration, raster_size=0.0005, x_closest=1, is_standardised=1, save_rasters=1){
   # Assign nearest sites to manta tows with method developed by Cameron Fletcher
   
   sf_use_s2(FALSE)
@@ -1261,9 +1261,10 @@ assign_nearest_method_c <- function(kml_data, data_df, layer_names_vec, crs, ras
     nearest_site_manta_data <- raster::extract(site_regions[[i]], reef_pts)
     updated_pts[is_contained, c("Nearest Site",  "Distance to Site")] <- nearest_site_manta_data
   }
-  st_drop_geometry(updated_pts)
-  is_nearest_site_has_error <- is.na(updated_pts$`Nearest Site`) | ifelse(is.na(check$`Nearest Site` == -1),FALSE,check$`Nearest Site` == -1)
+  updated_pts <- st_drop_geometry(updated_pts)
+  is_nearest_site_has_error <- is.na(updated_pts$`Nearest Site`) | ifelse(is.na(updated_pts$`Nearest Site` == -1),FALSE,updated_pts$`Nearest Site` == -1)
   updated_pts[,"error_flag"] <- as.integer(updated_pts[,"error_flag"] | is_nearest_site_has_error)
+  
   return(updated_pts)
 }
 
@@ -1281,9 +1282,13 @@ get_centroids <- function(data_df, crs, precision=0){
       mutate_at(vars(`Start lat`, `Start long`, `End lat`, `End long`, `mean_lat`, `mean_long`), ~ round(., precision))
   }
   
-  #create manta_tow points
-  is_coord_na <- !is.na(data_df$mean_lat) & !is.na(data_df$mean_long)
-  data_filtered <- data_df[is_coord_na, ]
+  #create manta_tow points. Can't create pts that are NA, use 0 as place holder.
+  # the st_as_sf function by default removes these columns which is desirable as
+  # they are not in the legacy format. This means that after geometry is dropped 
+  # the desired remaining columns will all be correct and Nearest Site will be 
+  # NA as expected. 
+  df$mean_lat[is.na(df$mean_lat)] <- 0
+  df$mean_long[is.na(df$mean_long)] <- 0
   pts <- st_as_sf(data_filtered, coords=c("mean_long", "mean_lat"), crs=crs)
   return(pts)
 }
@@ -1376,7 +1381,7 @@ assign_raster_pixel_to_sites <- function(kml_data, layer_names_vec, crs, raster_
 }
 
 site_names_to_numbers <- function(site_names){
-  return(as.numeric(sub(".+_(\\d+)$", "\\1", site_names)))
+  return(as.numeric(sub(".+_(\\d+).*", "\\1", site_names)))
 }
 
 simplify_reef_polyogns_rdp <- function(kml_data){

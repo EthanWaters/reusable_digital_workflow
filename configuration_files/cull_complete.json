@@ -95,12 +95,22 @@
         "target_field": "Latitude",
         "source_field": "Latitude",
         "position": 17
+      },
+      {
+        "target_field": "Dive type",
+        "source_field": "Dive type",
+        "position": 18
       }
     ],
     "new_fields": [
       {
-        "field": "error_flag",
+        "field": "Nearest Site",
         "position": 19,
+        "default": null
+      },
+      {
+        "field": "error_flag",
+        "position": 20,
         "default": 0
       }
     ],
@@ -127,7 +137,7 @@
       },
       {
         "field": "Vessel",
-        "data_type": "date"
+        "data_type": "character"
       },
       {
         "field": "Voyage End",
@@ -172,6 +182,14 @@
       {
         "field": "Reef ID",
         "data_type": "character"
+      },
+      {
+        "field": "Dive type",
+        "data_type": "character"
+      },
+      {
+        "field": "Nearest Site",
+        "data_type": "numeric"
       },
       {
         "field": "error_flag",

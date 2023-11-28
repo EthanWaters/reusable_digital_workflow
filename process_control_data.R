@@ -20,7 +20,7 @@ main <- function(new_path, configuration_path, kml_path, leg_path = NULL) {
   library("purrr")
   library("jsonlite")
   library("sf")
-  library("sp")
+  # library("sp")
   # library("rgdal")
   # library("parallel")
   library("raster")
@@ -37,8 +37,10 @@ main <- function(new_path, configuration_path, kml_path, leg_path = NULL) {
     
   # Check if optional_arg is provided
   if (is.null(leg_path)) {
+    is_new <- 1
     is_legacy_data_available <- 0
   } else {
+    is_new <- 0
     is_legacy_data_available <- 1
   }
     
@@ -91,7 +93,7 @@ main <- function(new_path, configuration_path, kml_path, leg_path = NULL) {
   formatted_data_df <- set_data_type(transformed_data_df, configuration$mappings$data_type_mappings) 
   
   verified_data_df <- verify_entries(formatted_data_df, configuration)
-  if(is_new){
+  if(!is_new){
     legacy_df <- verify_entries(legacy_df, configuration) 
   }
   
@@ -103,16 +105,19 @@ main <- function(new_path, configuration_path, kml_path, leg_path = NULL) {
     verified_data_df <- separate_control_dataframe(verified_data_df, legacy_df, configuration$metadata$control_data_type)
   }
   
-  
-  kml_layers <- st_layers(kml_path)
-  layer_names <- kml_layers["name"]
-  layer_names_vec <- unlist(kml_layers["name"])
-  kml_data <- setNames(lapply(layer_names_vec, function(i)  st_read(kml_path, layer = i)), layer_names_vec)
-  crs <- projection(kml_data[[1]])
-  
   tryCatch({
     if(configuration$metadata$assign_sites){
-      verified_data_df <- assign_nearest_method_c(kml_data, verified_data_df, layer_names_vec, crs, raster_size=0.0005, x_closest=1, is_standardised=0, save_rasters=0)
+      if(configuration$metadata$control_data_type == "manta_tow"){
+        kml_layers <- st_layers(kml_path)
+        layer_names <- kml_layers["name"]
+        layer_names_vec <- unlist(kml_layers["name"])
+        kml_data <- setNames(lapply(layer_names_vec, function(i)  st_read(kml_path, layer = i)), layer_names_vec)
+        crs <- projection(kml_data[[1]])
+        verified_data_df <- assign_nearest_method_c(kml_data, verified_data_df, layer_names_vec, crs, configuration, raster_size=0.0005, x_closest=1, is_standardised=0, save_rasters=0)
+      } else {
+        verified_data_df$`Nearest Site` <- site_names_to_numbers(verified_data_df$`Site Name`)
+      }
+        
     }
   }, error = function(e) {
     print(paste("Error assigning sites:", conditionMessage(e)))
