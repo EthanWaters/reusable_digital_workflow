@@ -60,9 +60,9 @@ main <- function(new_path, configuration_path, kml_path, leg_path = NULL) {
   # the file. The sheet index variable refer to the sheet the data is located on
   # in the XLSX files and is irrelevant for CSV as it is considered "Flat". 
   
-  new_data_df <- rio::import(new_path, configuration)
+  new_data_df <- rio::import(new_path)
   if(is_legacy_data_available){
-    legacy_df <- rio::import(leg_path, configuration)
+    legacy_df <- rio::import(leg_path)
     if("error_flag" %in% colnames(legacy_df)){
       is_new <- 0
     } else {
@@ -87,17 +87,12 @@ main <- function(new_path, configuration_path, kml_path, leg_path = NULL) {
   formatted_data_df <- set_data_type(transformed_data_df, configuration$mappings$data_type_mappings) 
   
   verified_data_df <- verify_entries(formatted_data_df, configuration)
-  if(!is_new){
+  if(is_new){
     legacy_df <- verify_entries(legacy_df, configuration) 
   }
   
   # flag non-genuine duplicates that are mistakes
   verified_data_df <- flag_duplicates(verified_data_df)
-  
-  # separate entries and update any rows that were changed on accident. 
-  if(is_legacy_data_available){
-    verified_data_df <- separate_control_dataframe(verified_data_df, legacy_df, configuration$metadata$control_data_type)
-  }
   
   tryCatch({
     if(configuration$metadata$assign_sites){
@@ -117,7 +112,12 @@ main <- function(new_path, configuration_path, kml_path, leg_path = NULL) {
     print(paste("Error assigning sites:", conditionMessage(e)))
   })
   
-  write.csv(verified_data_df, paste("Output\\",configuration$metadata$control_data_type,"_", Sys.Date(), ".csv", sep = ""), row.names = FALSE)
+  # separate entries and update any rows that were changed on accident. 
+  if(is_legacy_data_available){
+    verified_data_df <- separate_control_dataframe(verified_data_df, legacy_df, configuration$metadata$control_data_type)
+  }
+  
+  write.csv(verified_data_df, paste("Output\\",configuration$metadata$control_data_type,"_", Sys.time(), ".csv", sep = ""), row.names = FALSE)
   
 }
 
@@ -129,7 +129,7 @@ configuration_path <- args[2]
 kml_path <- args[3]
 if(length(args) >= 4){
   leg_path <- args[4]
-else{
+} else{
   leg_path <- NULL
 }
 

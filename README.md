@@ -150,7 +150,7 @@ Discrepancy Detection provides the opportunity to identify changes in a specific
   - `NA or Null` values are present in non-exempt columns. Non-exempt columns are those required to be created by the work flow process (Do not exist in GBRMPA database) and the ID column. 
   - `Integers` that are not positive
   - `Coral Cover` is not one of the agreed upon categorical options or value close enough to be mapped to the correct option
-  - `Reef Label / Reef ID` is not in an accepted format
+  - `Reef Label / Reef ID` is not in an accepted format. The latitude bounds currently set with regex are between 10 and 29 degrees south.
   - `Voyage Dates` is missing and cannot be estimated from other entries of the same voyage
   - `Duplicates` of any row more than two instances. It is plausible for two genuine distinct identical rows to exist so these are not flagged 
  

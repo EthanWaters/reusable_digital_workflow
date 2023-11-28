@@ -6,7 +6,7 @@
       "control_data_type": "manta_tow",
       "legacy_sheet_index": 4,
       "ID_col": "ID",
-      "is_ID_preferred": true,
+      "is_ID_preferred": false,
       "assign_sites": true
     },
     "mappings": {

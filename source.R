@@ -605,8 +605,8 @@ verify_lat_lng <- function(data_df, max_val, min_val, columns, ID_col){
       
       # Set any NA values to TRUE as the check was unable to be completed 
       # correctly
-      out_of_range <- ifelse(is.na(out_of_range),1,out_of_range)
-      data_df[["error_flag"]] <- data_df[["error_flag"]] | out_of_range
+      out_of_range <- ifelse(is.na(out_of_range), FALSE, out_of_range)
+      data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | out_of_range)
       
       if (any(out_of_range)) {
         grandparent <- as.character(sys.call(sys.parent()))[1]
@@ -633,7 +633,8 @@ verify_scar <- function(data_df) {
   
   tryCatch({
     check_valid_scar <- data_df$`Feeding Scars` %in% valid_scar
-    data_df[["error_flag"]] <- data_df[["error_flag"]] | !check_valid_scar 
+    out_of_range <- ifelse(is.na(check_valid_scar), TRUE, check_valid_scar)
+    data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | !check_valid_scar)
     
     
     if (any(!check_valid_scar )) {
@@ -715,23 +716,26 @@ verify_RHISS <- function(data_df) {
   # check that columns in RHISS data contain expected values according to metadata
   valid_tide <- c("L", "M", "H")
   check_tide <- data_df$`Tide` %in% valid_tide
+  check_tide <- ifelse(is.na(check_tide), TRUE, check_tide)
   
   cols <- c("Slime Height (cm)", "Entangled/Mat-Like Height (cm)", "Filamentous Height (cm)", "Leafy/Fleshy Height (cm)", "Tree/Bush-Like Height (cm)")
   valid_macroalgae <- c("A", "B", "C", "0", "1", "2", "3")
   is_valid_macroalgae <- apply(data_df[, cols], 2, function(x) !(x %in% valid_macroalgae))
+  is_valid_macroalgae <- ifelse(is.na(is_valid_macroalgae), FALSE, is_valid_macroalgae)
   check_macroalgae <- rowSums(is_valid_macroalgae) > 0
   
   valid_descriptive_bleach_severity <- c("Totally bleached white", "pale/fluoro (very light or yellowish)", "None", "Bleached only on upper surface", "Pale (very light)/Focal bleaching", "Totally bleached white/fluoro", "Recently dead coral lightly covered in algae")
   bcols <- c("Mushroom Bleach Severity", "Massive Bleach Severity", "Encrusting Bleach Severity", "Vase/Foliose Bleach Severity", "Plate/Table Bleach Severity", "Bushy Bleach Severity", "Branching Bleach Severity")
   is_valid_descriptive_bleach_severity <- apply(data_df[, bcols], 2, function(x) !(x %in% valid_descriptive_bleach_severity))
+  is_valid_descriptive_bleach_severity <- ifelse(is.na(is_valid_descriptive_bleach_severity), FALSE, is_valid_descriptive_bleach_severity)
   check_descriptive_bleach_severity <- rowSums(is_valid_descriptive_bleach_severity) > 0
   
   bleached_severity <- data_df$`Bleached Average Severity Index (calculated via matrix)`
-  bleached_severity <- ifelse(is.na(bleached_severity),1,bleached_severity)
   check_bleach_severity <- bleached_severity >= 1 & bleached_severity <= 8
-  
+  bleached_severity <- ifelse(is.na(bleached_severity), TRUE, bleached_severity)
+
   check <- !check_tide | check_macroalgae | !check_bleach_severity | check_descriptive_bleach_severity
-  if (any(check )) {
+  if (any(check)) {
     grandparent <- as.character(sys.call(sys.parent()))[1]
     parent <- as.character(match.call())[1]
     if (any(!check_tide)) {
@@ -760,7 +764,7 @@ verify_RHISS <- function(data_df) {
     contribute_to_metadata_report(warning_matrix)
     
   }
-  data_df[["error_flag"]] <- data_df[["error_flag"]] | check 
+  data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | check)
   
   
   return(data_df)
@@ -773,9 +777,9 @@ verify_percentages <- function(data_df) {
   if(length(perc_cols) > 0){
     perc_cols_vals <- data_df[, perc_cols]
     col_check <- apply(perc_cols_vals, 2, function(x) x < 0 | x > 100)
+    col_check <- ifelse(is.na(col_check), FALSE, col_check)
     check <- rowSums(col_check) > 0
-    check <- ifelse(is.na(check),1,check)
-    data_df[["error_flag"]] <- data_df[["error_flag"]] | check
+    data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | check)
     if (any(check)) {
       grandparent <- as.character(sys.call(sys.parent()))[1]
       parent <- as.character(match.call())[1]
@@ -803,9 +807,9 @@ verify_na_null <- function(data_df, configuration) {
   exempt_cols <- intersect(c(configuration$mappings$new_fields$field, ID_col), names(data_df))
   nonexempt_df <- data_df[, -which(names(data_df) %in% exempt_cols)]
   na_present <- apply(nonexempt_df, 2, function(x) is.na(x) | is.null(x) | x == "")
+  na_present <- ifelse(is.na(na_present), FALSE, na_present)
   check <- rowSums(na_present) > 0
-  check <- ifelse(is.na(check),1,check)
-  data_df[["error_flag"]] <- data_df[["error_flag"]] | check
+  data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | check)
   if (any(check)) {
     grandparent <- as.character(sys.call(sys.parent()))[1]
     parent <- as.character(match.call())[1]
@@ -830,9 +834,9 @@ verify_integers_positive <- function(data_df) {
     is_integer <- is.integer(data_df[1,])
     if(any(is_integer)){
       col_check <- apply(data_df[,is_integer], 2, function(x) x < 0)
+      col_check <- ifelse(is.na(col_check), FALSE, col_check)
       check <- rowSums(col_check) > 0
-      check <- ifelse(is.na(check),1,check)
-      data_df[, "error_flag"] <- data_df[, "error_flag"] | check
+      data_df[, "error_flag"] <- as.integer(data_df[, "error_flag"] | check)
      
       if (any(check)) {
         grandparent <- as.character(sys.call(sys.parent()))[1]
@@ -890,9 +894,13 @@ verify_coral_cover <- function(data_df) {
   sc_check <- data_df$`Soft Coral` %in% accepted_values
   rdc_check <- data_df$`Recently Dead Coral` %in% accepted_values
   
+  hc_check <- ifelse(is.na(hc_check), TRUE, hc_check)
+  sc_check <- ifelse(is.na(sc_check), TRUE, sc_check)
+  rdc_check <- ifelse(is.na(rdc_check), TRUE, rdc_check)
+  
   error <- !hc_check | !sc_check | !rdc_check
   
-  data_df[["error_flag"]] <- data_df[["error_flag"]] | error
+  data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | error)
   if (any(error)) {
     grandparent <- as.character(sys.call(sys.parent()))[1]
     parent <- as.character(match.call())[1]
@@ -913,7 +921,8 @@ verify_cots_scars <- function(data_df) {
   
   valid_values <- c("a", "p", "c")
   check <- data_df$`COTS Scars` %in% valid_values
-  data_df[["error_flag"]] <- data_df[["error_flag"]] | !check
+  check <- ifelse(is.na(check), TRUE, check)
+  data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | !check)
   return(data_df)
 }
 
@@ -924,8 +933,8 @@ verify_reef <- function(data_df){
   # the reef input is restricted to existing reefs so it is unlikley to be a typo
   
   reef_id <- data_df[["Reef ID"]]
-  correct_reef_id_format <- grepl("^(1[1-9]|2[0-9])-\\d{3}[a-z]?$", reef_id)
-  data_df[,"error_flag"] <- data_df[,"error_flag"] | !correct_reef_id_format
+  correct_reef_id_format <- grepl("^(1[0-9]|2[0-9]|10)-\\d{3}[a-z]?$", reef_id)
+  data_df[,"error_flag"] <- as.integer(data_df[,"error_flag"] | !correct_reef_id_format)
   if (any(!correct_reef_id_format)) {
     grandparent <- as.character(sys.call(sys.parent()))[1]
     parent <- as.character(match.call())[1]
