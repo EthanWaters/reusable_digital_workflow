@@ -1479,8 +1479,6 @@ perpendicularDistance <- function(p, A, B) {
 }
 
 
-
-
 find_largest_extent <- function(kml_data){
   num_geometries <- length(kml_data)
   
@@ -1528,7 +1526,7 @@ create_raster_templates <- function(extents, layer_names_vec, crs, raster_size=1
   # rasterise the bounding boxes 
   # res <- 0.0005
   # NN input requires standard image size. 570x550 is approximately a resolution of 0.00045
-  if (raster_size > 50){
+  if (raster_size > 1){
     y_pixel <- raster_size
     x_pixel <- raster_size
     rasters <- setNames(lapply(extents, function(i) {
@@ -1615,10 +1613,5 @@ xth_smallest <- function(x, x_values) {
   return(output)
   
 }
-
-
-
-
-
 
 

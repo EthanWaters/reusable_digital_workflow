@@ -473,9 +473,9 @@ Simple dataframe to CSV.
   - `data_df`: Data frame containing manta tow entries.
   - `layer_names_vec`: Vector of layer names.
   - `crs`: Coordinate Reference System.
-  - `raster_size`: Size of the raster cells.
-  - `x_closest`: Number of closest sites to assign.
-  - `is_standardised`: Flag indicating whether to standardize extents.
+  - `raster_size`: Size of the raster cells. Can specify resolution with value less than 1 or can specify the pixel length of the raster extent. 
+  - `x_closest`: Assign nth closest site to point. Typically in production only the closest site is required, however for research purposes during development it was beneficial for analysis. 
+  - `is_standardised`: Flag indicating whether to standardize extents to the largest one in data provided.
   - `save_rasters`: Flag indicating whether to save generated rasters.
 - **Outputs:**
   - `updated_pts`: Updated data frame with the nearest site information added.
@@ -497,9 +497,9 @@ Simple dataframe to CSV.
   - `kml_data`: KML data containing reef polygons.
   - `layer_names_vec`: Vector of layer names.
   - `crs`: Coordinate Reference System.
-  - `raster_size`: Size of the raster cells.
-  - `x_closest`: Number of closest sites to assign.
-  - `is_standardised`: Flag indicating whether to standardize extents.
+  - `raster_size`: Size of the raster cells. Can specify resolution with value less than 1 or can specify the pixel length of the raster extent.
+  - `x_closest`: Assign nth closest site to point. Typically in production only the closest site is required, however for research purposes during development it was beneficial for analysis. 
+  - `is_standardised`: Flag indicating whether to standardize extents to the largest one in data provided.
 - **Outputs:**
   - `site_regions`: List of rasters with assigned nearest site values.
 - **Description:**
@@ -515,9 +515,9 @@ Simple dataframe to CSV.
 
 #### Function: `simplify_reef_polyogns_rdp(kml_data)`
 - **Inputs:**
-  - `simplified_kml_data`: KML data with simplified reef polygons.
-  - `kml_data`: KML data containing reef polygons.
+  - `kml_data`: List of sf data frames for (reef), read from KML file
 - **Outputs:**
+ - `simplified_kml_data`:  List of sf data frames for (reef), read from KML file, with fewer boundary points that form individual polygons
 - **Description:**
   - This function simplifies all reef polygons stored in a list retrieved from the KML file using the Ramer-Douglas-Peucker algorithm.
 
@@ -526,7 +526,7 @@ Simple dataframe to CSV.
   - `polygon_points`: Matrix of polygon points.
   - `epsilon`: Tolerance parameter for simplification.
 - **Outputs:**
-  - Simplified polygon matrix.
+  - Simplified polygon.
 - **Description:**
   - This function applies the Ramer-Douglas-Peucker algorithm to simplify a polygon based on a tolerance parameter.
 
@@ -544,5 +544,58 @@ Simple dataframe to CSV.
   - `p`: Point coordinates.
   - `A`: Start point of a line segment.
   - `B`: End point of a line segment.
+- **Outputs:**
+  - `result`: perpendicular distance
 - **Description:**
 Calculate perpendicular distance of a point p from a line segment AB for RDP method.
+
+#### Function: `find_largest_extent(kml_data)`
+- **Inputs:**
+  - `kml_data`: List of sf data frames for (reef), read from KML file
+- **Outputs:**
+  - `result`: largest extent 
+- **Description:**
+Iterates through list of sf data frames and returns the extent that is the largest
+
+#### Function: `standardise_extents(kml_data)`
+- **Inputs:**
+  - `kml_data`: List of sf data frames for (reef), read from KML file
+- **Outputs:**
+  - `result`: List of sf data frames for (reef), read from KML file. 
+- **Description:**
+Iterates through list of sf data frames and increases their extents to match the size of the largest extent in the data provided. 
+
+#### Function: `create_raster_templates(extents, layer_names_vec, crs, raster_size=150)`
+- **Inputs:**
+  - `extents`: List of extents to create raster from. 
+  - `layer_names_vec`: Vector of reef names
+  - `crs`: Coordinate Reference System.
+  - `raster_size`: Size of the raster cells. Can specify resolution with value less than 1 or can specify the pixel length of the raster extent.
+- **Outputs:**
+  - `result`: List of valueless rasters for specified, CRS, extent and resolution. 
+
+#### Function: `rasterise_sites(kml_data, is_standardised=1, raster_size=150)`
+- **Inputs:**
+  - `kml_data`: List of sf data frames for (reef), read from KML file
+  - `is_standardised`: Vector of reef names
+  - `raster_size`: Size of the raster cells. Can specify resolution with value less than 1 or can specify the pixel length of the raster extent.
+- **Description:**
+  - Creates a raster for each sf data frame provided. Pixels are assigned values of sites they belong to. 
+
+#### Function: `rasterise_sites_reef_encoded(kml_data, layer_names_vec, is_standardised=1, raster_size=150)`
+- **Inputs:**
+  - `kml_data`: List of sf data frames for (reef), read from KML file
+  - `is_standardised`: Vector of reef names
+  - `raster_size`: Size of the raster cells. Can specify resolution with value less than 1 or can specify the pixel length of the raster extent.
+- **Description:**
+  - Creates a raster for each sf data frame provided. Pixels are assigned values of sites and the reef they belong to. 
+
+#### Function: `xth_smallest(x, x_values)`
+- **Inputs:**
+  - `x`: vector of values to sort
+  - `x_values`: Data frame showing the key value pairs. Nth_smallest_value:Value. 
+- **Description:**
+  - Function to find the xth smallest value in a vector without sorting. This allows for the second closest sites etc to be determined. Likely unnecessary in production was used for testing purposes. 
+
+
+
