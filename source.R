@@ -1,4 +1,5 @@
-# Format the new control data into the stardard legacy format 
+# Format the new control data into the stardard legacy format. ONLY REQUIRED IF 
+# rio::import() depreciates. 
 import_data <- function(data, configuration){
     out <- tryCatch(
       {

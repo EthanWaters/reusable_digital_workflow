@@ -46,6 +46,8 @@ docker push ghcr.io/ethanwaters/reusable_digital_workflow:latest
 
 ### 2.1.2 How to run code
 
+Do NOT use anything other than the latest version. Assume previous versions contain errors unless specifically labelled stable. 
+
 ```bash
 #SPECIFY DESIRED VERSION BY REPLACEING "latest"
 docker pull ghcr.io/ethanwaters/reusable_digital_workflow:latest
@@ -84,7 +86,6 @@ This is all taken care of by docker.
 | purrr         | 0.3.4     |
 | jsonlite      | 1.8.7     |
 | sf            | 1.0-14    |
-| sp            | 1.5-0     |
 | leaflet       | 2.1.2     |
 | raster        | 3.6-23    |
 | terra         | 1.7-39    |
@@ -92,7 +93,6 @@ This is all taken care of by docker.
 | tidyverse     | 1.3.2     |
 | tictoc        | 1.1       |
 | tidyr         | 1.2.0     |
-| ggplot2       | 3.4.2     |
 | lwgeom        | 0.2-13    |
 | stars         | 0.6-4     |
 | stringr       | 1.4.1     |
@@ -123,10 +123,8 @@ install.packages("raster", version = "3.6-23")
 install.packages("terra", version = "1.7-39")  
 install.packages("dplyr", version = "1.0.10")  
 install.packages("units", version = "0.8-0")  
-install.packages("tidyverse", version = "1.3.2")  
-install.packages("tictoc", version = "1.1")  
+install.packages("tidyverse", version = "1.3.2") 
 install.packages("tidyr", version = "1.2.0")  
-install.packages("ggplot2", version = "3.4.2")  
 install.packages("lwgeom", version = "0.2-13")  
 install.packages("stars", version = "0.6-4")  
 install.packages("stringr", version = "1.4.1")  

@@ -20,20 +20,14 @@ main <- function(new_path, configuration_path, kml_path, leg_path = NULL) {
   library("purrr")
   library("jsonlite")
   library("sf")
-  # library("sp")
-  # library("rgdal")
-  # library("parallel")
   library("raster")
   library("terra")
   library("units")
   library("tidyverse")
-  library("tictoc")
   library("tidyr")
-  library("ggplot2")
   library("lwgeom")
   library("stars")
   library("stringr")
-  library("fasterize")
     
   # Check if optional_arg is provided
   if (is.null(leg_path)) {
@@ -66,9 +60,9 @@ main <- function(new_path, configuration_path, kml_path, leg_path = NULL) {
   # the file. The sheet index variable refer to the sheet the data is located on
   # in the XLSX files and is irrelevant for CSV as it is considered "Flat". 
   
-  new_data_df <- import_data(new_path, configuration)
+  new_data_df <- rio::import(new_path, configuration)
   if(is_legacy_data_available){
-    legacy_df <- import_data(leg_path, configuration)
+    legacy_df <- rio::import(leg_path, configuration)
     if("error_flag" %in% colnames(legacy_df)){
       is_new <- 0
     } else {
