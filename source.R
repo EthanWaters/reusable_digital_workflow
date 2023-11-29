@@ -153,7 +153,7 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
     
     # find close matching rows (distance of two) based on all columns except ID. ID is not 
     # because it will always be null if the data is exported from powerBI. 
-    distance <- 2
+    distance <- 3
     
     temp_new_df <- new_data_df[ , -which(names(new_data_df) %in% required_columns)]
     temp_legacy_df <- legacy_data_df[ , -which(names(legacy_data_df) %in% required_columns)]
