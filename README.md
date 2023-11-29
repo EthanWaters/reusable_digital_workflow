@@ -91,7 +91,6 @@ This is all taken care of by docker.
 | terra         | 1.7-39    |
 | units         | 0.8-0     |
 | tidyverse     | 1.3.2     |
-| tictoc        | 1.1       |
 | tidyr         | 1.2.0     |
 | lwgeom        | 0.2-13    |
 | stars         | 0.6-4     |

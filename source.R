@@ -146,7 +146,9 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
   } else {
   
     # Determine additional columns required by the new data format and remove 
-    # from comparison
+    # from comparison. Even when "Nearest Site" exists in the legacy version we 
+    # do not want to compare it to see if it has changed. It is recalculated 
+    # every single workflow run through based on the available KML file.
     required_columns <- intersect(c(configuration$mappings$new_fields$field, ID_col), names(new_data_df))
     
     # find close matching rows (distance of two) based on all columns except ID. ID is not 
@@ -1081,26 +1083,17 @@ matrix_close_matches_vectorised <- function(x, y, distance){
   # Find list of all close matches between rows in x and y within a specified 
   # distance. This distance is the number of non perfect column matches within
   # a row. returns a the indices of the rows matched and the distance from
-  # perfect. (X_index, Y_index, Distance). Pre-allocates memory for the matrix
-  # assuming worst case scenario or maximum allocation possible. The operations 
-  # would not be possible if this fails and is still faster than 
-  # dynamically updating an object. 
+  # perfect. (X_index, Y_index, Distance). Pre-allocating memory for the matrix
+  # is not definitive and needs to assume worst case scenario or maximum 
+  # allocation possible. However, this requires to much memory, and therefore 
+  # will dynamically allocate memory as needed even though this is slower.
   
   #Pre-allocate variables and memory 
   x_rows <- nrow(x)
   x_cols <- ncol(x)
   y_rows <- nrow(y)
   
-  num_rows <- y_rows*x_rows
-  if(num_rows > 1000000000){
-    num_rows <- 1000000000 
-  }
-  match_indices <- try(matrix(data=NA, nrow=num_rows, ncol=3))
-  if(class(num_rows)[[1]]=='try-error'){
-    num_rows <- 10000000
-    match_indices <- matrix(data=NA, nrow=num_rows, ncol=3)
-  }
-  index <- 1
+  match_indices <- matrix(nrow = 0, ncol = 3)
   
   # Iterate through each row in matrix/dataframe x and evaluate for each value 
   # in the row whether it matches the column of y. This vector of logical values
@@ -1123,8 +1116,7 @@ matrix_close_matches_vectorised <- function(x, y, distance){
     if(length(nonNAvalues) >= 1){
       match <- store_index_vec(nonNAvalues, nonNA, z)
       match <- t(match)
-      match_indices[index:(index+nrow(match)-1),] <- match
-      index <- index + nrow(match)
+      match_indices <- rbind(match_indices, match)
     }
   }
   match_indices <- na.omit(match_indices)
