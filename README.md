@@ -4,7 +4,7 @@
 
 ## 1.0 Overview
 
-The overall purpose of this workflow is to clean and wrangle control program data from GBRMPA so that it takes a standardised form to be utilised in research. This R code defines a data processing pipeline that imports, formats, and verifies data. It also creates a metadata report to document the pipeline. The `main()` function is the entry point of the pipeline. It takes as input the paths to the legacy and new data files, the geospatial site data, algorithm to assign nearest sites, and a flag indicating whether the data was exported from PowerBI or not.
+The overall purpose of this workflow is to clean and wrangle control program data from GBRMPA so that it takes a standardised form to be utilised in research. This R code defines a data processing pipeline that imports, formats, and verifies data. It also creates a metadata report to document the pipeline. The `main()` function is the entry point of the pipeline. It takes as inputs the paths to the legacy data, new data ,KML data, and JSON configuration file. The data can then be assigned to the nearest sites.
 
 The four major steps in this process are as follows:
 
@@ -138,7 +138,7 @@ Error checking is independent of discrepancy detection. These functions interpre
 
 Discrepancy Detection provides the opportunity to identify changes in a specific row of data. It is not possible to know if a change is a mistake or QA so any changes that alter an error free data point to one containing an error, the original row will be utilised. In all other situations the new row will be utilised. 
   
-#### 3.2.1 What denotes an error ? 
+#### 3.2.1 What Denotes An Error ? 
   - `Latitude or Longitude` exceeds allowable range
   - `COT Scars` are not one of the agreed upon categorical options
   - `Tow Date` is missing and cannot be estimated from other entries of the same voyage 
@@ -152,6 +152,11 @@ Discrepancy Detection provides the opportunity to identify changes in a specific
   - `Reef Label / Reef ID` is not in an accepted format. The latitude bounds currently set with regex are between 10 and 29 degrees south.
   - `Voyage Dates` is missing and cannot be estimated from other entries of the same voyage
   - `Duplicates` of any row more than two instances. It is plausible for two genuine distinct identical rows to exist so these are not flagged 
+ 
+#### 3.2.2 Discrepancy Detection - Decisions & Their Philisophy
+  - `The workflow will not utilise the ID column to determine discrepancies`: Throughout development and historically it has been seen that the IDs in the database exports frequently change. It would be a large point of error if the IDs were treated as authoritative when it can not be guaranteed that they are. The functionality to do this has been programmed for a time when the IDs can be considered authoritative.
+  - `The "Distance" is the maximum number of columns in a given row that can change between the legacy and new data, and still be considered a discrepancy. This was set to three. Anything greater than this and it is assumed that the rows are not related`: There is no correct choice for distance. Three was able to captured all rows from the 6000 row legacy data set in the 115,000 row new data set. It was determined that being conservative is more beneficial as there is not a significant consequence for interpreting a discrepancy as a new row. It will still be utilised provided no errors are flagged in accordance with above.
+
  
 ## 3.3 Site Assignment
 The method traditionally employed for the assignment of control data observations to specific geographical regions was proposed by Dr. Cameron Fletcher at CSIRO. Dr. Fletcher's approach has proven valuable for understanding ecological patterns across various reef environments. However, the method's initial implementation relied on a Mathematica script, which introduced challenges of accessibility due to the proprietary nature of Mathematica software. This limitation not only hindered the wider adoption of the technique but also raised concerns about long-term sustainability and data processing bottlenecks. To overcome these hurdles and enhance the method's usability, we undertook the task of reconstructing Dr. Fletcher's approach using the open-source R programming language. This transformation aims to render the method more accessible, enabling researchers to employ it without the constraints posed by proprietary software. Our reimagined implementation closely follows the original approach, allowing us to efficiently process observations and alleviate potential bottlenecks associated with external dependencies, ensuring a more streamlined data analysis workflow. The R implementation of Dr Cameron Fletcher's site assignment was the accurate method for site assignment out of those tested. 
