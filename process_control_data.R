@@ -102,7 +102,7 @@ main <- function(new_path, configuration_path, kml_path, leg_path = NULL) {
         layer_names_vec <- unlist(kml_layers["name"])
         kml_data <- setNames(lapply(layer_names_vec, function(i)  st_read(kml_path, layer = i)), layer_names_vec)
         crs <- projection(kml_data[[1]])
-        verified_data_df <- assign_nearest_method_c(kml_data, verified_data_df, layer_names_vec, crs, configuration, raster_size=0.0005, x_closest=1, is_standardised=0, save_rasters=0)
+        verified_data_df <- assign_nearest_method_c(kml_data, verified_data_df, layer_names_vec, crs, configuration, calculate_site_rasters, raster_size=0.0005, x_closest=1, is_standardised=0, save_rasters=0)
       } else {
         verified_data_df$`Nearest Site` <- site_names_to_numbers(verified_data_df$`Site Name`)
       }
@@ -132,6 +132,8 @@ main <- function(new_path, configuration_path, kml_path, leg_path = NULL) {
     write.csv(verified_data_df, paste(configuration$metadata$control_data_type,"_", Sys.time(), ".csv", sep = ""), row.names = FALSE)
 
   })
+  
+  
 }
 
 

@@ -95,7 +95,6 @@ This is all taken care of by docker.
 | lwgeom        | 0.2-13    |
 | stars         | 0.6-4     |
 | stringr       | 1.4.1     |
-| fasterize     | 1.0.4     |
 
 
 ```R 
@@ -115,9 +114,7 @@ install.packages("rlang", version = "1.1.0")
 install.packages("inline", version = "0.3.19")  
 install.packages("purrr", version = "0.3.4")  
 install.packages("jsonlite", version = "1.8.7")  
-install.packages("sf", version = "1.0-14")  
-install.packages("sp", version = "1.5-0")  
-install.packages("leaflet", version = "2.1.2")   
+install.packages("sf", version = "1.0-14")
 install.packages("raster", version = "3.6-23")  
 install.packages("terra", version = "1.7-39")  
 install.packages("dplyr", version = "1.0.10")  
@@ -127,7 +124,6 @@ install.packages("tidyr", version = "1.2.0")
 install.packages("lwgeom", version = "0.2-13")  
 install.packages("stars", version = "0.6-4")  
 install.packages("stringr", version = "1.4.1")  
-install.packages("fasterize", version = "1.0.4")
 ```
 
 ## 3.1 Data Transformation

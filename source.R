@@ -1232,14 +1232,29 @@ get_closest_matches <- function(sources, targets){
   return(transformed_sources)
 }
 
-assign_nearest_method_c <- function(kml_data, data_df, layer_names_vec, crs, configuration, raster_size=0.0005, x_closest=1, is_standardised=1, save_rasters=1){
+assign_nearest_method_c <- function(kml_data, data_df, layer_names_vec, crs, configuration, calculate_site_rasters=1, raster_size=0.0005, x_closest=1, is_standardised=1, save_rasters=1){
   # Assign nearest sites to manta tows with method developed by Cameron Fletcher
   
   sf_use_s2(FALSE)
   pts <- get_centroids(data_df, crs)
-  kml_data_simplified <- simplify_reef_polyogns_rdp(kml_data)
-  site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
-  assign("site_regions", site_regions, envir = .GlobalEnv)
+  if(calculate_site_rasters){
+    kml_data_simplified <- simplify_reef_polyogns_rdp(kml_data)
+    site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
+    assign("site_regions", site_regions, envir = .GlobalEnv)
+    tryCatch({
+      if (!dir.exists(configuration$metadata$output_directory)) {
+        dir.create(configuration$metadata$output_directory)
+      }
+      saveRDS(site_regions, paste(configuration$metadata$output_directory, "\\site_regions_", Sys.time(), ".rds", sep = ""), row.names = FALSE)
+    }, error = function(e) {
+      print(paste("Error site regions raster data - Data saved in source directory", conditionMessage(e)))
+      saveRDS(site_regions, paste(configuration$metadata$control_data_type,"site_regions_", Sys.time(), ".rds", sep = ""))
+      
+    })
+    saveRDS(, file =  paste(, Sys.time(),".rds", sep=""))
+  } else {
+    site_regions <- readRDS("raster_list_test.rds")
+  }
   tryCatch({
     if(save_rasters){
       for(i in 1:length(site_regions)){
