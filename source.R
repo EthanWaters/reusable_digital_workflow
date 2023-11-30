@@ -99,7 +99,6 @@ contribute_to_metadata_report <- function(data, key = "Warning"){
 separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data_type){
 
   ID_col <- colnames(new_data_df)[1]
-  
   column_names <- colnames(legacy_data_df)
   verified_data_df <- data.frame(matrix(ncol = length(column_names), nrow = 0))
   colnames(verified_data_df) <- column_names 
@@ -114,8 +113,8 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
     
     # Determine additional columns required by the new data format and remove 
     # from comparison
-    
     required_columns <- intersect(configuration$mappings$new_fields$field, names(new_data_df))
+    
     # save original dataframes for legacy and new data so it can be manipulated
     # without loosing data. Columns will be removed that are not going to be  
     # compared for similarity. A unique identifier for each row will be created 
@@ -129,7 +128,6 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
     
     #find perfect duplicates and add to verified data df
     perfect_duplicates <- legacy_data_df[temp_legacy_df$Identifier %in% temp_new_df$Identifier, ]
-    verified_data_df <- rbind(verified_data_df, perfect_duplicates)
     
     # remove identifier columns
     temp_legacy_df$Identifier <- NULL
@@ -168,7 +166,7 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
     
     # This will contain any new entries and any rows that could not be separated
     new_entries <- new_data_df[-new_entries_i,]
-    verified_data_df <- rbind(verified_data_df, perfect_duplicates)
+    
   }
   
   # Given that it is not possible to definitively know if a change / discrepancy 
@@ -178,6 +176,7 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
   # discrepancies will check the original legacy entry, which if failed will 
   # be left as is. 
  
+  verified_data_df <- rbind(verified_data_df, perfect_duplicates)
   verified_discrepancies <- compare_discrepancies(new_data_df, legacy_data_df, separated_close_matches$discrepancies)
   verified_data_df <- rbind(verified_data_df, verified_discrepancies)
   verified_data_df <- rbind(verified_data_df, new_entries)
