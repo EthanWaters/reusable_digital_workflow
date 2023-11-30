@@ -113,12 +113,25 @@ main <- function(new_path, configuration_path, kml_path, leg_path = NULL) {
   })
   
   # separate entries and update any rows that were changed on accident. 
-  if(is_legacy_data_available){
-    verified_data_df <- separate_control_dataframe(verified_data_df, legacy_df, configuration$metadata$control_data_type)
-  }
+  tryCatch({
+    if(is_legacy_data_available){
+      verified_data_df <- separate_control_dataframe(verified_data_df, legacy_df, configuration$metadata$control_data_type)
+    }
+  }, error = function(e) {
+    print(paste("Error seperating control data. All data has been treated as new entries.", conditionMessage(e)))
+  })
   
-  write.csv(verified_data_df, paste("Output\\",configuration$metadata$control_data_type,"_", Sys.time(), ".csv", sep = ""), row.names = FALSE)
-  
+  # Save workflow output
+  tryCatch({
+    if (!dir.exists(configuration$metadata$output_directory)) {
+      dir.create(configuration$metadata$output_directory)
+    }
+    write.csv(verified_data_df, paste(configuration$metadata$output_directory, "\\",configuration$metadata$control_data_type,"_", Sys.time(), ".csv", sep = ""), row.names = FALSE)
+  }, error = function(e) {
+    print(paste("Error saving data - Data saved in source directory", conditionMessage(e)))
+    write.csv(verified_data_df, paste(configuration$metadata$control_data_type,"_", Sys.time(), ".csv", sep = ""), row.names = FALSE)
+
+  })
 }
 
 

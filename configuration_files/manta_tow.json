@@ -7,7 +7,8 @@
       "legacy_sheet_index": 4,
       "ID_col": "ID",
       "is_ID_preferred": false,
-      "assign_sites": true
+      "assign_sites": true,
+      "output_directory": "control_program_data"
     },
     "mappings": {
      
