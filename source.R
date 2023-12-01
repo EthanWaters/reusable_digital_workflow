@@ -1232,31 +1232,56 @@ get_closest_matches <- function(sources, targets){
   return(transformed_sources)
 }
 
-assign_nearest_method_c <- function(kml_data, data_df, layer_names_vec, crs, configuration, calculate_site_rasters=1, raster_size=0.0005, x_closest=1, is_standardised=1, save_rasters=1){
+
+find_recent_file <- function(directory_path, keyword, file_extension) {
+  # Get a list of files in the directory
+  files <- list.files(directory_path, pattern = paste0(keyword, ".*\\.", file_extension), full.names = TRUE)
+  if (length(files) == 0) {
+    cat("No matching files found.\n")
+    return(NULL)
+  }
+  
+  dates <- gsub(paste0(".*", keyword, "_(\\d{8}_\\d{6})", paste0("\\.", file_extension, "$")), "\\1", files)
+  date_objects <- parse_date_time(dates, orders = list(c("Ymd", "_", "HMS"), c("Ymd"), c("dmY")))
+  most_recent_index <- which.max(date_objects)
+  return(files[most_recent_index])
+}
+
+
+assign_nearest_method_c <- function(kml_data, data_df, layer_names_vec, crs, configuration, calculate_site_rasters=1, raster_size=0.0005, x_closest=1, is_standardised=0, save_rasters_as_spatial=0){
   # Assign nearest sites to manta tows with method developed by Cameron Fletcher
   
   sf_use_s2(FALSE)
   pts <- get_centroids(data_df, crs)
-  if(calculate_site_rasters){
+  
+  # if loading data fails calculate site regions
+  load_site_rasters_failed <- FALSE
+  if(!calculate_site_rasters){
+    tryCatch({
+      site_regions <- readRDS("site_regions.rds")
+    }, error = function(e) {
+      print(paste("Error site regions could not be loaded. Site regions will be calculated instead.", conditionMessage(e)))
+      load_site_rasters_failed <- TRUE
+    })
+  }
+  
+  if(calculate_site_rasters | load_site_rasters_failed){
     kml_data_simplified <- simplify_reef_polyogns_rdp(kml_data)
     site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
     assign("site_regions", site_regions, envir = .GlobalEnv)
     tryCatch({
-      if (!dir.exists(configuration$metadata$output_directory)) {
-        dir.create(configuration$metadata$output_directory)
+      if (!dir.exists(configuration$metadata$output_directory$spatial_data)) {
+        dir.create(configuration$metadata$output_directory$spatial_data, recursive = TRUE)
       }
-      saveRDS(site_regions, paste(configuration$metadata$output_directory, "\\site_regions_", Sys.time(), ".rds", sep = ""), row.names = FALSE)
+      saveRDS(site_regions, paste(configuration$metadata$output_directory$spatial_data, "\\site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = ""), row.names = FALSE)
     }, error = function(e) {
       print(paste("Error site regions raster data - Data saved in source directory", conditionMessage(e)))
-      saveRDS(site_regions, paste(configuration$metadata$control_data_type,"site_regions_", Sys.time(), ".rds", sep = ""))
-      
+      saveRDS(site_regions, paste(configuration$metadata$control_data_type,"site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = ""))
     })
-    saveRDS(, file =  paste(, Sys.time(),".rds", sep=""))
-  } else {
-    site_regions <- readRDS("raster_list_test.rds")
-  }
+    
+  } 
   tryCatch({
-    if(save_rasters){
+    if(save_rasters_as_spatial){
       for(i in 1:length(site_regions)){
         file_name <- names(site_regions[i])
         modified_file_name <- gsub("/", "_", file_name)

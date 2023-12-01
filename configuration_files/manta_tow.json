@@ -8,10 +8,13 @@
       "ID_col": "ID",
       "is_ID_preferred": false,
       "assign_sites": true,
-      "output_directory": "control_program_data"
+      "output_directory": {
+        "control_data": "Output\\control_data",
+        "spatial_data": "Output\\spatial_data",
+        "reports": "Output\\reports"
+      }
     },
     "mappings": {
-     
       "transformations": [
         {
           "target_field": "ID",

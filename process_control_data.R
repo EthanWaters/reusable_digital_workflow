@@ -124,12 +124,12 @@ main <- function(new_path, configuration_path, kml_path, leg_path = NULL) {
   # Save workflow output
   tryCatch({
     if (!dir.exists(configuration$metadata$output_directory)) {
-      dir.create(configuration$metadata$output_directory)
+      dir.create(configuration$metadata$output_directory, recursive = TRUE)
     }
-    write.csv(verified_data_df, paste(configuration$metadata$output_directory, "\\",configuration$metadata$control_data_type,"_", Sys.time(), ".csv", sep = ""), row.names = FALSE)
+    write.csv(verified_data_df, paste(configuration$metadata$output_directory, "\\",configuration$metadata$control_data_type,"_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv", sep = ""), row.names = FALSE)
   }, error = function(e) {
     print(paste("Error saving data - Data saved in source directory", conditionMessage(e)))
-    write.csv(verified_data_df, paste(configuration$metadata$control_data_type,"_", Sys.time(), ".csv", sep = ""), row.names = FALSE)
+    write.csv(verified_data_df, paste(configuration$metadata$control_data_type,"_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv", sep = ""), row.names = FALSE)
 
   })
   

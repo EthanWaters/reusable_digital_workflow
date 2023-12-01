@@ -7,7 +7,12 @@
     "legacy_sheet_index": 4,
     "ID_col": "Program ID",
     "is_ID_preferred": true,
-    "assign_sites": false
+    "assign_sites": false,
+    "output_directory": {
+      "control_data": "Output\\control_data",
+      "spatial_data": "Output\\spatial_data",
+      "reports": "Output\\reports"
+    }
   },
   "mappings": {
     "transformations": [
