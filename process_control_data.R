@@ -1,5 +1,5 @@
 
-main <- function(new_path, configuration_path, kml_path, leg_path = NULL) {
+main <- function(new_path, configuration_path, kml_path = NULL, leg_path = NULL) {
   
   # Initialize -------------------------------------------------------------
   source("source.R")
@@ -29,17 +29,33 @@ main <- function(new_path, configuration_path, kml_path, leg_path = NULL) {
   library("stars")
   library("stringr")
     
-  # Check if optional_arg is provided
+  configuration <- fromJSON(configuration_path)
+  
+  most_recent_report_path <- find_recent_file(configuration$metadat$output_directory$reports, configuration$metadat$control_data_type, "json")
+  most_recent_leg_path <- find_recent_file(configuration$metadat$output_directory$control_data, configuration$metadat$control_data_type, "csv")
+  most_recent_kml_path <- find_recent_file(configuration$metadat$output_directory$spatial_data, configuration$metadat$control_data_type, "kml")
+  
+  previous_report <- fromJSON(most_recent_report_path)
+  
   if (is.null(leg_path)) {
+    
+    
     is_new <- 1
     is_legacy_data_available <- 0
   } else {
     is_new <- 0
     is_legacy_data_available <- 1
   }
+  
+  if (is.null(kml_path)) {
     
     
-  configuration <- fromJSON(configuration_path)
+    is_new <- 1
+    is_legacy_data_available <- 0
+  } else {
+    is_new <- 0
+    is_legacy_data_available <- 1
+  }    
   
   # Create new report. If the file cannot be created due to file name issues a new
   # file name will be created.

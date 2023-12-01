@@ -9,9 +9,9 @@
       "is_ID_preferred": false,
       "assign_sites": true,
       "output_directory": {
-        "control_data": "Output\\control_data",
-        "spatial_data": "Output\\spatial_data",
-        "reports": "Output\\reports"
+        "control_data": "Output/control_data",
+        "spatial_data": "Output/spatial_data",
+        "reports": "Output/reports"
       }
     },
     "mappings": {
