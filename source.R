@@ -1241,16 +1241,21 @@ find_recent_file <- function(directory_path, keyword, file_extension) {
     return(NULL)
   }
   
-  dates <- gsub(paste0(".*", keyword, "_(\\d{8}_\\d{6})", paste0("\\.", file_extension, "$")), "\\1", files)
-  date_objects <- parse_date_time(dates, orders = list(c("Ymd", "_", "HMS"), c("Ymd"), c("dmY")))
+  dates <- str_extract(files, "\\d{8}_\\d{6}")
+  date_objects <- parse_date_time(dates, orders = c("Ymd_HMS"))
   most_recent_index <- which.max(date_objects)
   return(files[most_recent_index])
 }
 
 
-assign_nearest_method_c <- function(kml_data, data_df, layer_names_vec, crs, configuration, calculate_site_rasters=1, raster_size=0.0005, x_closest=1, is_standardised=0, save_rasters_as_spatial=0){
+assign_nearest_method_c <- function(kml_path, spatial_directory, keyword, calculate_site_rasters=1, raster_size=0.0005, x_closest=1, is_standardised=0, save_rasters_as_spatial=0){
   # Assign nearest sites to manta tows with method developed by Cameron Fletcher
   
+  kml_layers <- st_layers(kml_path)
+  layer_names <- kml_layers["name"]
+  layer_names_vec <- unlist(kml_layers["name"])
+  kml_data <- setNames(lapply(layer_names_vec, function(i)  st_read(kml_path, layer = i)), layer_names_vec)
+  crs <- projection(kml_data[[1]])
   sf_use_s2(FALSE)
   pts <- get_centroids(data_df, crs)
   
@@ -1258,7 +1263,8 @@ assign_nearest_method_c <- function(kml_data, data_df, layer_names_vec, crs, con
   load_site_rasters_failed <- FALSE
   if(!calculate_site_rasters){
     tryCatch({
-      site_regions <- readRDS("site_regions.rds")
+      file <- find_recent_file(spatial_directory, keyword, "rds")
+      site_regions <- readRDS(file)
     }, error = function(e) {
       print(paste("Error site regions could not be loaded. Site regions will be calculated instead.", conditionMessage(e)))
       load_site_rasters_failed <- TRUE
@@ -1270,13 +1276,13 @@ assign_nearest_method_c <- function(kml_data, data_df, layer_names_vec, crs, con
     site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
     assign("site_regions", site_regions, envir = .GlobalEnv)
     tryCatch({
-      if (!dir.exists(configuration$metadata$output_directory$spatial_data)) {
-        dir.create(configuration$metadata$output_directory$spatial_data, recursive = TRUE)
+      if (!dir.exists(spatial_directory)) {
+        dir.create(spatial_directory, recursive = TRUE)
       }
-      saveRDS(site_regions, paste(configuration$metadata$output_directory$spatial_data, "\\site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = ""), row.names = FALSE)
+      saveRDS(site_regions, paste(spatial_directory, "\\site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = ""), row.names = FALSE)
     }, error = function(e) {
       print(paste("Error site regions raster data - Data saved in source directory", conditionMessage(e)))
-      saveRDS(site_regions, paste(configuration$metadata$control_data_type,"site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = ""))
+      saveRDS(site_regions, paste(keyword,"site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = ""))
     })
     
   } 

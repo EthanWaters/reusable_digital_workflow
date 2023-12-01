@@ -175,7 +175,7 @@ Manta tow centroids are transformed into point representations. Iterating throug
 
 ## 3.4 Export Data
 
-Output locations are defined in the configuration files and will be created if they do not already exist. The any output will be saved with the naming convention: `Keyword`_`%Y%m%d`_`%H%M%S`.`File extension`
+Output locations are defined in the configuration files and will be created if they do not already exist. The any output will be saved with the naming convention: `Keyword`_`%Y%m%d`_`%H%M%S`.`File extension. Do NOT remove data outputs, simply take a copy. Previous outputs are utilised to reduce processing and reduce errors. 
 
 ## 4.0 Code Documentation
 
