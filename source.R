@@ -1248,7 +1248,7 @@ find_recent_file <- function(directory_path, keyword, file_extension) {
 }
 
 
-assign_nearest_method_c <- function(kml_path, spatial_directory, keyword, calculate_site_rasters=1, raster_size=0.0005, x_closest=1, is_standardised=0, save_rasters_as_spatial=0){
+assign_nearest_method_c <- function(kml_path, keyword, calculate_site_rasters=1, spatial_path=NULL, raster_size=0.0005, x_closest=1, is_standardised=0, save_rasters_as_spatial=0){
   # Assign nearest sites to manta tows with method developed by Cameron Fletcher
   
   kml_layers <- st_layers(kml_path)

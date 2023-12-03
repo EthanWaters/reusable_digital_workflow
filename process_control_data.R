@@ -1,5 +1,5 @@
 
-main <- function(new_path, configuration_path, kml_path = NULL, leg_path = NULL) {
+main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path = NULL) {
   
   # Initialize -------------------------------------------------------------
   source("source.R")
@@ -28,33 +28,53 @@ main <- function(new_path, configuration_path, kml_path = NULL, leg_path = NULL)
   library("lwgeom")
   library("stars")
   library("stringr")
-    
+      
   configuration <- fromJSON(configuration_path)
   
   most_recent_report_path <- find_recent_file(configuration$metadat$output_directory$reports, configuration$metadat$control_data_type, "json")
   most_recent_leg_path <- find_recent_file(configuration$metadat$output_directory$control_data, configuration$metadat$control_data_type, "csv")
-  most_recent_kml_path <- find_recent_file(configuration$metadat$output_directory$spatial_data, configuration$metadat$control_data_type, "kml")
+  most_recent_new_path <- find_recent_file(configuration$metadat$input_directory$control_data, configuration$metadat$control_data_type, "csv")
+  most_recent_kml_path <- find_recent_file(configuration$metadat$input_directory$spatial_data, configuration$metadat$control_data_type, "kml")
+  most_recent_serialised_spatial_path <- find_recent_file(configuration$metadat$output_directory$spatial_data, "site_regions", "rds")
   
   previous_report <- fromJSON(most_recent_report_path)
   
+  if (is.null(new_path)) {
+    new_path <- most_recent_new_path
+  }
+  
+  # Attempt to use legacy data where possible. 
   if (is.null(leg_path)) {
-    
-    
-    is_new <- 1
-    is_legacy_data_available <- 0
+    if(is.null(most_recent_leg_path)){
+      is_new <- 1
+      is_legacy_data_available <- 0
+    } else {
+      leg_path <- most_recent_leg_path
+      is_new <- 0
+      is_legacy_data_available <- 1
+    }
   } else {
     is_new <- 0
     is_legacy_data_available <- 1
   }
   
+  # Reduce computation time by only assigning sites to raster pixels when needed.
+  # If the previous output utilised the most up-to-date kml file, then there 
+  # will be a saved serialised version of the raster data that can be utilised 
+  # instead of calculating it again as this is by far the most time consuming 
+  # part of the process. 
   if (is.null(kml_path)) {
-    
-    
-    is_new <- 1
-    is_legacy_data_available <- 0
+    kml_path <- most_recent_kml_path
+    if(kml_path == previous_report$input$kml_path){
+      calculate_site_rasters <- 0
+      serialised_spatial_path <- most_recent_serialised_spatial_path
+    } else {
+      calculate_site_rasters <- 1
+      serialised_spatial_path <- NULL
+    }
   } else {
-    is_new <- 0
-    is_legacy_data_available <- 1
+    calculate_site_rasters <- 1
+    serialised_spatial_path <- NULL
   }    
   
   # Create new report. If the file cannot be created due to file name issues a new
@@ -113,7 +133,7 @@ main <- function(new_path, configuration_path, kml_path = NULL, leg_path = NULL)
   tryCatch({
     if(configuration$metadata$assign_sites){
       if(configuration$metadata$control_data_type == "manta_tow"){
-        verified_data_df <- assign_nearest_method_c(kml_data, verified_data_df, layer_names_vec, crs, configuration, calculate_site_rasters, raster_size=0.0005, x_closest=1, is_standardised=0, save_rasters=0)
+        verified_data_df <- assign_nearest_method_c(kml_path, configuration$metadata$control_data_type, calculate_site_rasters, spatia_path, raster_size=0.0005, x_closest=1, is_standardised=0, save_rasters=0)
       } else {
         verified_data_df$`Nearest Site` <- site_names_to_numbers(verified_data_df$`Site Name`)
       }

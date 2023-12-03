@@ -12,6 +12,11 @@
       "control_data": "Output/control_data",
       "spatial_data": "Output/spatial_data",
       "reports": "Output/reports"
+    },
+    "input_directory": {
+      "control_data": "Input/control_data",
+      "spatial_data": "Input/spatial_data",
+      "reports": "Input/reports"
     }
   },
   "mappings": {
