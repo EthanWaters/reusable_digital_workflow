@@ -1247,8 +1247,24 @@ find_recent_file <- function(directory_path, keyword, file_extension) {
   return(files[most_recent_index])
 }
 
+save_spatial_as_raster <- function(output_path, serialized_spatial_path){
+  tryCatch({
+    site_regions <- readRDS(serialized_spatial_path)
+    for(i in 1:length(site_regions)){
+      file_name <- names(site_regions[i])
+      modified_file_name <- gsub("/", "_", file_name)
+      if (file.exists(output_path) && file.isFile(output_path)){
+        file.remove(output_path)
+        output_path <- dirname(output_path)
+      }
+      writeRaster(site_regions[[i]], filename = paste(output_path,"\\",modified_file_name,".tif", sep=""), format = "GTiff", overwrite = TRUE)
+    }
+  }, error = function(e) {
+    cat("An error occurred while saving", modified_file_name, "\n")
+  })
+}
 
-assign_nearest_method_c <- function(kml_path, keyword, calculate_site_rasters=1, spatial_path=NULL, raster_size=0.0005, x_closest=1, is_standardised=0, save_rasters_as_spatial=0){
+assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_site_rasters=1, spatial_path=NULL, raster_size=0.0005, x_closest=1, is_standardised=0, save_spatial_as_raster=0){
   # Assign nearest sites to manta tows with method developed by Cameron Fletcher
   
   kml_layers <- st_layers(kml_path)
@@ -1257,7 +1273,6 @@ assign_nearest_method_c <- function(kml_path, keyword, calculate_site_rasters=1,
   kml_data <- setNames(lapply(layer_names_vec, function(i)  st_read(kml_path, layer = i)), layer_names_vec)
   crs <- projection(kml_data[[1]])
   sf_use_s2(FALSE)
-  pts <- get_centroids(data_df, crs)
   
   # if loading data fails calculate site regions
   load_site_rasters_failed <- FALSE
@@ -1286,25 +1301,25 @@ assign_nearest_method_c <- function(kml_path, keyword, calculate_site_rasters=1,
     })
     
   } 
-  tryCatch({
-    if(save_rasters_as_spatial){
-      for(i in 1:length(site_regions)){
-        file_name <- names(site_regions[i])
-        modified_file_name <- gsub("/", "_", file_name)
-        writeRaster(site_regions[[i]], filename = paste("Cameron Method\\",raster_size,"\\",modified_file_name,".tif", sep=""), format = "GTiff", overwrite = TRUE)
-      }
+  if(save_spatial_as_raster == 1){
+    directory_path <- spatial_path
+    if (file.exists(directory_path) && file.isFile(directory_path)) {
+      file.remove(file_path)
+      directory_path <- dirname(file_path)
     }
-  }, error = function(e) {
-    cat("An error occurred while saving", modified_file_name, "\n")
-  })
+    directory_path <- paste0(directory_path, "\\rasters", sep="")
+    save_spatial_as_raster(output_path, serialized_spatial_path)
+  }
+ 
   
-  updated_pts <- pts
+  data_df <- get_centroids(data_df, crs)
+  updated_pts <- data_df
   for(i in 1:length(site_regions)){
-    is_contained <- sapply(pts$`Reef ID`, function(str) grepl(str, names(site_regions[i])))
+    is_contained <- sapply(data_df$`Reef ID`, function(str) grepl(str, names(site_regions[i])))
     if(any(is_contained) == FALSE){
       next
     }
-    reef_pts <- pts[is_contained,]
+    reef_pts <- data_df[is_contained,]
     nearest_site_manta_data <- raster::extract(site_regions[[i]], reef_pts)
     updated_pts[is_contained, c("Nearest Site",  "Distance to Site")] <- nearest_site_manta_data
   }

@@ -65,12 +65,11 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
   # part of the process. 
   if (is.null(kml_path)) {
     kml_path <- most_recent_kml_path
+    serialised_spatial_path <- most_recent_serialised_spatial_path
     if(kml_path == previous_report$input$kml_path){
       calculate_site_rasters <- 0
-      serialised_spatial_path <- most_recent_serialised_spatial_path
     } else {
       calculate_site_rasters <- 1
-      serialised_spatial_path <- NULL
     }
   } else {
     calculate_site_rasters <- 1
@@ -133,7 +132,7 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
   tryCatch({
     if(configuration$metadata$assign_sites){
       if(configuration$metadata$control_data_type == "manta_tow"){
-        verified_data_df <- assign_nearest_method_c(kml_path, configuration$metadata$control_data_type, calculate_site_rasters, spatia_path, raster_size=0.0005, x_closest=1, is_standardised=0, save_rasters=0)
+        verified_data_df <- assign_nearest_site_method_c(verified_data_df, kml_path, configuration$metadata$control_data_type, calculate_site_rasters, serialised_spatial_path, raster_size=0.0005, x_closest=1, is_standardised=0, save_rasters=0)
       } else {
         verified_data_df$`Nearest Site` <- site_names_to_numbers(verified_data_df$`Site Name`)
       }
