@@ -36,28 +36,6 @@ import_data <- function(data, configuration){
   return(out)
 }
 
-
-create_metadata_report <- function(control_data_type){
-    #Generate the XML template for the control data process report.
-    reports_location <<- "reports\\"
-    if (!dir.exists(reports_location)) {
-      dir.create(reports_location)
-    }
-    
-    #create file name systematically
-    date <- as.character(Sys.Date())
-    timestamp <- as.character(Sys.time())
-    filename <- paste0(reports_location, "Processed Control Data Report ", date, " ",control_data_type, ".xml", sep="")
-    
-    #generate template
-    template <- xml_new_root("session") 
-    control_data <- xml_find_all(template, "//session")
-    xml_add_child(control_data, "timestamp", timestamp) 
-    xml_add_child(control_data, "Notifications")
-    write_xml(template, file = filename, options =c("format", "no_declaration"))
-}
-
-
 contribute_to_metadata_report <- function(key, data, parent_key=NULL, report_path=NULL){
   if(is.null(report_path)){
     report_path <- find_recent_file("Output\\reports", "report", "json")
@@ -73,45 +51,6 @@ contribute_to_metadata_report <- function(key, data, parent_key=NULL, report_pat
   }
   report[[key]] <- data
   toJSON(report, pretty = TRUE, auto_unbox = TRUE) %>% writeLines(report_path)
-}
-
-contribute_to_metadata_report <- function(data, key = "Warning"){
-  # finds files with current date in file name and attempts to open xml file
-  file_count <- 1
-  reports_location <- "reports\\"
-  trywait <- 0
-  xml_files <- list.files(path= reports_location, pattern = as.character(Sys.Date()))
-  xml_filename <- xml_files[file_count]
-  xml_file <- paste0(reports_location, xml_filename, sep="")
-  xml_file_data <- try(read_xml(xml_file))
-  while ((class(xml_file_data)[[1]]=='try-error')&(trywait<=(5))){
-    file_count <- file_count + 1
-    print(paste('retrying in ', trywait, 'second(s)')) 
-    Sys.sleep(trywait) 
-    trywait <- trywait + 1 
-    xml_file_data <- try(read_xml(paste0(reports_location, xml_filename, sep="")))
-  }
-  node <- xml_find_all(xml_file_data, "//Notifications")
-  
-  # Only add to node if it exists. Node Should always exist. 
-  # A dataframe will add a key value pair for each column. A single value will  
-  # directly assigned as a value. Columns with Multiple entries will form a list
-  # before being assigned as a value. 
-  # A matrix will pair each entry with the specified key. 
-  if(length(node) > 0){
-    if(is.data.frame(data)){
-      xml_add_child(node, key ,data)
-    } else {
-      desired_nodes <- xml_find_all(xml_file_data, "//Notifications")
-      newest_desired_node <- desired_nodes[[length(desired_nodes)]]
-      sapply(1:length(data), function(i) {
-        xml_add_child(newest_desired_node, key, data[i])
-       }
-      )
-    }
-    
-  }
-  write_xml(xml_file_data, file = xml_file, options =c("format", "no_declaration"))
 }
 
 separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data_type){
@@ -1453,7 +1392,7 @@ get_centroids <- function(data_df, crs, precision=0){
   
   if(precision != 0){
     data_df <- data_df %>%
-      mutate_at(vars(`Start lat`, `Start long`, `End lat`, `End long`, `mean_lat`, `mean_long`), ~ round(., precision))
+      mutate_at(vars(`Start Lat`, `Start Lng`, `End Lat`, `End Lng`, `mean_lat`, `mean_long`), ~ round(., precision))
   }
   
   #create manta_tow points. Can't create pts that are NA, use 0 as place holder.
@@ -1461,9 +1400,9 @@ get_centroids <- function(data_df, crs, precision=0){
   # they are not in the legacy format. This means that after geometry is dropped 
   # the desired remaining columns will all be correct and Nearest Site will be 
   # NA as expected. 
-  df$mean_lat[is.na(df$mean_lat)] <- 0
-  df$mean_long[is.na(df$mean_long)] <- 0
-  pts <- st_as_sf(data_filtered, coords=c("mean_long", "mean_lat"), crs=crs)
+  data_df$mean_lat[is.na(data_df$mean_lat)] <- 0
+  data_df$mean_long[is.na(data_df$mean_long)] <- 0
+  pts <- st_as_sf(data_df, coords=c("mean_long", "mean_lat"), crs=crs)
   return(pts)
 }
 
