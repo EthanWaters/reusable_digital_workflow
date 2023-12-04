@@ -28,7 +28,7 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
   library("lwgeom")
   library("stars")
   library("stringr")
-      
+  
   configuration <- fromJSON(configuration_path)
   
   most_recent_report_path <- find_recent_file(configuration$metadat$output_directory$reports, configuration$metadat$control_data_type, "json")
@@ -63,10 +63,10 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
   # will be a saved serialised version of the raster data that can be utilised 
   # instead of calculating it again as this is by far the most time consuming 
   # part of the process. 
+  serialised_spatial_path <- most_recent_serialised_spatial_path
   if (is.null(kml_path)) {
     kml_path <- most_recent_kml_path
-    serialised_spatial_path <- most_recent_serialised_spatial_path
-    if(kml_path == previous_report$input$kml_path){
+    if(kml_path == previous_report$inputs$kml_path){
       calculate_site_rasters <- 0
     } else {
       calculate_site_rasters <- 1
@@ -75,25 +75,6 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     calculate_site_rasters <- 1
     serialised_spatial_path <- NULL
   }    
-  
-  # Create new report. If the file cannot be created due to file name issues a new
-  # file name will be created.
-  file_count <- 1
-  trywait <- 0
-  report_attempt <- try(create_metadata_report(control_data_type))
-  while ((class(report_attempt)[[1]]=='try-error')&(trywait<=(10))){
-    print(paste('retrying in ', trywait, 'second(s)')) 
-    Sys.sleep(trywait) 
-    trywait <- trywait+1 
-    report_attempt <- try(create_metadata_report(control_data_type))
-  }
-  if (trywait>(10)) print(paste('Cannot create metadata report'))  
-  trywait <- 0
-  
-  # The following code returns a dataframe after recieving the path 
-  # to a CSV, XLSX or TXT file. This can be adapted to use an explorer to choose 
-  # the file. The sheet index variable refer to the sheet the data is located on
-  # in the XLSX files and is irrelevant for CSV as it is considered "Flat". 
   
   new_data_df <- rio::import(new_path)
   if(is_legacy_data_available){
@@ -114,6 +95,33 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
   
   has_authorative_ID <-  !any(is.na(new_data_df[[configuration$metadata$ID_col]])) & configuration$metadata$is_ID_preferred
   assign("has_authorative_ID", has_authorative_ID, envir = .GlobalEnv) 
+  
+  # create list to export as json file with metadata about workflow
+  metadata_json_output <- list()    
+  
+  # timestamp workflow 
+  metadata_json_output[["timestamp"]] = Sys.time()
+  
+  # record inputs to workflow
+  metadata_json_output[["inputs"]] = list(
+    kml_path = kml_path,
+    new_path = new_path,
+    leg_path = leg_path, 
+    configuration_path = configuration_path,
+    serialised_spatial_path = serialised_spatial_path
+  )
+  
+  # record inputs to workflow
+  metadata_json_output[["decisions"]] = list(
+    has_authorative_ID = has_authorative_ID,
+    is_legacy_data_available = is_legacy_data_available,
+    is_new = is_new, 
+    calculate_site_rasters = calculate_site_rasters
+  )
+  
+  # save metadata json file 
+  json_data <- toJSON(metadata_json_output, pretty = TRUE)
+  writeLines(json_data, paste(configuration$metadat$output_directory$reports,"\\Control_Data_Report_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = ""))
   
   transformed_data_df <- transform_data_structure(new_data_df, configuration$mappings$transformations, configuration$mappings$new_fields)
   if(is_legacy_data_available){
