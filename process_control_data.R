@@ -190,26 +190,3 @@ main(new_path, configuration_path, kml_path, leg_path)
 
 
 
-
-
-# Create all combinations of points and extents
-combinations <- expand.grid(point_index = seq_len(nrow(is_outside_raster_pts)), extent_index = seq_len(length(is_outside_raster_reefs)))
-
-# Initialize a matrix to store the results
-result_matrix <- matrix(FALSE, nrow = nrow(is_outside_raster_pts), ncol = length(is_outside_raster_reefs), dimnames = list(NULL, names(is_outside_raster_reefs)))
-
-# Check if each point is inside each extent
-for (i in seq_len(nrow(combinations))) {
-  point_index <- combinations$point_index[i]
-  extent_index <- combinations$extent_index[i]
-  
-  extent <- extent(is_outside_raster_reefs[[extent_index]])
-  point <- c(x = st_coordinates(is_outside_raster_pts$geometry[point_index])[1], y = st_coordinates(is_outside_raster_pts$geometry[point_index])[2])
-  
-  is_inside <- all(point >= extent@xmin & point <= extent@xmax & point >= extent@ymin & point <= extent@ymax)
-  
-  result_matrix[point_index, extent_index] <- is_inside
-}
-
-
-
