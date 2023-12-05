@@ -1,179 +1,181 @@
 
 main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path = NULL) {
-  
-  # Initialize -------------------------------------------------------------
-  source("source.R")
-  library("tools")
-  library("installr")
-  library("readxl")
-  library("sets")
-  library("XML")
-  library("methods")
-  library("xml2")
-  library("rio")
-  library("dplyr")
-  library("stringr")
-  library("fastmatch")
-  library("lubridate")
-  library("rlang")
-  library("inline")
-  library("purrr")
-  library("jsonlite")
-  library("sf")
-  library("raster")
-  library("terra")
-  library("units")
-  library("tidyverse")
-  library("tidyr")
-  library("lwgeom")
-  library("stars")
-  library("stringr")
-  
-  configuration <- fromJSON(configuration_path)
-  
-  most_recent_report_path <- find_recent_file(configuration$metadat$output_directory$reports, configuration$metadat$control_data_type, "json")
-  most_recent_leg_path <- find_recent_file(configuration$metadat$output_directory$control_data, configuration$metadat$control_data_type, "csv")
-  most_recent_new_path <- find_recent_file(configuration$metadat$input_directory$control_data, configuration$metadat$control_data_type, "csv")
-  most_recent_kml_path <- find_recent_file(configuration$metadat$input_directory$spatial_data, configuration$metadat$control_data_type, "kml")
-  most_recent_serialised_spatial_path <- find_recent_file(configuration$metadat$output_directory$spatial_data, "site_regions", "rds")
-  
-  previous_report <- fromJSON(most_recent_report_path)
-  
-  if (is.null(new_path)) {
-    new_path <- most_recent_new_path
-  }
-  
-  # Attempt to use legacy data where possible. 
-  if (is.null(leg_path)) {
-    if(is.null(most_recent_leg_path)){
-      is_new <- 1
-      is_legacy_data_available <- 0
+  tryCatch({
+    # Initialize -------------------------------------------------------------
+    source("source.R")
+    library("tools")
+    library("installr")
+    library("readxl")
+    library("sets")
+    library("XML")
+    library("methods")
+    library("xml2")
+    library("rio")
+    library("dplyr")
+    library("stringr")
+    library("fastmatch")
+    library("lubridate")
+    library("rlang")
+    library("inline")
+    library("purrr")
+    library("jsonlite")
+    library("sf")
+    library("raster")
+    library("terra")
+    library("units")
+    library("tidyverse")
+    library("tidyr")
+    library("lwgeom")
+    library("stars")
+    library("stringr")
+    library("gmailr")
+    
+    
+    configuration <- fromJSON(configuration_path)
+    
+    most_recent_report_path <- find_recent_file(configuration$metadat$output_directory$reports, configuration$metadat$control_data_type, "json")
+    most_recent_leg_path <- find_recent_file(configuration$metadat$output_directory$control_data, configuration$metadat$control_data_type, "csv")
+    most_recent_new_path <- find_recent_file(configuration$metadat$input_directory$control_data, configuration$metadat$control_data_type, "csv")
+    most_recent_kml_path <- find_recent_file(configuration$metadat$input_directory$spatial_data, configuration$metadat$control_data_type, "kml")
+    most_recent_serialised_spatial_path <- find_recent_file(configuration$metadat$output_directory$spatial_data, "site_regions", "rds")
+    
+    previous_report <- fromJSON(most_recent_report_path)
+    
+    if (is.null(new_path)) {
+      new_path <- most_recent_new_path
+    }
+    
+    # Attempt to use legacy data where possible. 
+    if (is.null(leg_path)) {
+      if(is.null(most_recent_leg_path)){
+        is_new <- 1
+        is_legacy_data_available <- 0
+      } else {
+        leg_path <- most_recent_leg_path
+        is_new <- 0
+        is_legacy_data_available <- 1
+      }
     } else {
-      leg_path <- most_recent_leg_path
       is_new <- 0
       is_legacy_data_available <- 1
     }
-  } else {
-    is_new <- 0
-    is_legacy_data_available <- 1
-  }
-  
-  # Reduce computation time by only assigning sites to raster pixels when needed.
-  # If the previous output utilised the most up-to-date kml file, then there 
-  # will be a saved serialised version of the raster data that can be utilised 
-  # instead of calculating it again as this is by far the most time consuming 
-  # part of the process. 
-  serialised_spatial_path <- most_recent_serialised_spatial_path
-  if (is.null(kml_path)) {
-    kml_path <- most_recent_kml_path
-    if(kml_path == previous_report$inputs$kml_path){
-      calculate_site_rasters <- 0
+    
+    # Reduce computation time by only assigning sites to raster pixels when needed.
+    # If the previous output utilised the most up-to-date kml file, then there 
+    # will be a saved serialised version of the raster data that can be utilised 
+    # instead of calculating it again as this is by far the most time consuming 
+    # part of the process. 
+    serialised_spatial_path <- most_recent_serialised_spatial_path
+    if (is.null(kml_path)) {
+      kml_path <- most_recent_kml_path
+      if(kml_path == previous_report$inputs$kml_path){
+        calculate_site_rasters <- 0
+      } else {
+        calculate_site_rasters <- 1
+      }
     } else {
       calculate_site_rasters <- 1
-    }
-  } else {
-    calculate_site_rasters <- 1
-    serialised_spatial_path <- NULL
-  }    
-  
-  new_data_df <- rio::import(new_path)
-  if(is_legacy_data_available){
-    legacy_df <- rio::import(leg_path)
-    if("error_flag" %in% colnames(legacy_df)){
-      is_new <- 0
-    } else {
-      is_new <- 1
-      legacy_df["error_flag"] <- 0
-    }
-  }
-  # Check if the new data has an authoritative ID. All rows of a database export 
-  # will have one and no rows from a powerBI export will. There should be no 
-  # scenario where only a portion of rows have IDs. Even if an ID is present it 
-  # should be ensured that it is authoritative before altering the configuration 
-  # files to preference the use of the ID for separation rather than checking 
-  # for differences manually. 
-  
-  has_authorative_ID <-  !any(is.na(new_data_df[[configuration$metadata$ID_col]])) & configuration$metadata$is_ID_preferred
-  assign("has_authorative_ID", has_authorative_ID, envir = .GlobalEnv) 
-  
-  # create list to export as json file with metadata about workflow
-  metadata_json_output <- list()    
-  
-  # timestamp workflow 
-  metadata_json_output[["timestamp"]] = Sys.time()
-  
-  # record inputs to workflow
-  metadata_json_output[["inputs"]] = list(
-    kml_path = kml_path,
-    new_path = new_path,
-    leg_path = leg_path, 
-    configuration_path = configuration_path,
-    serialised_spatial_path = serialised_spatial_path
-  )
-  
-  # record inputs to workflow
-  metadata_json_output[["decisions"]] = list(
-    has_authorative_ID = has_authorative_ID,
-    is_legacy_data_available = is_legacy_data_available,
-    is_new = is_new, 
-    calculate_site_rasters = calculate_site_rasters
-  )
-  
-  # save metadata json file 
-  json_data <- toJSON(metadata_json_output, pretty = TRUE)
-  writeLines(json_data, paste(configuration$metadat$output_directory$reports,"\\Control_Data_Report_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = ""))
-  
-  transformed_data_df <- transform_data_structure(new_data_df, configuration$mappings$transformations, configuration$mappings$new_fields)
-  if(is_legacy_data_available){
-    legacy_df <- set_data_type(legacy_df, configuration$mappings$data_type_mappings) 
-  }
-  formatted_data_df <- set_data_type(transformed_data_df, configuration$mappings$data_type_mappings) 
-  
-  verified_data_df <- verify_entries(formatted_data_df, configuration)
-  if(is_new){
-    legacy_df <- verify_entries(legacy_df, configuration) 
-  }
-  
-  # flag non-genuine duplicates that are mistakes
-  verified_data_df <- flag_duplicates(verified_data_df)
-  
-  tryCatch({
-    if(configuration$metadata$assign_sites){
-      if(configuration$metadata$control_data_type == "manta_tow"){
-        verified_data_df <- assign_nearest_site_method_c(verified_data_df, kml_path, configuration$metadata$control_data_type, calculate_site_rasters, serialised_spatial_path, raster_size=0.0005, x_closest=1, is_standardised=0, save_rasters=0)
-      } else {
-        verified_data_df$`Nearest Site` <- site_names_to_numbers(verified_data_df$`Site Name`)
-      }
-        
-    }
-  }, error = function(e) {
-    print(paste("Error assigning sites:", conditionMessage(e)))
-  })
-  
-  # separate entries and update any rows that were changed on accident. 
-  tryCatch({
+      serialised_spatial_path <- NULL
+    }    
+    
+    new_data_df <- rio::import(new_path)
     if(is_legacy_data_available){
-      verified_data_df <- separate_control_dataframe(verified_data_df, legacy_df, configuration$metadata$control_data_type)
+      legacy_df <- rio::import(leg_path)
+      if("error_flag" %in% colnames(legacy_df)){
+        is_new <- 0
+      } else {
+        is_new <- 1
+        legacy_df["error_flag"] <- 0
+      }
     }
-  }, error = function(e) {
-    print(paste("Error seperating control data. All data has been treated as new entries.", conditionMessage(e)))
-  })
-  
-  # Save workflow output
-  tryCatch({
-    if (!dir.exists(configuration$metadata$output_directory)) {
-      dir.create(configuration$metadata$output_directory, recursive = TRUE)
+    # Check if the new data has an authoritative ID. All rows of a database export 
+    # will have one and no rows from a powerBI export will. There should be no 
+    # scenario where only a portion of rows have IDs. Even if an ID is present it 
+    # should be ensured that it is authoritative before altering the configuration 
+    # files to preference the use of the ID for separation rather than checking 
+    # for differences manually. 
+    
+    has_authorative_ID <-  !any(is.na(new_data_df[[configuration$metadata$ID_col]])) & configuration$metadata$is_ID_preferred
+    assign("has_authorative_ID", has_authorative_ID, envir = .GlobalEnv) 
+    
+    # create list to export as json file with metadata about workflow
+    metadata_json_output <- list()    
+    
+    # timestamp workflow 
+    metadata_json_output[["timestamp"]] = Sys.time()
+    
+    # record inputs to workflow
+    metadata_json_output[["inputs"]] = list(
+      kml_path = kml_path,
+      new_path = new_path,
+      leg_path = leg_path, 
+      configuration_path = configuration_path,
+      serialised_spatial_path = serialised_spatial_path
+    )
+    
+    # record inputs to workflow
+    metadata_json_output[["decisions"]] = list(
+      has_authorative_ID = has_authorative_ID,
+      is_legacy_data_available = is_legacy_data_available,
+      is_new = is_new, 
+      calculate_site_rasters = calculate_site_rasters
+    )
+    
+    # save metadata json file 
+    json_data <- toJSON(metadata_json_output, pretty = TRUE)
+    writeLines(json_data, paste(configuration$metadat$output_directory$reports,"\\Control_Data_Report_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = ""))
+    
+    transformed_data_df <- transform_data_structure(new_data_df, configuration$mappings$transformations, configuration$mappings$new_fields)
+    if(is_legacy_data_available){
+      legacy_df <- set_data_type(legacy_df, configuration$mappings$data_type_mappings) 
     }
-    write.csv(verified_data_df, paste(configuration$metadata$output_directory, "\\",configuration$metadata$control_data_type,"_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv", sep = ""), row.names = FALSE)
+    formatted_data_df <- set_data_type(transformed_data_df, configuration$mappings$data_type_mappings) 
+    
+    verified_data_df <- verify_entries(formatted_data_df, configuration)
+    if(is_new){
+      legacy_df <- verify_entries(legacy_df, configuration) 
+    }
+    
+    # flag non-genuine duplicates that are mistakes
+    verified_data_df <- flag_duplicates(verified_data_df)
+    
+    tryCatch({
+      if(configuration$metadata$assign_sites){
+        if(configuration$metadata$control_data_type == "manta_tow"){
+          verified_data_df <- assign_nearest_site_method_c(verified_data_df, kml_path, configuration$metadata$control_data_type, calculate_site_rasters, serialised_spatial_path, raster_size=0.0005, x_closest=1, is_standardised=0, save_rasters=0)
+        } else {
+          verified_data_df$`Nearest Site` <- site_names_to_numbers(verified_data_df$`Site Name`)
+        }
+          
+      }
+    }, error = function(e) {
+      print(paste("Error assigning sites:", conditionMessage(e)))
+    })
+    
+    # separate entries and update any rows that were changed on accident. 
+    tryCatch({
+      if(is_legacy_data_available){
+        verified_data_df <- separate_control_dataframe(verified_data_df, legacy_df, configuration$metadata$control_data_type)
+      }
+    }, error = function(e) {
+      print(paste("Error seperating control data. All data has been treated as new entries.", conditionMessage(e)))
+    })
+    
+    # Save workflow output
+    tryCatch({
+      if (!dir.exists(configuration$metadata$output_directory)) {
+        dir.create(configuration$metadata$output_directory, recursive = TRUE)
+      }
+      write.csv(verified_data_df, paste(configuration$metadata$output_directory, "\\",configuration$metadata$control_data_type,"_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv", sep = ""), row.names = FALSE)
+    }, error = function(e) {
+      print(paste("Error saving data - Data saved in source directory", conditionMessage(e)))
+      write.csv(verified_data_df, paste(configuration$metadata$control_data_type,"_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv", sep = ""), row.names = FALSE)
+  
+    })
   }, error = function(e) {
-    print(paste("Error saving data - Data saved in source directory", conditionMessage(e)))
-    write.csv(verified_data_df, paste(configuration$metadata$control_data_type,"_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv", sep = ""), row.names = FALSE)
-
+    send_error_email("Auth\\", "ethankwaters@gmail", "TEST")
   })
-  
-  
 }
-
 
 
 args <- commandArgs(trailingOnly = TRUE)

@@ -14,6 +14,9 @@ if not exist "%baseDir%\Output\control_data" mkdir "%baseDir%\Output\control_dat
 if not exist "%baseDir%\Output\reports" mkdir "%baseDir%\Output\reports"
 if not exist "%baseDir%\Output\spatial_data" mkdir "%baseDir%\Output\spatial_data"
 
+REM Create Auth folder
+if not exist "Auth" mkdir "Auth"
+
 echo Folders created successfully.
 
 :end

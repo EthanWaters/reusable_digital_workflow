@@ -5,6 +5,7 @@ reports/
 data/
 backup/
 Output/
+Auth/
 New Database Raw Export/
 version.txt
 pre-push - Copy.bat

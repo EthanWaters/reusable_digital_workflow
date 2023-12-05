@@ -24,7 +24,7 @@ This section defines several terms utilized throughout the documentation to ensu
   
   
 ## 2.0 Installation & Requirements
-Docker is utilised to ensure that the client environment remains consistent with the dev environment, see section 2.1 for instructions. See section 2.2 & 2.3 for details of all packages installed in dev environment.
+This workflow is designed to be run on a server with in conjunction with an automate script. It may be easier to run source code in place of the container for one time uses. Docker is utilised to ensure that the client environment remains consistent with the dev environment, see section 2.1 for instructions. See section 2.2 & 2.3 for details of all packages installed in dev environment.  
 
 This requires Docker version 24.0.6:https://www.docker.com/products/docker-desktop/
 
@@ -46,7 +46,7 @@ docker push ghcr.io/ethanwaters/reusable_digital_workflow:latest
 
 ### 2.1.2 How to run code
 
-Do NOT use anything other than the latest version. Assume previous versions contain errors unless specifically labelled stable. 
+Do NOT use anything other than the latest version. Assume previous versions contain errors unless specifically labelled stable. Double click the setup.bat file to ensure correct file structure is created. Follow commands below. 
 
 ```bash
 #SPECIFY DESIRED VERSION BY REPLACEING "latest"

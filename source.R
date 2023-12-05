@@ -1425,7 +1425,7 @@ assign_raster_pixel_to_sites <- function(kml_data, layer_names_vec, crs, raster_
   }
   
   # Define the increase amount in both x and y directions. 
-  increase_amount <- 0.005
+  increase_amount <- 0.003
   expanded_bboxs <- setNames(lapply(expanded_extent, function(i) {
     
     original_extent <- i
@@ -1477,7 +1477,7 @@ assign_raster_pixel_to_sites <- function(kml_data, layer_names_vec, crs, raster_
     }
     
     # Set site numbers to NA if they are more than 300m away.
-    is_within_required_distance <- min_distances > 500
+    is_within_required_distance <- min_distances > 300
     min_distance_site_numbers[is_within_required_distance] <- -1
     values(raster) <- min_distance_site_numbers
     names(raster) <- c("Nearest Site")
@@ -1715,6 +1715,34 @@ xth_smallest <- function(x, x_values) {
   output[1,] <- c(xth_smallest_indices, xth_smallest_values)
   return(output)
   
+}
+
+
+send_error_email <- function(oauth_path, to_email, content, subject = "Fatal Error in CCIP Control Data Workflow") {
+  tryCatch({
+    if (file.info(oauth_path)$isdir) {
+      files <- list.files(oauth_path, full.names = TRUE)
+      if (length(files) > 0) {
+        file_info <- file.info(files)
+        oauth_path <- files[which.max(file_info$mtime)]
+      }
+    }
+    auth <- fromJSON(oauth_path)
+    gmail_auth(scope = "compose", id = auth$installled$client_id, secret = auth$installled$client_secret)
+    # Format email with the error message
+    error_message <- paste("Error in R Script:\n", conditionMessage(content))
+    mime <- create_mime(
+      To(to_email),
+      Subject(subject),
+      body = error_message
+    )
+    
+    # Send the email
+    send_message(mime)
+    cat("Error email sent.\n")
+  }, error = function(e) {
+    print("Error email failed.\n")
+  })
 }
 
 
