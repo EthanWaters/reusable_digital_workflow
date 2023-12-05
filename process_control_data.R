@@ -123,7 +123,7 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     
     # save metadata json file 
     json_data <- toJSON(metadata_json_output, pretty = TRUE)
-    writeLines(json_data, paste(configuration$metadat$output_directory$reports,"\\Control_Data_Report_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = ""))
+    writeLines(json_data, paste(configuration$metadata$output_directory$reports,"\\Control_Data_Report_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = ""))
     
     transformed_data_df <- transform_data_structure(new_data_df, configuration$mappings$transformations, configuration$mappings$new_fields)
     if(is_legacy_data_available){

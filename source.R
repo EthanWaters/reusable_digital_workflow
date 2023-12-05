@@ -1225,8 +1225,59 @@ set_data_type <- function(data_df, mapping){
   return(output_df)
 }
   
+update_config_file <- function(data_df, config_path, json_file_path) {
+  
+  config <- fromJSON(config_path)
+  data_colnames <- colnames(data_df)
+  expected_source_names <- config$mappings$source_field
+  
+  if (!all(data_colnames %in% expected_source_names)) {
+    warning <- "Column names in 'data_df' do not match the expected source names. New json config file will be created with most appropriate mapping. Please check after process is complete."
+    warning(warning)
+    send_error_email("Auth\\", "ethankwaters@gmail", warning, "CCIP Reusable Workflow - Config File out-of-date")
+    closest_matches <- get_closest_matches(data_colnames, expected_source_names)
+    new_json_data <- config
+    
+    # Replace the original source values in new_json_data with closest matches
+    for (i in seq_len(ncol(closest_matches))) {
+      new_input <- closest_matches[1, i]
+      closest_match <- closest_matches[2, i]
+      index <- which(new_json_data$mappings$source_field[i] %in% closest_match)
+      if (!is.na(index) ) {
+        new_json_data$mappings$source_field[index] <- new_input
+      }
+    }
+    
+    json_data <- toJSON(new_json_data, pretty = TRUE)
+    directory <- dirname(config_path)
+    writeLines(json_data, file.path(directory,paste(config$metadata$control_data_type, format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = "")))
+    
+  }
+}
 
-transform_data_structure <- function(data_df, mappings, new_fields){
+map_new_fields <- function(data_df, new_fields){
+  for (i in seq_len(nrow(new_fields))) {
+    new_field <- new_fields$field[i]
+    default_value <- new_fields$default[i]
+    position <- new_fields$position[i]
+    data_df[, position] <- default_value
+    colnames(data_df)[position] <- new_field
+  }
+}  
+  
+map_all_fields <- function(data_df, transformed_df, mappings){
+  closest_matches <- get_closest_matches(colnames(data_df), mappings$source_field)
+  for (i in seq_len(ncol(closest_matches))) {
+    index <- match(closest_matches[2,i], mappings$source_field)
+    position <- mappings$position[index]
+    mapped_name <- mappings$target_field[index]
+    colnames(transformed_df)[position] <- mapped_name 
+    transformed_df[, position] <- data_df[[closest_matches[1,i]]]
+  }
+  
+}
+
+map_data_structure <- function(data_df, mappings, new_fields){
   
   transformed_df <- data.frame(matrix(ncol = nrow(mappings) + nrow(new_fields), nrow = nrow(data_df)))
   data_colnames <- colnames(data_df)
@@ -1238,23 +1289,9 @@ transform_data_structure <- function(data_df, mappings, new_fields){
     return(transformed_df)
   }
 
-  for (i in seq_len(nrow(new_fields))) {
-    new_field <- new_fields$field[i]
-    default_value <- new_fields$default[i]
-    position <- new_fields$position[i]
-    transformed_df[, position] <- default_value
-    colnames(transformed_df)[position] <- new_field
-  }
-  closest_matches <- get_closest_matches(colnames(data_df), mappings$source_field)
-  for (i in seq_len(ncol(closest_matches))) {
-    index <- match(closest_matches[2,i], mappings$source_field)
-    position <- mappings$position[index]
-    mapped_name <- mappings$target_field[index]
-    colnames(transformed_df)[position] <- mapped_name 
-    transformed_df[, position] <- data_df[[closest_matches[1,i]]]
-  }
+  transformed_df <- map_new_fields(transformed_df, new_fields)
+  transformed_df <- map_all_fields(data_df, transformed_df, mappings)
   
- 
   return(transformed_df)
 }
 
