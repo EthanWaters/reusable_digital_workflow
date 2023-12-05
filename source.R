@@ -1304,7 +1304,7 @@ save_spatial_as_raster <- function(output_path, serialized_spatial_path){
     for(i in 1:length(site_regions)){
       file_name <- names(site_regions[i])
       modified_file_name <- gsub("/", "_", file_name)
-      if (file.exists(output_path) && file.isFile(output_path)){
+      if (file.info(output_path)$isdir) {
         file.remove(output_path)
         output_path <- dirname(output_path)
       }
@@ -1354,7 +1354,7 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_s
   } 
   if(save_spatial_as_raster == 1){
     directory_path <- spatial_path
-    if (file.exists(directory_path) && file.isFile(directory_path)) {
+    if (file.info(file_path)$isdir) {
       file.remove(file_path)
       directory_path <- dirname(file_path)
     }
