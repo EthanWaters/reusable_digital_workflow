@@ -1355,16 +1355,37 @@ save_spatial_as_raster <- function(output_path, serialized_spatial_path){
   })
 }
 
-assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_site_rasters=1, spatial_path=NULL, raster_size=0.0005, x_closest=1, is_standardised=0, save_spatial_as_raster=0){
+
+get_spatial_differences <- function(kml_data, previous_kml_data){
+  
+}
+
+
+assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_site_rasters=1, kml_path_previous=NULL, spatial_path=NULL, raster_size=0.0005, x_closest=1, is_standardised=0, save_spatial_as_raster=0){
   # Assign nearest sites to manta tows with method developed by Cameron Fletcher
   
   kml_layers <- st_layers(kml_path)
-  layer_names <- kml_layers["name"]
   layer_names_vec <- unlist(kml_layers["name"])
   kml_data <- setNames(lapply(layer_names_vec, function(i)  st_read(kml_path, layer = i)), layer_names_vec)
   crs <- projection(kml_data[[1]])
   sf_use_s2(FALSE)
-  
+
+  # compare two kml files and return the geometry collections that have been 
+  # updated 
+  update_kml <- FALSE
+  if(!is.null(kml_path_previous)){
+    previous_kml_layers <- st_layers(kml_path_previous)
+    previous_layer_names_vec <- unlist(previous_kml_layers["name"])
+    previous_kml_data <- setNames(lapply(previous_layer_names_vec, function(i)  st_read(kml_path_previous, layer = i)), previous_layer_names_vec)
+    previous_crs <- projection(previous_kml_data[[1]])
+    if(previous_crs == crs){
+      kml_data_to_update <- get_spatial_differences(kml_data, previous_kml_data)
+      if(!is.na(kml_data_to_update) | !is.null(kml_data_to_update)){
+        update_kml <- TRUE
+      }
+    } 
+  }
+
   # Acquire the directory to store raster outputs and the most recent spatial 
   # file that was saved as an R binary
   if(!is.null(spatial_path)){
