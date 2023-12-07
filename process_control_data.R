@@ -66,17 +66,18 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     # instead of calculating it again as this is by far the most time consuming 
     # part of the process. 
     serialised_spatial_path <- most_recent_serialised_spatial_path
+    calculate_site_rasters <- 1
     if (is.null(kml_path)) {
       kml_path <- most_recent_kml_path
-      if(kml_path == previous_report$inputs$kml_path){
-        calculate_site_rasters <- 0
-      } else {
+      tryCatch({
+        if(kml_path == previous_report$inputs$kml_path){
+          calculate_site_rasters <- 0
+          print("Previous report does not provide path of utilised Kml file")
+        } 
+      }, error = function(e) {
         calculate_site_rasters <- 1
-      }
-    } else {
-      calculate_site_rasters <- 1
-      serialised_spatial_path <- NULL
-    }    
+      })
+    } 
     
     new_data_df <- rio::import(new_path)
     if(is_legacy_data_available){

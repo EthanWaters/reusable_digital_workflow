@@ -1320,6 +1320,11 @@ get_closest_matches <- function(sources, targets){
   return(transformed_sources)
 }
 
+extract_dates <- function(input){
+  dates <- str_extract(input, "\\d{8}_\\d{6}")
+  date_objects <- parse_date_time(dates, orders = c("Ymd_HMS"))
+  return(date_objects)
+}
 
 find_recent_file <- function(directory_path, keyword, file_extension) {
   # Get a list of files in the directory
@@ -1328,9 +1333,7 @@ find_recent_file <- function(directory_path, keyword, file_extension) {
     cat("No matching files found.\n")
     return(NULL)
   }
-  
-  dates <- str_extract(files, "\\d{8}_\\d{6}")
-  date_objects <- parse_date_time(dates, orders = c("Ymd_HMS"))
+  date_objects <- extract_dates(files)
   most_recent_index <- which.max(date_objects)
   return(files[most_recent_index])
 }
