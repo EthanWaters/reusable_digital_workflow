@@ -1348,7 +1348,7 @@ save_spatial_as_raster <- function(output_path, serialized_spatial_path){
         file.remove(output_path)
         output_path <- dirname(output_path)
       }
-      writeRaster(site_regions[[i]], filename = paste(output_path,"\\",modified_file_name,".tif", sep=""), format = "GTiff", overwrite = TRUE)
+      writeRaster(site_regions[[i]], filename = file.path(output_path, paste(modified_file_name,".tif", sep=""), format = "GTiff", overwrite = TRUE))
     }
   }, error = function(e) {
     cat("An error occurred while saving", modified_file_name, "\n")
@@ -1365,18 +1365,28 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_s
   crs <- projection(kml_data[[1]])
   sf_use_s2(FALSE)
   
+  # Acquire the directory to store raster outputs and the most recent spatial 
+  # file that was saved as an R binary
+  if(!is.null(spatial_path)){
+    if(file.info(spatial_path)$isdir){
+      spatial_directory <- spatial_path
+      spatial_file <- find_recent_file(spatial_directory, keyword, "rds")
+    } else {
+      spatial_file <- spatial_path
+      spatial_directory <- dirname(spatial_path)
+    }
+  }
   # if loading data fails calculate site regions
   load_site_rasters_failed <- FALSE
-  if(!calculate_site_rasters){
+  if(!calculate_site_rasters && !is.null(spatial_path)){
     tryCatch({
-      file <- find_recent_file(spatial_directory, keyword, "rds")
-      site_regions <- readRDS(file)
+      site_regions <- readRDS(spatial_file)
     }, error = function(e) {
       print(paste("Error site regions could not be loaded. Site regions will be calculated instead.", conditionMessage(e)))
       load_site_rasters_failed <- TRUE
     })
   }
-  
+
   if(calculate_site_rasters | load_site_rasters_failed){
     kml_data_simplified <- simplify_reef_polyogns_rdp(kml_data)
     site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
@@ -1385,21 +1395,19 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_s
       if (!dir.exists(spatial_directory)) {
         dir.create(spatial_directory, recursive = TRUE)
       }
-      saveRDS(site_regions, paste(spatial_directory, "\\site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = ""), row.names = FALSE)
+      saveRDS(site_regions, file.path(spatial_directory, paste("site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = "")), row.names = FALSE)
     }, error = function(e) {
       print(paste("Error site regions raster data - Data saved in source directory", conditionMessage(e)))
       saveRDS(site_regions, paste(keyword,"site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = ""))
     })
     
   } 
-  if(save_spatial_as_raster == 1){
-    directory_path <- spatial_path
-    if (file.info(file_path)$isdir) {
-      file.remove(file_path)
-      directory_path <- dirname(file_path)
+  if(save_spatial_as_raster == 1 && !is.null(spatial_path)){
+    raster_output <- file.path(spatial_directory, "rasters")
+    if (!dir.exists(raster_output)) {
+      dir.create(raster_output, recursive = TRUE)
     }
-    directory_path <- paste0(directory_path, "\\rasters", sep="")
-    save_spatial_as_raster(output_path, serialized_spatial_path)
+    save_spatial_as_raster(raster_output, spatial_file)
   }
  
   
