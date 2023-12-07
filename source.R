@@ -1354,34 +1354,46 @@ save_spatial_as_raster <- function(output_path, serialized_spatial_path){
   })
 }
 
-
-extract_reef_ids <- function(named_list, pattern) {
-  sapply(str_extract_all(named_list, reef_id_pattern), toString)
-}
-
 get_spatial_differences <- function(kml_data, previous_kml_data){
-  reef_id_pattern <- "^(1[0-9]|2[0-9]|10)-\\d{3}[a-z]?$"
+  spatial_differences <- list()
+  reef_id_pattern <- "\\b(1[0-9]|2[0-9]|10)-\\d{3}[a-z]?\\b"
 
   # Extract Reef IDs from each list
-  reef_ids_list1 <- extract_reef_ids(list1)
-  reef_ids_list2 <- extract_reef_ids(list2)
+  reef_ids <- sapply(str_extract(names(kml_data), reef_id_pattern), toString)
+  reef_ids_previous <- sapply(str_extract(names(previous_kml_data), reef_id_pattern), toString)
   
-  common_reef_ids <- intersect(reef_ids_list1, reef_ids_list2)
-  
-  for (reef_id in common_reef_ids) {
-    index_list1 <- which(reef_ids_list1 == reef_id)
-    index_list2 <- which(reef_ids_list2 == reef_id)
+  # Iterate through all IDS that exist in the new KML file. Any that have 
+  # changed or do not exist in the previous data set will be added to the new 
+  # one. It is intentional that cull sites that have been removed are not 
+  # included, as a result of the general philosophy outlined in the documentation
+  for (reef_id in reef_ids) {
+    index_reefs <- which(reef_ids == reef_id)
+    index_reefs_previous <- which(reef_ids_previous == reef_id)
     
-    if (length(index_list1) > 0 && length(index_list2) > 0) {
-      reef_name_list1 <- list1[index_list1]
-      reef_name_list2 <- list2[index_list2]
+    if (length(index_reefs) > 0 && length(index_reefs_previous) > 0) {
+      reef <- kml_data[[index_reefs]]
+      reef_name <- names(kml_data)[[index_reefs]]
+      reef_previous <- previous_kml_data[[index_reefs_previous]]
+      reef_name_previous <- names(previous_kml_data)[[index_reefs_previous]]
       
-      cat("Reef ID:", reef_id, "\n")
-      cat("List 1:", reef_name_list1, "\n")
-      cat("List 2:", reef_name_list2, "\n")
-      cat("\n")
+      # If comparison fails or does not indicate that reefs are identical then 
+      # add reef to list of changed reefs.
+      is_unchanged <- FALSE
+      tryCatch({
+        if (all(dim(reef) == dim(reef_previous))) {
+          is_unchanged <- (all(reef_previous == reef)) && (reef_name_previous == reef_name)
+        }
+        if(!is_unchanged){
+          name <- names(kml_data)[[index_reefs]]
+          spatial_differences[[name]] <- kml_data[[index_reefs]]
+        }
+      }, error = function(e) {
+        name <- names(kml_data)[[index_reefs]]
+        spatial_differences[[name]] <- kml_data[[index_reefs]]
+      })
     }
   }
+  return(spatial_differences)
 }
 
 
