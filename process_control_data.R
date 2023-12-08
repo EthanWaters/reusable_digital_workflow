@@ -37,9 +37,11 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     most_recent_leg_path <- find_recent_file(configuration$metadat$output_directory$control_data, configuration$metadat$control_data_type, "csv")
     most_recent_new_path <- find_recent_file(configuration$metadat$input_directory$control_data, configuration$metadat$control_data_type, "csv")
     most_recent_kml_path <- find_recent_file(configuration$metadat$input_directory$spatial_data, configuration$metadat$control_data_type, "kml")
-    most_recent_serialised_spatial_path <- find_recent_file(configuration$metadat$output_directory$spatial_data, "site_regions", "rds")
     
     previous_report <- fromJSON(most_recent_report_path)
+    
+    previous_kml_path <- previous_report$inputs$kml_path
+    serialised_spatial_path <- previous_report$outputs$serialized_data
     
     if (is.null(new_path)) {
       new_path <- most_recent_new_path
@@ -65,12 +67,11 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     # will be a saved serialised version of the raster data that can be utilised 
     # instead of calculating it again as this is by far the most time consuming 
     # part of the process. 
-    serialised_spatial_path <- most_recent_serialised_spatial_path
     calculate_site_rasters <- 1
     if (is.null(kml_path)) {
       kml_path <- most_recent_kml_path
       tryCatch({
-        if(kml_path == previous_report$inputs$kml_path){
+        if(kml_path == previous_kml_path){
           calculate_site_rasters <- 0
           print("Previous report does not provide path of utilised Kml file")
         } 

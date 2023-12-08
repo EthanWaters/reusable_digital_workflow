@@ -1409,7 +1409,7 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_s
   # compare two kml files and return the geometry collections that have been 
   # updated 
   update_kml <- FALSE
-  if(!is.null(kml_path_previous)){
+  if(!is.null(kml_path_previous) && !is.null(spatial_path)){
     previous_kml_layers <- st_layers(kml_path_previous)
     previous_layer_names_vec <- unlist(previous_kml_layers["name"])
     previous_kml_data <- setNames(lapply(previous_layer_names_vec, function(i)  st_read(kml_path_previous, layer = i)), previous_layer_names_vec)
@@ -1426,8 +1426,7 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_s
   # file that was saved as an R binary
   if(!is.null(spatial_path)){
     if(file.info(spatial_path)$isdir){
-      spatial_directory <- spatial_path
-      spatial_file <- find_recent_file(spatial_directory, keyword, "rds")
+      print("Invalid path to serialized spatial data. Must be a file not a directory")
     } else {
       spatial_file <- spatial_path
       spatial_directory <- dirname(spatial_path)
@@ -1444,10 +1443,27 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_s
     })
   }
 
-  if(calculate_site_rasters | load_site_rasters_failed){
-    kml_data_simplified <- simplify_reef_polyogns_rdp(kml_data)
-    site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
+  if(calculate_site_rasters){
+    if(!update_kml | load_site_rasters_failed){
+      kml_data_simplified <- simplify_reef_polyogns_rdp(kml_data)
+      site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
+    } else {
+      kml_data_simplified <- simplify_reef_polyogns_rdp(kml_data_to_update)
+      updated_layer_names_vec <- names(kml_data_simplified)
+      updated_site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, updated_layer_names_vec, crs, raster_size, x_closest, is_standardised)
+      
+      reef_id_pattern <- "\\b(1[0-9]|2[0-9]|10)-\\d{3}[a-z]?\\b"
+      site_regions_reef_ids <- sapply(str_extract(names(kml_data), reef_id_pattern), toString)
+      updated_site_regions_reef_ids <- sapply(str_extract(names(kml_data_to_update), reef_id_pattern), toString)
+      
+      index_reefs <- match(updated_site_regions_reef_ids, site_regions_reef_ids)
+      site_regions <- site_regions[-index_reefs]
+      site_regions <- c(site_regions, updated_site_regions)
+      site_regions <- site_regions[order(names(site_regions))]
+    }
+    # The is for testing purposes 
     assign("site_regions", site_regions, envir = .GlobalEnv)
+    
     tryCatch({
       if (!dir.exists(spatial_directory)) {
         dir.create(spatial_directory, recursive = TRUE)
