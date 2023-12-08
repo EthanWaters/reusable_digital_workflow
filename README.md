@@ -470,20 +470,29 @@ Output locations are defined in the configuration files and will be created if t
 - **Description:**
   - This function transforms the structure of the input data frame based on provided mappings and new fields. It maps existing columns, adds new fields with default values if necessary, and returns the transformed data frame.
 
-#### Function: `assign_nearest_method_c(kml_data, data_df, layer_names_vec, crs, raster_size=0.0005, x_closest=1, is_standardised=1, save_rasters=1)`
-- **Inputs:**
-  - `kml_data`: KML data containing reef polygons.
-  - `data_df`: Data frame containing manta tow entries.
-  - `layer_names_vec`: Vector of layer names.
-  - `crs`: Coordinate Reference System.
-  - `raster_size`: Size of the raster cells. Can specify resolution with value less than 1 or can specify the pixel length of the raster extent. 
-  - `x_closest`: Assign nth closest site to point. Typically in production only the closest site is required, however for research purposes during development it was beneficial for analysis. 
-  - `is_standardised`: Flag indicating whether to standardize extents to the largest one in data provided.
-  - `save_rasters`: Flag indicating whether to save generated rasters.
-- **Outputs:**
+#### Function: `assign_nearest_site_method_c`
+- **Inputs**:
+  - `data_df`: Data frame containing observations.
+  - `kml_path`: Path to the KML file containing reef polygons.
+  - `keyword`: Keyword used in file naming convention.
+  - `calculate_site_rasters`: Flag indicating whether to calculate site regions or load precomputed data.
+  - `kml_path_previous`: Path to the previous version of the KML file for comparison (optional).
+  - `spatial_path`: Path to the serialized spatial data file (optional).
+  - `raster_size`: Size of the raster cells. Can specify resolution with a value less than 1 or specify the pixel length of the raster extent.
+  - `x_closest`: Assign nth closest site to point. Typically, in production, only the closest site is required; however, during development, multiple closest sites can be beneficial for analysis.
+  - `is_standardised`: Flag indicating whether to standardize extents to the largest one in the provided data.
+  - `save_spatial_as_raster`: Flag indicating whether to save the generated spatial data as individual raster files for analysis with traditional geospatial program such as Archgis and QGIS (optional).
+- **Outputs**:
   - `updated_pts`: Updated data frame with the nearest site information added.
-- **Description:**
-  - This function assigns nearest sites to manta tow entries using a method developed by Dr. Cameron Fletcher. It generates rasters, assigns nearest sites, and updates the input data frame with the nearest site information.
+- **Description**:
+  - Reads the KML file containing reef polygons and extracts layer information.
+  - Compares the current KML file with a previous version, if provided, and identifies the geometries that have require updating.
+  - Loads or calculates site regions based on the KML data.
+  - Saves the site regions as R binary files for future use.
+  - Optionally, saves the spatial data as raster files for visualization.
+  - Retrieves the centroids of manta tow entries and assigns the nearest site information based on the calculated site regions.
+  - Flags any errors encountered during the process in the output data frame.
+
 
 #### Function: `get_centroids(data_df, crs, precision=0)`
 - **Inputs:**
