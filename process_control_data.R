@@ -33,10 +33,10 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     
     configuration <- fromJSON(configuration_path)
     
-    most_recent_report_path <- find_recent_file(configuration$metadat$output_directory$reports, configuration$metadat$control_data_type, "json")
-    most_recent_leg_path <- find_recent_file(configuration$metadat$output_directory$control_data, configuration$metadat$control_data_type, "csv")
-    most_recent_new_path <- find_recent_file(configuration$metadat$input_directory$control_data, configuration$metadat$control_data_type, "csv")
-    most_recent_kml_path <- find_recent_file(configuration$metadat$input_directory$spatial_data, configuration$metadat$control_data_type, "kml")
+    most_recent_report_path <- find_recent_file(configuration$metadata$output_directory$reports, configuration$metadata$control_data_type, "json")
+    most_recent_leg_path <- find_recent_file(configuration$metadata$output_directory$control_data, configuration$metadata$control_data_type, "csv")
+    most_recent_new_path <- find_recent_file(configuration$metadata$input_directory$control_data, "Surveillance", "csv")
+    most_recent_kml_path <- find_recent_file(configuration$metadata$input_directory$spatial_data, "sites", "kml")
     
     if(!is.null(most_recent_report_path)){
       previous_report <- fromJSON(most_recent_report_path)

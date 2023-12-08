@@ -1327,7 +1327,7 @@ extract_dates <- function(input){
 
 find_recent_file <- function(directory_path, keyword, file_extension) {
   # Get a list of files in the directory
-  files <- list.files(directory_path, pattern = paste0(keyword, ".*\\.", file_extension), full.names = TRUE)
+  files <- list.files(file.path(getwd(),directory_path), pattern = paste0(keyword, ".*\\.", file_extension), full.names = TRUE)
   if (length(files) == 0) {
     cat("No matching files found.\n")
     return(NULL)

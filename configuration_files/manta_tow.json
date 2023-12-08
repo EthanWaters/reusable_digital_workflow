@@ -43,7 +43,7 @@
         },
         {
           "target_field": "Reef ID",
-          "source_field": "Reef label",
+          "source_field": "Reef labe",
           "position": 6
         },
         {
