@@ -1320,8 +1320,12 @@ get_closest_matches <- function(sources, targets){
 }
 
 extract_dates <- function(input){
+  input <- sapply(input, basename)
   dates <- str_extract(input, "\\d{8}_\\d{6}")
-  date_objects <- parse_date_time(dates, orders = c("Ymd_HMS"))
+  dates <- ifelse(is.na(dates), str_extract(input, "\\d{4}_\\d{1,2}_\\d{1,2}_\\d{1,2}_\\d{1,2}(?:_\\d{1,2}(?:_\\d{1,2})?)?_[APMapm]{2}"), dates)
+  dates <- ifelse(is.na(dates), str_extract(input, "\\d{8}"), dates)
+  dates <- ifelse(is.na(dates), str_extract(input, "\\d{6}"), dates)
+  date_objects <- parse_date_time(dates, orders = c("Ymd_HMS", "Y_m_d_H_M_%p", "Y_m_d_H_M", "Y_m_d_H_M_S_%p", "Ymd", "ymd"))
   return(date_objects)
 }
 
