@@ -40,20 +40,23 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     
     if(!is.null(most_recent_report_path)){
       previous_report <- fromJSON(most_recent_report_path)
-    }
-    
-    previous_kml_path <- previous_report$inputs$kml_path
-    serialised_spatial_path <- previous_report$outputs$serialized_data
-    if (!file.exists(previous_kml_path)) {
-      previous_kml_path <- NULL
-    }
-    if (!file.exists(serialised_spatial_path)) {
-      serialised_spatial_path <- NULL
+      previous_kml_path <- previous_report$inputs$kml_path
+      serialised_spatial_path <- previous_report$outputs$serialized_data
+      if (!file.exists(previous_kml_path)) {
+        previous_kml_path <- NULL
+      }
+      if (!file.exists(serialised_spatial_path)) {
+        serialised_spatial_path <- NULL
+      }
+      
     }
     
     
     if (is.null(new_path)) {
       new_path <- most_recent_new_path
+    }
+    if (is.null(leg_path)) {
+      leg_path <- most_recent_leg_path
     }
     
     # Attempt to use legacy data where possible. 

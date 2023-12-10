@@ -856,7 +856,7 @@ verify_integers_positive <- function(data_df) {
   # as such. All relevant columns were set as integers in the set_data_type 
   # function
   
-    is_integer <- is.integer(data_df[1,])
+    is_integer <- sapply(output_df[1,],is.integer)
     if(any(is_integer)){
       col_check <- apply(data_df[,is_integer], 2, function(x) x < 0)
       col_check <- ifelse(is.na(col_check), FALSE, col_check)
@@ -1400,6 +1400,10 @@ get_spatial_differences <- function(kml_data, previous_kml_data){
   return(spatial_differences)
 }
 
+compute_checksum <- function(data) {
+  digest(data, algo = "md5", serialize = TRUE)
+}
+
 
 assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_site_rasters=1, kml_path_previous=NULL, spatial_path=NULL, raster_size=0.0005, x_closest=1, is_standardised=0, save_spatial_as_raster=0){
   # Assign nearest sites to manta tows with method developed by Cameron Fletcher
@@ -1409,7 +1413,8 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_s
   kml_data <- setNames(lapply(layer_names_vec, function(i)  st_read(kml_path, layer = i)), layer_names_vec)
   crs <- projection(kml_data[[1]])
   sf_use_s2(FALSE)
-
+  checksum <- compute_checksum(kml_data)
+  
   # compare two kml files and return the geometry collections that have been 
   # updated 
   update_kml <- FALSE
@@ -1418,12 +1423,18 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_s
     previous_layer_names_vec <- unlist(previous_kml_layers["name"])
     previous_kml_data <- setNames(lapply(previous_layer_names_vec, function(i)  st_read(kml_path_previous, layer = i)), previous_layer_names_vec)
     previous_crs <- projection(previous_kml_data[[1]])
-    if(previous_crs == crs){
-      kml_data_to_update <- get_spatial_differences(kml_data, previous_kml_data)
-      if(!is.na(kml_data_to_update) | !is.null(kml_data_to_update)){
-        update_kml <- TRUE
-      }
-    } 
+    previous_checksum <- compute_checksum(previous_kml_data)
+    if(checksum != previous_checksum){
+      calculate_site_rasters <- 1
+      if(previous_crs == crs){
+        kml_data_to_update <- get_spatial_differences(kml_data, previous_kml_data)
+        if(!is.na(kml_data_to_update) | !is.null(kml_data_to_update)){
+          update_kml <- TRUE
+        }
+      } 
+    } else {
+      calculate_site_rasters <- 0
+    }
   }
 
   # Acquire the directory to store raster outputs and the most recent spatial 
@@ -1497,7 +1508,7 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_s
     }
     reef_pts <- data_df[is_contained,]
     nearest_site_manta_data <- raster::extract(site_regions[[i]], reef_pts)
-    updated_pts[is_contained, c("Nearest Site",  "Distance to Site")] <- nearest_site_manta_data
+    updated_pts[is_contained, c("Nearest Site")] <- nearest_site_manta_data
   }
   updated_pts <- st_drop_geometry(updated_pts)
   is_nearest_site_has_error <- is.na(updated_pts$`Nearest Site`) | ifelse(is.na(updated_pts$`Nearest Site` == -1),FALSE,updated_pts$`Nearest Site` == -1)
@@ -1607,12 +1618,12 @@ assign_raster_pixel_to_sites <- function(kml_data, layer_names_vec, crs, raster_
     values(raster) <- min_distance_site_numbers
     names(raster) <- c("Nearest Site")
     
-    distance_raster <- raster
-    values(distance_raster) <- min_distances
-    names(distance_raster) <- c("Distance to Site")
-    
-    site_region <- brick(raster,distance_raster)
-    site_regions[[i]] <- site_region
+    # distance_raster <- raster
+    # values(distance_raster) <- min_distances
+    # names(distance_raster) <- c("Distance to Site")
+    # 
+    # site_region <- brick(raster,distance_raster)
+    site_regions[[i]] <- raster
   }
   
   return(site_regions)
