@@ -42,13 +42,15 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
       previous_report <- fromJSON(most_recent_report_path)
       previous_kml_path <- previous_report$inputs$kml_path
       serialised_spatial_path <- previous_report$outputs$serialized_data
+      previous_kml_path <- NULL
+      serialised_spatial_path <- NULL
+    } else {
       if (!file.exists(previous_kml_path)) {
         previous_kml_path <- NULL
       }
       if (!file.exists(serialised_spatial_path)) {
         serialised_spatial_path <- NULL
       }
-      
     }
     
     
@@ -102,6 +104,7 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
         legacy_df["error_flag"] <- 0
       }
     }
+    
     # Check if the new data has an authoritative ID. All rows of a database export 
     # will have one and no rows from a powerBI export will. There should be no 
     # scenario where only a portion of rows have IDs. Even if an ID is present it 
@@ -138,6 +141,8 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     # save metadata json file 
     json_data <- toJSON(metadata_json_output, pretty = TRUE)
     writeLines(json_data, paste(configuration$metadata$output_directory$reports,"\\Control_Data_Report_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = ""))
+    
+    update_config_file(new_data_df, configuration_path)
     
     transformed_data_df <- transform_data_structure(new_data_df, configuration$mappings$transformations, configuration$mappings$new_fields)
     if(is_legacy_data_available){

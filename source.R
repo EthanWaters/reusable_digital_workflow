@@ -38,7 +38,7 @@ import_data <- function(data, configuration){
 
 contribute_to_metadata_report <- function(key, data, parent_key=NULL, report_path=NULL){
   if(is.null(report_path)){
-    report_path <- find_recent_file("Output\\reports", "report", "json")
+    report_path <- find_recent_file("Output\\reports", "Report", "json")
   }
   if (file.exists(report_path)) {
     report <- fromJSON(report_path)
@@ -1224,11 +1224,11 @@ set_data_type <- function(data_df, mapping){
   return(output_df)
 }
   
-update_config_file <- function(data_df, config_path, json_file_path) {
+update_config_file <- function(data_df, config_path) {
   
   config <- fromJSON(config_path)
   data_colnames <- colnames(data_df)
-  expected_source_names <- config$mappings$source_field
+  expected_source_names <- config$mappings$transformations$source_field
   
   if (!all(data_colnames %in% expected_source_names)) {
     warning <- "Column names in 'data_df' do not match the expected source names. New json config file will be created with most appropriate mapping. Please check after process is complete."
@@ -1241,15 +1241,16 @@ update_config_file <- function(data_df, config_path, json_file_path) {
     for (i in seq_len(ncol(closest_matches))) {
       new_input <- closest_matches[1, i]
       closest_match <- closest_matches[2, i]
-      index <- which(new_json_data$mappings$source_field[i] %in% closest_match)
+      index <- which(new_json_data$mappings$transformations$source_field %in% closest_match)
       if (!is.na(index) ) {
-        new_json_data$mappings$source_field[index] <- new_input
+        new_json_data$mappings$transformations$source_field[index] <- new_input
+        contribute_to_metadata_report("Config Mapping Update", paste(closest_match, "updated to", new_input), parent_key = "Warning")
       }
     }
     
     json_data <- toJSON(new_json_data, pretty = TRUE)
     directory <- dirname(config_path)
-    writeLines(json_data, file.path(directory,paste(config$metadata$control_data_type, format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = "")))
+    writeLines(json_data, file.path(directory,paste(config$metadata$control_data_type, "_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = "")))
     
   }
 }
