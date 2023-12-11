@@ -1423,6 +1423,18 @@ compute_checksum <- function(data) {
 assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_site_rasters=1, kml_path_previous=NULL, spatial_path=NULL, raster_size=0.0005, x_closest=1, is_standardised=0, save_spatial_as_raster=0){
   # Assign nearest sites to manta tows with method developed by Cameron Fletcher
   
+  # Acquire the directory to store raster outputs and the most recent spatial 
+  # file that was saved as an R binary
+  if(!is.null(spatial_path)){
+    if(file.info(spatial_path)$isdir){
+      print("Invalid path to serialized spatial data. Must be a file not a directory")
+      spatial_file <- NULL
+      spatial_directory <- spatial_path
+    } else {
+      spatial_file <- spatial_path
+      spatial_directory <- dirname(spatial_path)
+    }
+  }
   
   # if loading data fails calculate site regions
   load_site_rasters_failed <- TRUE
@@ -1436,27 +1448,21 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_s
       print(paste("Error site regions could not be loaded. Site regions will be calculated instead.", conditionMessage(e)))
     })
   }
-  
+ 
   if(load_site_rasters_failed || calculate_site_rasters){
-    kml_layers <- st_layers(kml_path)
-    layer_names_vec <- unlist(kml_layers["name"])
-    kml_data <- setNames(lapply(layer_names_vec, function(i)  st_read(kml_path, layer = i)), layer_names_vec)
-    crs <- projection(kml_data[[1]])
-    sf_use_s2(FALSE)
-    checksum <- compute_checksum(kml_data)
-  }
-  
-  # Acquire the directory to store raster outputs and the most recent spatial 
-  # file that was saved as an R binary
-  if(!is.null(spatial_path)){
-    if(file.info(spatial_path)$isdir){
-      print("Invalid path to serialized spatial data. Must be a file not a directory")
-      spatial_file <- NULL
-      spatial_directory <- spatial_path
-    } else {
-      spatial_file <- spatial_path
-      spatial_directory <- dirname(spatial_path)
-    }
+      kml_layers <- st_layers(kml_path)
+      layer_names_vec <- unlist(kml_layers["name"])
+      kml_data <- Null
+      tryCatch({
+        plan(multisession)
+        future_layers <- future_map(layer_names_vec, ~ st_read(kml_path, layer = .x))
+        kml_data <- setNames(future_layers, layer_names_vec)
+      }, error = function(e) {
+        kml_data <- setNames(lapply(layer_names_vec, function(i)  st_read(kml_path, layer = i)), layer_names_vec)
+      })
+      crs <- projection(kml_data[[1]])
+      sf_use_s2(FALSE)
+      checksum <- compute_checksum(kml_data)
   }
   
   # compare two kml files and return the geometry collections that have been 
