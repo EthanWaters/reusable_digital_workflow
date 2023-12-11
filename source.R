@@ -28,9 +28,9 @@ import_data <- function(data, configuration){
       },
       
       error=function(cond) {
-        message(paste("Cannot read from:", data))
-        message("Original error message:")
-        message(cond)
+        base::message(paste("Cannot read from:", data))
+        base::message("Original error message:")
+        base::message(cond)
       }
     ) 
   return(out)
@@ -166,7 +166,7 @@ flag_duplicates <- function(new_data_df){
     parent <- as.character(match.call())[1]
     warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have been flagged as duplicates", 
                      toString(data_df[is_duplicate, 1]), "and the following indexes", toString((1:nrow(data_df))[is_duplicate]))
-    message(warning)
+    base::message(warning)
     if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
       # Append the warning to an existing matrix 
       warnings <- data.frame(
@@ -518,7 +518,7 @@ check_for_mistake <- function(control_data_type){
     parent <- as.character(match.call())[1]
     warning <- paste("Warning in", parent , "within", grandparent, "- The rows were not correctly separated and the following row indexes were labeled as a `Perfect Duplicate`, `Discrepancy` and/or an `Error`:", 
                      "New Data Indices (Y):", toString(common_y_values), "Legacy Data Indices (X):", toString(common_x_values))
-    message(warning)
+    base::message(warning)
     
     if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
       # Append the warning to an existing matrix 
@@ -581,7 +581,7 @@ verify_lat_lng <- function(data_df, max_val, min_val, columns, ID_col){
         parent <- as.character(match.call())[1]
         warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have inappropriate LatLong coordinates:", 
                          toString(data_df[out_of_range, 1]), "and the following indexes", toString((1:nrow(data_df))[out_of_range]))
-        message(warning)
+        base::message(warning)
         
         if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
           # Append the warning to an existing matrix 
@@ -616,7 +616,7 @@ verify_scar <- function(data_df) {
       parent <- as.character(match.call())[1]
       warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid COTS scar:",
                        toString(data_df[!check_valid_scar , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[!check_valid_scar ]))
-      message(warning)
+      base::message(warning)
       
       
       if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
@@ -669,12 +669,12 @@ verify_tow_date <- function(data_df){
     if (any(dated_estimated)) {
       warning1 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have their tow date estimated from their vessel",
                        toString(data_df[dated_estimated , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[dated_estimated]))
-      message(warning1)
+      base::message(warning1)
     }
     if (any(na_present)) {
       warning2 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have no tow date",
                         toString(data_df[na_present , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[na_present]))
-      message(warning2)
+      base::message(warning2)
     }  
     
     
@@ -796,7 +796,7 @@ verify_percentages <- function(data_df) {
       parent <- as.character(match.call())[1]
       warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have percentages in an invalid format:",
                        toString(data_df[check , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[check]))
-      message(warning)
+      base::message(warning)
       
       if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
         # Append the warning to an existing matrix 
@@ -833,7 +833,7 @@ verify_na_null <- function(data_df, configuration) {
     parent <- as.character(match.call())[1]
     warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have missing data:",
                      toString(data_df[check , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[check]))
-    message(warning)
+    base::message(warning)
     
     if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
       # Append the warning to an existing matrix 
@@ -868,7 +868,7 @@ verify_integers_positive <- function(data_df) {
         parent <- as.character(match.call())[1]
         warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have non-positive integer values:",
                          toString(data_df[check , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[check]))
-        message(warning)
+        base::message(warning)
         
         
         if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
@@ -939,7 +939,7 @@ verify_coral_cover <- function(data_df) {
     parent <- as.character(match.call())[1]
     warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid coral cover values:",
                      toString(data_df[error , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[error]))
-    message(warning)
+    base::message(warning)
     
     
     if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
@@ -969,7 +969,7 @@ verify_reef <- function(data_df){
     parent <- as.character(match.call())[1]
     warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid Reef IDs:",
                      toString(data_df[!correct_reef_id_format , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[!correct_reef_id_format]))
-    message(warning)
+    base::message(warning)
     
     if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
       # Append the warning to an existing matrix 
@@ -1029,12 +1029,12 @@ verify_voyage_dates <- function(data_df){
     if (any(dated_estimated) & !any(na_present)) {
       warning1 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have their voyage dates estimated from their vessel",
                         toString(data_df[dated_estimated , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[dated_estimated]))
-      message(warning1)
+      base::message(warning1)
     }
     if (any(na_present)) {
       warning2 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have voyage dates",
                         toString(data_df[na_present , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[na_present]))
-      message(warning2)
+      base::message(warning2)
     }  
     
     if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
@@ -1206,7 +1206,7 @@ set_data_type <- function(data_df, mapping){
     indexes <- (1:length(coerced_na))
     warning <- paste("Warning in", parent , "within", grandparent, "- Incorrect data type present. The rows with the following IDs have had value(s) coerced to NA:",
                      paste(data_df[coerced_na, 1], collapse = ", "), "and the following indexes", paste(indexes[coerced_na], collapse = ", "))
-    message(warning)
+    base::message(warning)
     
     if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
       # Append the warning to an existing matrix 
@@ -1250,7 +1250,7 @@ update_config_file <- function(data_df, config_path) {
     
     json_data <- toJSON(new_json_data, pretty = TRUE)
     directory <- dirname(config_path)
-    writeLines(json_data, file.path(directory,paste(config$metadata$control_data_type, "_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = "")))
+    writeLines(json_data, file.path(directory, paste(config$metadata$control_data_type, "_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = "")))
     
   }
 }
@@ -1416,17 +1416,29 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_s
   sf_use_s2(FALSE)
   checksum <- compute_checksum(kml_data)
   
+  # Acquire the directory to store raster outputs and the most recent spatial 
+  # file that was saved as an R binary
+  if(!is.null(spatial_path)){
+    if(file.info(spatial_path)$isdir){
+      print("Invalid path to serialized spatial data. Must be a file not a directory")
+      spatial_file <- NULL
+      spatial_directory <- spatial_path
+    } else {
+      spatial_file <- spatial_path
+      spatial_directory <- dirname(spatial_path)
+    }
+  }
+  
   # compare two kml files and return the geometry collections that have been 
   # updated 
   update_kml <- FALSE
-  if(!is.null(kml_path_previous) && !is.null(spatial_path)){
+  if(!is.null(kml_path_previous) && !is.null(spatial_file) && calculate_site_rasters){
     previous_kml_layers <- st_layers(kml_path_previous)
     previous_layer_names_vec <- unlist(previous_kml_layers["name"])
     previous_kml_data <- setNames(lapply(previous_layer_names_vec, function(i)  st_read(kml_path_previous, layer = i)), previous_layer_names_vec)
     previous_crs <- projection(previous_kml_data[[1]])
     previous_checksum <- compute_checksum(previous_kml_data)
     if(checksum != previous_checksum){
-      calculate_site_rasters <- 1
       if(previous_crs == crs){
         kml_data_to_update <- get_spatial_differences(kml_data, previous_kml_data)
         if(!is.na(kml_data_to_update) | !is.null(kml_data_to_update)){
@@ -1434,36 +1446,31 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_s
         }
       } 
     } else {
+      base::message("Checksum determined current and previous KML data are identical")
       calculate_site_rasters <- 0
     }
   }
 
-  # Acquire the directory to store raster outputs and the most recent spatial 
-  # file that was saved as an R binary
-  if(!is.null(spatial_path)){
-    if(file.info(spatial_path)$isdir){
-      print("Invalid path to serialized spatial data. Must be a file not a directory")
-    } else {
-      spatial_file <- spatial_path
-      spatial_directory <- dirname(spatial_path)
-    }
-  }
   # if loading data fails calculate site regions
-  load_site_rasters_failed <- FALSE
-  if(!calculate_site_rasters && !is.null(spatial_path)){
+  load_site_rasters_failed <- TRUE
+  if(!calculate_site_rasters && !is.null(spatial_file)){
     tryCatch({
+      base::message("Loading previously saved raster data ...")
       site_regions <- readRDS(spatial_file)
+      load_site_rasters_failed <- FALSE
+      base::message("Loaded data successfully")
     }, error = function(e) {
       print(paste("Error site regions could not be loaded. Site regions will be calculated instead.", conditionMessage(e)))
-      load_site_rasters_failed <- TRUE
     })
   }
 
   if(calculate_site_rasters){
     if(!update_kml | load_site_rasters_failed){
+      base::message("Assigning sites to raster pixels for all reefs...")
       kml_data_simplified <- simplify_reef_polyogns_rdp(kml_data)
       site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
     } else {
+      base::message("Updating raster pixels for reefs that have changed since last process date...")
       kml_data_simplified <- simplify_reef_polyogns_rdp(kml_data_to_update)
       updated_layer_names_vec <- names(kml_data_simplified)
       updated_site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, updated_layer_names_vec, crs, raster_size, x_closest, is_standardised)
@@ -1480,18 +1487,23 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_s
     # The is for testing purposes 
     assign("site_regions", site_regions, envir = .GlobalEnv)
     
+    
+    base::message("Saving raster data as serialised binary file...")
     tryCatch({
       if (!dir.exists(spatial_directory)) {
         dir.create(spatial_directory, recursive = TRUE)
       }
-      saveRDS(site_regions, file.path(spatial_directory, paste("site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = "")), row.names = FALSE)
+      saveRDS(site_regions, file.path(spatial_directory, paste(keyword, "_site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = "")), row.names = FALSE)
     }, error = function(e) {
       print(paste("Error site regions raster data - Data saved in source directory", conditionMessage(e)))
-      saveRDS(site_regions, paste(keyword,"site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = ""))
+      saveRDS(site_regions, paste(keyword,"_site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = ""))
+      contribute_to_metadata_report("output", file.path(getwd(), paste(keyword,"_site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = "")))
     })
     
   } 
+  
   if(save_spatial_as_raster == 1 && !is.null(spatial_path)){
+    base::message("Saving raster data as gtiff files...")
     raster_output <- file.path(spatial_directory, "rasters")
     if (!dir.exists(raster_output)) {
       dir.create(raster_output, recursive = TRUE)
@@ -1499,7 +1511,7 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_s
     save_spatial_as_raster(raster_output, spatial_file)
   }
  
-  
+  base::message("Assigning sites to data...")
   data_df <- get_centroids(data_df, crs)
   updated_pts <- data_df
   for(i in 1:length(site_regions)){

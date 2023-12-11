@@ -38,20 +38,13 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     most_recent_new_path <- find_recent_file(configuration$metadata$input_directory$control_data, "Surveillance", "csv")
     most_recent_kml_path <- find_recent_file(configuration$metadata$input_directory$spatial_data, "sites", "kml")
     
+    previous_kml_path <- NULL
+    serialised_spatial_path <- NULL
     if(!is.null(most_recent_report_path)){
       previous_report <- fromJSON(most_recent_report_path)
       previous_kml_path <- previous_report$inputs$kml_path
-      serialised_spatial_path <- previous_report$outputs$serialized_data
-      previous_kml_path <- NULL
-      serialised_spatial_path <- NULL
-    } else {
-      if (!file.exists(previous_kml_path)) {
-        previous_kml_path <- NULL
-      }
-      if (!file.exists(serialised_spatial_path)) {
-        serialised_spatial_path <- NULL
-      }
-    }
+      serialised_spatial_path <- previous_report$outputs$spatial_data
+    } 
     
     
     if (is.null(new_path)) {
@@ -62,19 +55,16 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     }
     
     # Attempt to use legacy data where possible. 
+    is_new <- 0
+    is_legacy_data_available <- 1
     if (is.null(leg_path)) {
       if(is.null(most_recent_leg_path)){
         is_new <- 1
         is_legacy_data_available <- 0
       } else {
         leg_path <- most_recent_leg_path
-        is_new <- 0
-        is_legacy_data_available <- 1
       }
-    } else {
-      is_new <- 0
-      is_legacy_data_available <- 1
-    }
+    } 
     
     # Reduce computation time by only assigning sites to raster pixels when needed.
     # If the previous output utilised the most up-to-date kml file, then there 
@@ -85,11 +75,11 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     if (is.null(kml_path)) {
       kml_path <- most_recent_kml_path
       tryCatch({
-        if(kml_path == previous_kml_path){
+        if(basename(kml_path) == basename(previous_kml_path)){
           calculate_site_rasters <- 0
-          print("Previous report does not provide path of utilised Kml file")
         } 
       }, error = function(e) {
+        print("Error comparing previous and most recent kml paths")
         calculate_site_rasters <- 1
       })
     } 
@@ -140,7 +130,7 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     
     # save metadata json file 
     json_data <- toJSON(metadata_json_output, pretty = TRUE)
-    writeLines(json_data, paste(configuration$metadata$output_directory$reports,"\\Control_Data_Report_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = ""))
+    writeLines(json_data, file.path(getwd(), configuration$metadata$output_directory$reports, paste(configuration$metadata$control_data_type, "_Report_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = "")))
     
     update_config_file(new_data_df, configuration_path)
     
@@ -185,7 +175,7 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
       if (!dir.exists(configuration$metadata$output_directory)) {
         dir.create(configuration$metadata$output_directory, recursive = TRUE)
       }
-      write.csv(verified_data_df, paste(configuration$metadata$output_directory, "\\",configuration$metadata$control_data_type,"_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv", sep = ""), row.names = FALSE)
+      write.csv(verified_data_df, file.path(configuration$metadata$output_directory$control_data, paste(configuration$metadata$control_data_type,"_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv", sep = ""), row.names = FALSE))
     }, error = function(e) {
       print(paste("Error saving data - Data saved in source directory", conditionMessage(e)))
       write.csv(verified_data_df, paste(configuration$metadata$control_data_type,"_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv", sep = ""), row.names = FALSE)
