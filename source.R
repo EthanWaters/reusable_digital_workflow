@@ -47,9 +47,10 @@ contribute_to_metadata_report <- function(key, data, parent_key=NULL, report_pat
     return(NULL)
   }
   if(!is.null(parent_key)){
-    report <- report[[parent_key]]
+    report[[parent_key]][[key]] <- data
+  } else {
+    report[[key]] <- data
   }
-  report[[key]] <- data
   toJSON(report, pretty = TRUE, auto_unbox = TRUE) %>% writeLines(report_path)
 }
 
