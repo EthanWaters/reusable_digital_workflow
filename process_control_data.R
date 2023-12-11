@@ -175,7 +175,14 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
       if (!dir.exists(configuration$metadata$output_directory)) {
         dir.create(configuration$metadata$output_directory, recursive = TRUE)
       }
-      write.csv(verified_data_df, file.path(configuration$metadata$output_directory$control_data, paste(configuration$metadata$control_data_type,"_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv", sep = ""), row.names = FALSE))
+      
+      output_directory <- configuration$metadata$output_directory$control_data
+      data_type <- configuration$metadata$control_data_type
+      timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+      file_name <- paste(data_type, "_", timestamp, ".csv", sep = "")
+      output_path <- file.path(output_directory, file_name)
+      write.csv(verified_data_df, output_path, row.names = FALSE)
+      
     }, error = function(e) {
       print(paste("Error saving data - Data saved in source directory", conditionMessage(e)))
       write.csv(verified_data_df, paste(configuration$metadata$control_data_type,"_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv", sep = ""), row.names = FALSE)
