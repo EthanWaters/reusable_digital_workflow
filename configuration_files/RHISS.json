@@ -4,6 +4,7 @@
     "description": "Configuration for RHISS data",
     "created": "2023-11-20",
     "control_data_type": "RHISS",
+    "GBRMPA_keyword": "Dashboard",
     "legacy_sheet_index": 4,
     "ID_col": "Program ID",
     "is_ID_preferred": true,

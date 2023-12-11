@@ -1410,12 +1410,28 @@ compute_checksum <- function(data) {
 assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_site_rasters=1, kml_path_previous=NULL, spatial_path=NULL, raster_size=0.0005, x_closest=1, is_standardised=0, save_spatial_as_raster=0){
   # Assign nearest sites to manta tows with method developed by Cameron Fletcher
   
-  kml_layers <- st_layers(kml_path)
-  layer_names_vec <- unlist(kml_layers["name"])
-  kml_data <- setNames(lapply(layer_names_vec, function(i)  st_read(kml_path, layer = i)), layer_names_vec)
-  crs <- projection(kml_data[[1]])
-  sf_use_s2(FALSE)
-  checksum <- compute_checksum(kml_data)
+  
+  # if loading data fails calculate site regions
+  load_site_rasters_failed <- TRUE
+  if(!calculate_site_rasters && !is.null(spatial_file)){
+    tryCatch({
+      base::message("Loading previously saved raster data ...")
+      site_regions <- readRDS(spatial_file)
+      load_site_rasters_failed <- FALSE
+      base::message("Loaded data successfully")
+    }, error = function(e) {
+      print(paste("Error site regions could not be loaded. Site regions will be calculated instead.", conditionMessage(e)))
+    })
+  }
+  
+  if(load_site_rasters_failed || calculate_site_rasters){
+    kml_layers <- st_layers(kml_path)
+    layer_names_vec <- unlist(kml_layers["name"])
+    kml_data <- setNames(lapply(layer_names_vec, function(i)  st_read(kml_path, layer = i)), layer_names_vec)
+    crs <- projection(kml_data[[1]])
+    sf_use_s2(FALSE)
+    checksum <- compute_checksum(kml_data)
+  }
   
   # Acquire the directory to store raster outputs and the most recent spatial 
   # file that was saved as an R binary
@@ -1450,19 +1466,6 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_s
       base::message("Checksum determined current and previous KML data are identical")
       calculate_site_rasters <- 0
     }
-  }
-
-  # if loading data fails calculate site regions
-  load_site_rasters_failed <- TRUE
-  if(!calculate_site_rasters && !is.null(spatial_file)){
-    tryCatch({
-      base::message("Loading previously saved raster data ...")
-      site_regions <- readRDS(spatial_file)
-      load_site_rasters_failed <- FALSE
-      base::message("Loaded data successfully")
-    }, error = function(e) {
-      print(paste("Error site regions could not be loaded. Site regions will be calculated instead.", conditionMessage(e)))
-    })
   }
 
   if(calculate_site_rasters){

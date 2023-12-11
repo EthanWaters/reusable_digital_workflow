@@ -35,7 +35,7 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     
     most_recent_report_path <- find_recent_file(configuration$metadata$output_directory$reports, "Report", "json")
     most_recent_leg_path <- find_recent_file(configuration$metadata$output_directory$control_data, configuration$metadata$control_data_type, "csv")
-    most_recent_new_path <- find_recent_file(configuration$metadata$input_directory$control_data, "Surveillance", "csv")
+    most_recent_new_path <- find_recent_file(configuration$metadata$input_directory$control_data, configuration$metadata$GBRMPA_keyword, "csv")
     most_recent_kml_path <- find_recent_file(configuration$metadata$input_directory$spatial_data, "sites", "kml")
     
     previous_kml_path <- NULL
@@ -141,7 +141,7 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     formatted_data_df <- set_data_type(transformed_data_df, configuration$mappings$data_type_mappings) 
     
     verified_data_df <- verify_entries(formatted_data_df, configuration)
-    if(is_new){
+    if(is_new && is_legacy_data_available){
       legacy_df <- verify_entries(legacy_df, configuration) 
     }
     
@@ -172,8 +172,8 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     
     # Save workflow output
     tryCatch({
-      if (!dir.exists(configuration$metadata$output_directory)) {
-        dir.create(configuration$metadata$output_directory, recursive = TRUE)
+      if (!dir.exists(configuration$metadata$output_directory$control_data)) {
+        dir.create(configuration$metadata$output_directory$control_data, recursive = TRUE)
       }
       
       output_directory <- configuration$metadata$output_directory$control_data

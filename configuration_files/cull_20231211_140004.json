@@ -1,30 +1,30 @@
 {
   "metadata": {
-    "author": "Ethan Waters",
-    "description": "Configuration for cull data",
-    "created": "2023-11-20",
-    "control_data_type": "cull",
-    "GBRMPA_keyword": "Dives",
-    "legacy_sheet_index": 2,
-    "ID_col": "Capture ID",
-    "is_ID_preferred": true,
-    "assign_sites": true,
+    "author": ["Ethan Waters"],
+    "description": ["Configuration for cull data"],
+    "created": ["2023-11-20"],
+    "control_data_type": ["cull"],
+    "GBRMPA_keyword": ["Dives"],
+    "legacy_sheet_index": [2],
+    "ID_col": ["Capture ID"],
+    "is_ID_preferred": [true],
+    "assign_sites": [true],
     "output_directory": {
-      "control_data": "Output/control_data",
-      "spatial_data": "Output/spatial_data",
-      "reports": "Output/reports"
+      "control_data": ["Output/control_data"],
+      "spatial_data": ["Output/spatial_data"],
+      "reports": ["Output/reports"]
     },
     "input_directory": {
-      "control_data": "Input/control_data",
-      "spatial_data": "Input/spatial_data",
-      "reports": "Input/reports"
+      "control_data": ["Input/control_data"],
+      "spatial_data": ["Input/spatial_data"],
+      "reports": ["Input/reports"]
     }
   },
   "mappings": {
     "transformations": [
       {
         "target_field": "Capture ID",
-        "source_field": "COTS Cull Dive Id",
+        "source_field": "COTS cull dive id",
         "position": 1
       },
       {
@@ -84,7 +84,7 @@
       },
       {
         "target_field": "Cohort2 (15-25cm)",
-        "source_field": "Cohort 2 (15cm - 25cm)",
+        "source_field": "Cohort 2 (15cm - 25cm",
         "position": 13
       },
       {
@@ -188,7 +188,6 @@
         "field": "error_flag",
         "data_type": "numeric"
       }
-
     ]
   }
 }
