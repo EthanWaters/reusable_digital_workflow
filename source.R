@@ -1056,7 +1056,20 @@ verify_voyage_dates <- function(data_df){
     
   }
   
-  data_df$error_flag <- data_df$error_flag | (data_df$`Survey Date` < data_df$`Voyage Start` | data_df$`Survey Date` > data_df$`Voyage End`)
+  survey_date_error <- (data_df$`Survey Date` < data_df$`Voyage Start` | data_df$`Survey Date` > data_df$`Voyage End`)
+  data_df$error_flag <- data_df$error_flag | survey_date_error
+  
+  if(any(survey_date_error)){
+    if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
+      # Append the warning to an existing matrix 
+      warnings <- data.frame(
+        ID = data_df[survey_date_error, 1],
+        index = (1:nrow(data_df))[survey_date_error],
+        message = "Survey date outside voyage date range"
+      )
+      contribute_to_metadata_report("Survey Date", warnings, parent_key = "Warning")
+    }
+  }
   
   vessel_voyage <- unique(data_df[,which(names(data_df) %in% c("Vessel", "Voyage"))])
   for (i in 1:nrow(vessel_voyage)){

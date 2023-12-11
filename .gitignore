@@ -5,6 +5,7 @@ reports/
 data/
 backup/
 Output/
+Input/
 Auth/
 New Database Raw Export/
 version.txt
