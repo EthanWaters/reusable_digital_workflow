@@ -1578,7 +1578,97 @@ get_centroids <- function(data_df, crs, precision=0){
   return(pts)
 }
 
+assign_raster_pixel_to_sites_parallel <- function(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0){
+  # Produces same result as assign_raster_pixel_to_sites in a parallel manner
+  
+  if(is_standardised){
+    expanded_extent <- standardise_extents(kml_data)
+  } else {
+    expanded_extent <- list()
+    for(i in 1:length(kml_data)) {
+      expanded_extent[[i]] <- extent(kml_data[[i]])
+    }
+  }
+  
+  # Define the increase amount in both x and y directions. 
+  increase_amount <- 0.003
+  expanded_bboxs <- setNames(lapply(expanded_extent, function(i) {
+    
+    original_extent <- i
+    # Increase the extent by the specified amount
+    expanded_bboxs <- extent(original_extent[1] - increase_amount,
+                             original_extent[2] + increase_amount,
+                             original_extent[3] - increase_amount,
+                             original_extent[4] + increase_amount)
+    
+  }), layer_names_vec)
+  
+  # Create an empty raster based on the bounding box, cell size, and projection
+  rasters <- create_raster_templates(expanded_bboxs, layer_names_vec, crs, raster_size)
+  
+  # The original script in mathmatica utilised a function "RegionDistance". This 
+  # finds the Euclidean distance between the polygon and a point and does not
+  # consider the curviture of the earth. 
+  
+  site_regions <- foreach(i = 1:length(kml_data), .combine = "c",  .export = c("assign_raster_pixel_to_sites_single", "rasterToPoints", "st_polygon", "raster", "values", "as.matrix", "st_multipoint", "st_sfc", "st_cast", "st_crs<-", "st_distance", "drop_units", "site_names_to_numbers", "xth_smallest")) %dopar% {
+    assign_raster_pixel_to_sites_single(rasters[[i]], kml_data[[i]], crs, x_closest)
+  }
+  site_regions <- setNames(site_regions, layer_names_vec)
+  return(site_regions)
+}
+
+assign_raster_pixel_to_sites_single <- function(raster, site_poly, crs, x_closest){
+    
+  raster::values(raster) <- 1
+  pixel_coords <- rasterToPoints(raster)
+  pixel_coords <- pixel_coords[,1:2]
+  raster_points <- pixel_coords |> as.matrix() |> st_multipoint() |> st_sfc() |> st_cast('POINT')
+  st_crs(raster_points) <- crs
+  
+  site_names <- site_poly$Name
+  site_numbers <- site_names_to_numbers(site_names)
+  
+  distances <- st_distance(site_poly, raster_points)
+  
+  if (dim(distances)[1] != 1){
+    distances <- apply(distances, 2, as.numeric)
+    min_distances_list <- apply(distances, 2, xth_smallest, x_values=x_closest)
+    min_distances_df <- do.call(rbind, min_distances_list)
+    min_distance_site_numbers <- site_numbers[as.vector(min_distances_df$`Nearest Site`)]
+    min_distances <- min_distances_df$`Distance to Site`
+  } else {
+    min_distances <- drop_units(distances)
+    min_distance_site_numbers <- rep(site_numbers, length(min_distances))
+  }
+  
+  is_within_required_distance <- min_distances > 300
+  min_distance_site_numbers[is_within_required_distance] <- -1
+  raster::values(raster) <- min_distance_site_numbers
+  names(raster) <- c("Nearest Site")
+  
+  return(raster)
+}
+
 assign_raster_pixel_to_sites <- function(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0){
+  site_regions <- NULL
+  tryCatch({
+    library(sf)
+    library(foreach)
+    library(doParallel)
+    
+    cl <- makeCluster(detectCores())
+    registerDoParallel(cl)
+    
+    site_regions <- assign_raster_pixel_to_sites_parallel(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0)
+    
+  }, error = function(e) {
+   site_regions <- assign_raster_pixel_to_sites_non_parallel(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0)
+  })
+  return(site_regions)
+}
+
+
+assign_raster_pixel_to_sites_non_parallel <- function(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0){
   # This is a method of assigning sites to manta tows that was initially 
   # implemented in Mathmatica by Dr Cameron Fletcher. A set of rasters are 
   # created slightly larger than the bounding box of each layer in the KML file.
@@ -1653,12 +1743,6 @@ assign_raster_pixel_to_sites <- function(kml_data, layer_names_vec, crs, raster_
     min_distance_site_numbers[is_within_required_distance] <- -1
     values(raster) <- min_distance_site_numbers
     names(raster) <- c("Nearest Site")
-    
-    # distance_raster <- raster
-    # values(distance_raster) <- min_distances
-    # names(distance_raster) <- c("Distance to Site")
-    # 
-    # site_region <- brick(raster,distance_raster)
     site_regions[[i]] <- raster
   }
   
