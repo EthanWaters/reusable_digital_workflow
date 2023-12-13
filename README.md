@@ -201,15 +201,6 @@ Output locations are defined in the configuration files and will be created if t
 - **Description:**
     - This function reads data from a file and returns a dataframe. It determines the file type and reads the file using the appropriate method. 
 
-#### Function: `create_metadata_report(control_data_type)`
-
-- **Input:**
-    - `control_data_type`: Specifies the control data for use in file name generation.
-- **Output:**
-    - None
-- **Description:**
-    - This function creates an empty XML file for to later document metadata and warnings surrounding the pipeline.
-    
 #### Function: `contribute_to_metadata_report(data, key="Warning")`
 - **Input:**
     - `data`: Matrix or dataframe containing strings that describe the location and warning/error that occurred
@@ -504,9 +495,82 @@ Output locations are defined in the configuration files and will be created if t
 - **Description:**
   - This function determines the centroids of manta tows based on latitude and longitude columns in the data frame. It creates geospatial points and returns them.
 
+#### Function: `find_recent_file(directory_path, keyword, file_extension)`
+- **Inputs:**
+  - `directory_path`: Path to the directory where files are located.
+  - `keyword`: Keyword used in file naming convention.
+  - `file_extension`: File extension of the desired files.
+- **Output:**
+  - File path of the most recently modified file that matches the specified criteria, or `NULL` if no matching file is found.
+- **Description:**
+  - Searches for the most recently modified file in a specified directory based on a keyword and file extension. Returns the file path or `NULL` if no matching file is found.
+
+#### Function: `save_spatial_as_raster(output_path, serialized_spatial_path)`
+- **Inputs:**
+  - `output_path`: Path where raster files will be saved.
+  - `serialized_spatial_path`: Path to the serialized spatial data file.
+- **Output:**
+  - None
+- **Description:**
+  - Reads serialized spatial data, converts it to raster format, and saves individual raster files to the specified output path. Handles errors and prints a message if an error occurs during the process.
+
+#### Function: `get_spatial_differences(kml_data, previous_kml_data)`
+- **Inputs:**
+  - `kml_data`: List of spatial data for the current version.
+  - `previous_kml_data`: List of spatial data for the previous version.
+- **Output:**
+  - List of spatial differences between the current and previous versions.
+- **Description:**
+  - Compares spatial data between the current and previous versions and identifies differences. The function returns a list of spatial differences based on Reef IDs.
+
+#### Function: `compute_checksum(data)`
+- **Input:**
+  - `data`: Data for which the checksum needs to be computed.
+- **Output:**
+  - Checksum computed using the MD5 algorithm.
+- **Description:**
+  - Computes the MD5 checksum for the provided data using the `digest` function.
+
+#### Function: `assign_raster_pixel_to_sites_parallel(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0)`
+- **Inputs:**
+  - `kml_data`: List of spatial data.
+  - `layer_names_vec`: Vector of layer names.
+  - `crs`: Coordinate reference system.
+  - `raster_size`: ster cells. Can specify resolution with value less than 1 or can specify the pixel length of the raster extent. (default is 0.0005)
+  - `x_closest`: Assign nth closest site to point (default is 1).
+  - `is_standardised`: Flag indicating whether to standardize extents (default is 0).
+- **Output:**
+  - List of rasters representing assigned nearest site information for each layer.
+- **Description:**
+  - Parallelized version of the function to assign raster pixels to sites based on their distances. Utilizes parallel processing to improve performance.
+
+#### Function: `assign_raster_pixel_to_sites_single(raster, site_poly, crs, x_closest)`
+- **Inputs:**
+  - `raster`: Raster object.
+  - `site_poly`: Spatial data for sites.
+  - `crs`: Coordinate reference system.
+  - `x_closest`: Assign nth closest site to point.
+- **Output:**
+  - Raster with assigned nearest site information.
+- **Description:**
+  - Assigns raster pixel values based on the distances between sites and raster points for a single layer.
+
+#### Function: `assign_raster_pixel_to_sites_non_parallel(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0)`
+- **Inputs:**
+  - `kml_data`: List of spatial data.
+  - `layer_names_vec`: Vector of layer names.
+  - `crs`: Coordinate reference system.
+  - `raster_size`: Size of the raster cells. Can specify resolution with value less than 1 or can specify the pixel length of the raster extent. (default is 0.0005)
+  - `x_closest`: Assign nth closest site to point (default is 1).
+  - `is_standardised`: Flag indicating whether to standardize extents (default is 0).
+- **Output:**
+  - List of rasters representing assigned nearest site information for each layer.
+- **Description:**
+  - Non-parallel version of the function to assign raster pixel values to sites based on their distances.
+
 #### Function: `assign_raster_pixel_to_sites(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0)`
 - **Inputs:**
-  - `kml_data`: KML data containing reef polygons.
+  - `kml_data`: List of spatial data.
   - `layer_names_vec`: Vector of layer names.
   - `crs`: Coordinate Reference System.
   - `raster_size`: Size of the raster cells. Can specify resolution with value less than 1 or can specify the pixel length of the raster extent.
@@ -515,7 +579,7 @@ Output locations are defined in the configuration files and will be created if t
 - **Outputs:**
   - `site_regions`: List of rasters with assigned nearest site values.
 - **Description:**
-  - This function assigns raster pixel values based on the nearest site to manta tow entries. It creates rasters slightly larger than the bounding box of each layer in the KML file, assigns values based on distances to sites, and returns a list of site regions.
+  - This function assigns raster pixel values based on the nearest site to manta tow entries. It creates rasters slightly larger than the bounding box of each layer in the KML file, assigns values based on distances to sites, and returns a list of site regions. Utilizes parallel processing if available; otherwise, falls back to a non-parallel version.
 
 #### Function: `site_names_to_numbers(site_names)`
 - **Inputs:**
@@ -608,6 +672,67 @@ Iterates through list of sf data frames and increases their extents to match the
   - `x_values`: Data frame showing the key value pairs. Nth_smallest_value:Value. 
 - **Description:**
   - Function to find the xth smallest value in a vector without sorting. This allows for the second closest sites etc to be determined. Likely unnecessary in production was used for testing purposes. 
+
+#### Function: `contribute_to_metadata_report(key, data, parent_key=NULL, report_path=NULL)`
+- **Input:**
+  - `key`: The key representing the node to be inserted.
+  - `data`: Data to be added to the metadata report.
+  - `parent_key`: Optional parent key under which the data should be inserted.
+  - `report_path`: Optional path to the metadata report file. If not provided, the function will attempt to find the most recent report file.
+- **Output:**
+  - None
+- **Description:**
+  - This function contributes information to the XML metadata report, adding data to the specified control data node. If a parent key is provided, the data is inserted under that parent key.
+
+#### Function: `update_config_file(data_df, config_path)`
+- **Inputs:**
+  - `data_df`: Data frame containing observations.
+  - `config_path`: Path to the JSON config file.
+- **Output:**
+  - None
+- **Description:**
+  - Updates the JSON config file based on the column names in the input data frame. If column names do not match the expected source names, a new config file is created with the most appropriate mapping. The function also handles warning messages and sends an error email if needed.
+
+#### Function: `map_new_fields(data_df, new_fields)`
+- **Inputs:**
+  - `data_df`: Data frame containing observations.
+  - `new_fields`: Data frame containing information about new fields to be added.
+- **Output:**
+  - None
+- **Description:**
+  - Maps and adds new fields to the input data frame based on the information provided in the `new_fields` data frame.
+
+#### Function: `map_all_fields(data_df, transformed_df, mappings)`
+- **Inputs:**
+  - `data_df`: Data frame containing observations.
+  - `transformed_df`: Data frame to which the fields will be mapped.
+  - `mappings`: Data frame containing mapping information.
+- **Output:**
+  - None
+- **Description:**
+  - Maps all fields from the input data frame to the transformed data frame based on the provided mappings.
+
+#### Function: `map_data_structure(data_df, mappings, new_fields)`
+- **Inputs:**
+  - `data_df`: Data frame containing observations.
+  - `mappings`: Data frame containing mapping information.
+  - `new_fields`: Data frame containing information about new fields to be added.
+- **Output:**
+  - `transformed_df`: Transformed data frame with mapped fields.
+- **Description:**
+  - Maps the data structure of the input data frame to a new structure defined by mappings and new fields.
+
+#### Function: `extract_dates(input)`
+- **Input:**
+  - `input`: Vector of character strings representing file or directory names.
+- **Output:**
+  - `date_objects`: Vector of date-time objects extracted from the input.
+- **Description:**
+  - Extracts date-time information from a vector of character strings representing file or directory names. The function uses various date formats for extraction and returns a vector of date-time objects.
+
+
+
+
 
 
 

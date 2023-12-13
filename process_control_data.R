@@ -30,9 +30,6 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     library("stringr")
     library("gmailr")
     
-    library(profmem)
-    
-    
     configuration <- fromJSON(configuration_path)
     
     most_recent_report_path <- find_recent_file(configuration$metadata$output_directory$reports, "Report", "json")
