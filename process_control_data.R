@@ -131,7 +131,7 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     json_data <- toJSON(metadata_json_output, pretty = TRUE)
     writeLines(json_data, file.path(getwd(), configuration$metadata$output_directory$reports, paste(configuration$metadata$control_data_type, "_Report_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = "")))
     
-    update_config_file(new_data_df, configuration_path)
+    configuration <- update_config_file(new_data_df, configuration_path)
     
     transformed_data_df <- transform_data_structure(new_data_df, configuration$mappings$transformations, configuration$mappings$new_fields)
     if(is_legacy_data_available){

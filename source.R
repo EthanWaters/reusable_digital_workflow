@@ -1238,35 +1238,79 @@ set_data_type <- function(data_df, mapping){
   return(output_df)
 }
   
-update_config_file <- function(data_df, config_path) {
+update_config_file <- function(data_df, configuration_path, new_mappings_to_add=c()) {
   
-  config <- fromJSON(config_path)
+  configuration <- fromJSON(configuration_path)
   data_colnames <- colnames(data_df)
-  expected_source_names <- config$mappings$transformations$source_field
+  expected_source_names <- configuration$mappings$transformations$source_field
+  new_json_data <- configuration
   
   if (!all(data_colnames %in% expected_source_names)) {
-    warning <- "Column names in 'data_df' do not match the expected source names. New json config file will be created with most appropriate mapping. Please check after process is complete."
+    warning <- "Column names in 'data_df' do not match the expected source names. New json configuration file will be created with most appropriate mapping. Please check after process is complete."
     warning(warning)
-    send_error_email("Auth\\", "ethankwaters@gmail", warning, "CCIP Reusable Workflow - Config File out-of-date")
+    send_error_email("Auth\\", "ethankwaters@gmail", warning, "CCIP Reusable Workflow - configuration File out-of-date")
     closest_matches <- get_closest_matches(data_colnames, expected_source_names)
-    new_json_data <- config
-    
     # Replace the original source values in new_json_data with closest matches
+    
+    old_values <- c()
+    new_values <- c()
     for (i in seq_len(ncol(closest_matches))) {
       new_input <- closest_matches[1, i]
       closest_match <- closest_matches[2, i]
       index <- which(new_json_data$mappings$transformations$source_field %in% closest_match)
       if (!is.na(index) ) {
         new_json_data$mappings$transformations$source_field[index] <- new_input
-        contribute_to_metadata_report("Config Mapping Update", paste(closest_match, "updated to", new_input), parent_key = "Warning")
+        old_values <- c(old_values, closest_matches)
+        new_values <- c(new_values, new_input)
       }
     }
-    
-    json_data <- toJSON(new_json_data, pretty = TRUE)
-    directory <- dirname(config_path)
-    writeLines(json_data, file.path(directory, paste(config$metadata$control_data_type, "_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = "")))
-    
+    warnings <- data.frame(
+      old_values = old_values,
+      new_values = new_values,
+      message = "Mapping has been updated"
+    )
+    contribute_to_metadata_report("configuration Mapping Update", warnings, parent_key = "Warning")
   }
+  
+  if(length(new_mappings_to_add) > 0){
+    max_position <- base::max(configuration$mappings$transformations$position, configuration$mappings$new_fields$position)
+    closest_matches <- get_closest_matches(new_mappings_to_add, data_colnames)
+    contribute_to_metadata_report("New configuration Mappings", paste(closest_match, "updated to", new_input), parent_key = "Warning")
+    for(i in 1:length(new_mappings_to_add)){
+      source_field <- closest_matches[2,i]
+      target_field <- closest_matches[2,i]
+      position <- max_position + i
+    }
+    warnings <- data.frame(
+      field_name = closest_matches[2,i],
+      message = "Mappings have been created for the following field names"
+    )
+    contribute_to_metadata_report("configuration Mapping Update", warnings, parent_key = "Warning")
+  }
+  
+  if (!all(data_colnames %in% expected_source_names) || (length(new_mappings_to_add) > 0)) {
+    json_data <- toJSON(new_json_data, pretty = TRUE)
+    directory <- dirname(configuration_path)
+    tryCatch({
+      writeLines(json_data, file.path(directory, paste(configuration$metadata$control_data_type, "_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = "")))
+    }, error = function(e){
+      writeLines(json_data, file.path(paste(configuration$metadata$control_data_type, "_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = "")))
+    })
+   
+  }
+  
+  if(length(new_mappings_to_add) > 0){
+    tryCatch({
+      configuration <- fromJSON(file.path(directory, paste(configuration$metadata$control_data_type, "_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = "")))
+    }, error = function(e){
+      tryCatch({
+        configuration <-fromJSON(file.path(paste(configuration$metadata$control_data_type, "_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = "")))
+      })
+    })
+  }
+  
+  return(configuration)
+  
 }
 
 map_new_fields <- function(data_df, new_fields){
