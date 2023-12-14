@@ -1696,7 +1696,6 @@ assign_raster_pixel_to_sites_single <- function(raster, site_poly, crs, x_closes
 assign_raster_pixel_to_sites <- function(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0){
   site_regions <- NULL
   tryCatch({
-    library(sf)
     library(foreach)
     library(doParallel)
     

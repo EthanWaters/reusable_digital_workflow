@@ -47,6 +47,9 @@ RUN R -e "install.packages('lwgeom', version = '0.2-13', dependencies=TRUE)"
 RUN R -e "install.packages('stars', version = '0.6-4', dependencies=TRUE)"
 RUN R -e "install.packages('stringr', version = '1.4.1', dependencies=TRUE)"
 RUN R -e "install.packages('fasterize', version = '1.0.4', dependencies=TRUE)"
+RUN R -e "install.packages('furrr', version = '0.3.1', dependencies = TRUE)"
+RUN R -e "install.packages('foreach', version = '1.5.2', dependencies = TRUE)  "
+RUN R -e "install.packages('doParallel', version = '1.0.17', dependencies = TRUE)"
 
 # Specify the command to run your R script
 CMD ["Rscript", "process_control_data.R"]

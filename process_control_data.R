@@ -16,7 +16,7 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     library("fastmatch")
     library("lubridate")
     library("rlang")
-    library("inline")
+    # library("inline")
     library("purrr")
     library("jsonlite")
     library("sf")
@@ -29,6 +29,9 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     library("stars")
     library("stringr")
     library("gmailr")
+    library("future")
+    library("foreach")
+    library("doParallel")
     
     configuration <- fromJSON(configuration_path)
     
