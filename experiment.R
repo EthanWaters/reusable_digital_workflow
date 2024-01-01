@@ -28,11 +28,11 @@ library("stars")
 library("stringr")
 library("gmailr")
 
+name <- "TS_AIMS_NESP_Torres_Strait_Features_V1b_with_GBR_Features.shp"
+location <- "D:\\COTS\\COTS_tow_prediction_interface\\gbr"
+path <- file.path(location, name)
+shapefile <- st_read(path)
 
-
-
-tryCatch({
- 
-}, error = function(e) {
- 
-})
+location_save <- "D:\\COTS\\on_water_PWA\\cots_on_water_pwa_draft"
+save_path <- file.path(location_save, "pwa_reefs_geojson")
+st_write(shapefile, save_path, driver = "GeoJSON")
