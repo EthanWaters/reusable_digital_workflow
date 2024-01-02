@@ -1534,11 +1534,11 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_s
   if(calculate_site_rasters){
     if(!update_kml | load_site_rasters_failed){
       base::message("Assigning sites to raster pixels for all reefs...")
-      kml_data_simplified <- simplify_reef_polyogns_rdp(kml_data)
+      kml_data_simplified <- simplify_kml_polyogns_rdp(kml_data)
       site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
     } else {
       base::message("Updating raster pixels for reefs that have changed since last process date...")
-      kml_data_simplified <- simplify_reef_polyogns_rdp(kml_data_to_update)
+      kml_data_simplified <- simplify_kml_polyogns_rdp(kml_data_to_update)
       updated_layer_names_vec <- names(kml_data_simplified)
       updated_site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, updated_layer_names_vec, crs, raster_size, x_closest, is_standardised)
       
@@ -1796,9 +1796,32 @@ site_names_to_numbers <- function(site_names){
   return(as.numeric(sub(".+_(\\d+).*", "\\1", site_names)))
 }
 
-simplify_reef_polyogns_rdp <- function(kml_data){
-  # simplify all reef polygons stored in a list that was retrieved from the kml
-  # file with the Ramer-Douglas-Peucker algorithm
+
+simplify_shp_polyogns_rdp <- function(shapefile){
+  # simplify polygons stored in a shapefile with the Ramer-Douglas-Peucker 
+  # algorithm
+  
+  reef_geometries <- shapefile_filtered[,"geometry"]
+  simplified_shapefile_filtered <- shapefile_filtered
+  reef_geometries_updated <- reef_geometries
+  for(i in 1:length(reef_geometries)){
+    # A vast majority of reef_geometries at this level are polygons but 
+    # occasionally they are geometrycollections and require iteration. 
+    
+    site_polygon <- reef_geometries[i,1][[1]][[1]]
+    polygon_points <- site_polygon[[1]]
+    approx_polygon_points <- polygon_rdp(polygon_points)
+    site_polygon[[1]] <- approx_polygon_points
+    simplified_shapefile_filtered[i,"geometry"][[1]][[1]] <- site_polygon
+  }
+  
+  return(simplified_kml_data)
+}
+
+
+simplify_kml_polyogns_rdp <- function(kml_data){
+  # simplify all polygons in a list that was retrieved from the kml file with
+  # the Ramer-Douglas-Peucker algorithm
   
   simplified_kml_data <- kml_data
   for (j in 1:length(kml_data)){
