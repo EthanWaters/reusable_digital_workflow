@@ -1,0 +1,14 @@
+.RData
+.Rhistory
+.Rproj.user
+reports/
+data/
+backup/
+Output/
+Input/
+Auth/
+New Database Raw Export/
+version.txt
+pre-push - Copy.bat
+pre-push.bat
+230707_190823_sites.kml
