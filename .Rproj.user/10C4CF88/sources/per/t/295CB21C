@@ -1,0 +1,26 @@
+{
+    "id": "295CB21C",
+    "path": "D:/COTS/Reusable Digital Workflows/reusable_digital_workflow/source.R",
+    "project_path": "source.R",
+    "type": "r_source",
+    "hash": "2632910140",
+    "contents": "",
+    "dirty": false,
+    "created": 1702266242620.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "1514,62",
+        "scrollLine": "1495"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1704241863,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1704241863034,
+    "read_only": false,
+    "read_only_alternatives": []
+}

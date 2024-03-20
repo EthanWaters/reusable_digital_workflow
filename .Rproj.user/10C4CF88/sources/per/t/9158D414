@@ -1,0 +1,27 @@
+{
+    "id": "9158D414",
+    "path": "D:/COTS/Reusable Digital Workflows/reusable_digital_workflow/experiment.R",
+    "project_path": "experiment.R",
+    "type": "r_source",
+    "hash": "1819594041",
+    "contents": "",
+    "dirty": false,
+    "created": 1702441197255.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "51,0",
+        "scrollLine": "1"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1704324741,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1704324741695,
+    "read_only": false,
+    "read_only_alternatives": []
+}
