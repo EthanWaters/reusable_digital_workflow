@@ -136,7 +136,7 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     
     configuration <- update_config_file(new_data_df, configuration_path)
     
-    transformed_data_df <- transform_data_structure(new_data_df, configuration$mappings$transformations, configuration$mappings$new_fields)
+    transformed_data_df <- map_data_structure(new_data_df, configuration$mappings$transformations, configuration$mappings$new_fields)
     if(is_legacy_data_available){
       legacy_df <- set_data_type(legacy_df, configuration$mappings$data_type_mappings) 
     }
