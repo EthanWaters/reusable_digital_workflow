@@ -1,0 +1,819 @@
+{
+  "metadata": {
+    "author": "Ethan Waters",
+    "description": "Configuration for RHISS data",
+    "created": "2023-11-20",
+    "control_data_type": "RHISS",
+    "GBRMPA_keyword": "Dashboard",
+    "legacy_sheet_index": 4,
+    "ID_col": "Program ID",
+    "is_ID_preferred": true,
+    "assign_sites": false,
+    "output_directory": {
+      "control_data": "Output/control_data",
+      "spatial_data": "Output/spatial_data",
+      "reports": "Output/reports"
+    },
+    "input_directory": {
+      "control_data": "Input/control_data",
+      "spatial_data": "Input/spatial_data",
+      "reports": "Input/reports"
+    }
+  },
+  "mappings": {
+    "transformations": [
+      {
+        "target_field": "Program ID",
+        "source_field": "Program Id",
+        "position": 1
+      },
+      {
+        "target_field": "Survey Program",
+        "source_field": "Program",
+        "position": 2
+      },
+      {
+        "target_field": "Observation Date",
+        "source_field": "Observation Time",
+        "position": 3
+      },
+      {
+        "target_field": "Reef ID",
+        "source_field": "Reef Label",
+        "position": 4
+      },
+      {
+        "target_field": "Reef Name",
+        "source_field": "Reef Name",
+        "position": 5
+      },
+      {
+        "target_field": "COTS Cull Site",
+        "source_field": "Cull Site",
+        "position": 6
+      },
+      {
+        "target_field": "Longitude",
+        "source_field": "Longitude",
+        "position": 7
+      },
+      {
+        "target_field": "Latitude",
+        "source_field": "Latitude",
+        "position": 8
+      },
+      {
+        "target_field": "Marine Park Zone",
+        "source_field": "Marine Park Zone Type",
+        "position": 9
+      },
+      {
+        "target_field": "Marine Park Mgmt Section",
+        "source_field": "Management Area",
+        "position": 10
+      },
+      {
+        "target_field": "Habitat",
+        "source_field": "Habitat",
+        "position": 11
+      },
+      {
+        "target_field": "Aspect",
+        "source_field": "Aspect",
+        "position": 12
+      },
+      {
+        "target_field": "Swim Type",
+        "source_field": "Swim Type",
+        "position": 13
+      },
+      {
+        "target_field": "Water Depth (M)",
+        "source_field": "Depth (m)",
+        "position": 14
+      },
+      {
+        "target_field": "Visibility",
+        "source_field": "Visibility",
+        "position": 15
+      },
+      {
+        "target_field": "Tide",
+        "source_field": "Tide",
+        "position": 16
+      },
+      {
+        "target_field": "Flood Plume",
+        "source_field": "Flood Plume",
+        "position": 17
+      },
+      {
+        "target_field": "Macroalgae",
+        "source_field": "Macroalgae",
+        "position": 18
+      },
+      {
+        "target_field": "Live Coral",
+        "source_field": "Live Coral",
+        "position": 19
+      },
+      {
+        "target_field": "Live Coral Rock",
+        "source_field": "Live Coral Rock",
+        "position": 20
+      },
+      {
+        "target_field": "Recently Dead Coral",
+        "source_field": "Recently Dead Coral",
+        "position": 21
+      },
+      {
+        "target_field": "Coral Rubble",
+        "source_field": "Coral Rubble",
+        "position": 22
+      },
+      {
+        "target_field": "Live + R.Dead Coral %",
+        "source_field": "Live And Recently Dead Coral",
+        "position": 23
+      },
+      {
+        "target_field": "RDC% of Total Coral Cover",
+        "source_field": "Recently Dead Coral Cover % of Total Coral Cover",
+        "position": 24
+      },
+      {
+        "target_field": "LCC% of Total Coral Cover",
+        "source_field": "Live Coral Cover % of Total Coral Cover",
+        "position": 25
+      },
+      {
+        "target_field": "Total Hard Coral %",
+        "source_field": "Total Hard Coral %",
+        "position": 26
+      },
+      {
+        "target_field": "% Benthos Live Soft Coral",
+        "source_field": "% Benthos Live Soft Coral",
+        "position": 27
+      },
+      {
+        "target_field": "% Benthos Live Hard Coral",
+        "source_field": "% Benthos Live Hard Coral",
+        "position": 28
+      },
+      {
+        "target_field": "Slime Amount",
+        "source_field": "Slime Amount",
+        "position": 29
+      },
+      {
+        "target_field": "Slime Height (cm)",
+        "source_field": "Slime Height",
+        "position": 30
+      },
+      {
+        "target_field": "Entangled/Mat-Like Amount",
+        "source_field": "Entangled/Mat-Like Amount",
+        "position": 31
+      },
+      {
+        "target_field": "Entangled/Mat-Like Height (cm)",
+        "source_field": "Entangled/Mat-Like Height",
+        "position": 32
+      },
+      {
+        "target_field": "Filamentous Amount",
+        "source_field": "Filamentous Amount",
+        "position": 33
+      },
+      {
+        "target_field": "Filamentous Height (cm)",
+        "source_field": "Filamentous Height",
+        "position": 34
+      },
+      {
+        "target_field": "Leafy/Fleshy Amount",
+        "source_field": "Leafy/Fleshy Amount",
+        "position": 35
+      },
+      {
+        "target_field": "Leafy/Fleshy Height (cm)",
+        "source_field": "Leafy/Fleshy Height",
+        "position": 36
+      },
+      {
+        "target_field": "Tree/Bush-Like Amount",
+        "source_field": "Tree/Bush-Like Amount",
+        "position": 37
+      },
+      {
+        "target_field": "Tree/Bush-Like Height (cm)",
+        "source_field": "Tree/Bush-Like Height",
+        "position": 38
+      },
+      {
+        "target_field": "Soft Coral % (Live and Recently dead)",
+        "source_field": "Soft Coral % (Live and Recently dead)",
+        "position": 39
+      },
+      {
+        "target_field": "Soft Coral % (Recently dead of coral type)",
+        "source_field": "Soft Coral % (Recently dead of coral type)",
+        "position": 40
+      },
+      {
+        "target_field": "Soft Coral % (Live coral of coral type)",
+        "source_field": "Soft Coral % (Live coral of coral type)",
+        "position": 41
+      },
+      {
+        "target_field": "Branching Coral % (Live and Recently dead)",
+        "source_field": "Branching Coral % (Live and Recently dead)",
+        "position": 42
+      },
+      {
+        "target_field": "Branching Coral % (Recently dead of coral type)",
+        "source_field": "Branching Coral % (Recently dead of coral type)",
+        "position": 43
+      },
+      {
+        "target_field": "Branching Coral % (Live coral of coral type)",
+        "source_field": "Branching Coral % (Live coral of coral type)",
+        "position": 44
+      },
+      {
+        "target_field": "Bushy Coral % (Live and Recently dead)",
+        "source_field": "Bushy Coral % (Live and Recently dead)",
+        "position": 45
+      },
+      {
+        "target_field": "Bushy Coral % (Recently dead of coral type)",
+        "source_field": "Bushy Coral % (Recently dead of coral type)",
+        "position": 46
+      },
+      {
+        "target_field": "Bushy Coral % (Live coral of coral type)",
+        "source_field": "Bushy Coral % (Live coral of coral type)",
+        "position": 47
+      },
+      {
+        "target_field": "Plate/Table Coral % (Live and Recently dead)",
+        "source_field": "Plate/Table Coral % (Live and Recently dead)",
+        "position": 48
+      },
+      {
+        "target_field": "Plate/Table Coral % (Recently dead of coral type)",
+        "source_field": "Plate/Table Coral % (Recently dead of coral type)",
+        "position": 49
+      },
+      {
+        "target_field": "Plate/Table Coral % (Live coral of coral type)",
+        "source_field": "Plate/Table Coral % (Live coral of coral type)",
+        "position": 50
+      },
+      {
+        "target_field": "Vase/Foliose Coral % (Live and Recently dead)",
+        "source_field": "Vase/Foliose Coral % (Live and Recently dead)",
+        "position": 51
+      },
+      {
+        "target_field": "Vase/Foliose Coral % (Recently dead of coral type)",
+        "source_field": "Vase/Foliose Coral % (Recently dead of coral type)",
+        "position": 52
+      },
+      {
+        "target_field": "Vase/Foliose Coral % (Live coral of coral type)",
+        "source_field": "Vase/Foliose Coral % (Live coral of coral type)",
+        "position": 53
+      },
+      {
+        "target_field": "Encrusting Coral % (Live and Recently dead)",
+        "source_field": "Encrusting Coral % (Live and Recently dead)",
+        "position": 54
+      },
+      {
+        "target_field": "Encrusting Coral % (Recently dead of coral type)",
+        "source_field": "Encrusting Coral % (Recently dead of coral type)",
+        "position": 55
+      },
+      {
+        "target_field": "Encrusting Coral % (Live coral of coral type)",
+        "source_field": "Encrusting Coral % (Live coral of coral type)",
+        "position": 56
+      },
+      {
+        "target_field": "Massive Coral % (Live and Recently dead)",
+        "source_field": "Massive Coral % (Live and Recently dead)",
+        "position": 57
+      },
+      {
+        "target_field": "Massive Coral % (Recently dead of coral type)",
+        "source_field": "Massive Coral % (Recently dead of coral type)",
+        "position": 58
+      },
+      {
+        "target_field": "Massive Coral % (Live coral of coral type)",
+        "source_field": "Massive Coral % (Live coral of coral type)",
+        "position": 59
+      },
+      {
+        "target_field": "Mushroom Coral % (Live and Recently dead)",
+        "source_field": "Mushroom Coral % (Live and Recently dead)",
+        "position": 60
+      },
+      {
+        "target_field": "Mushroom Coral % (Recently dead of coral type)",
+        "source_field": "Mushroom Coral % (Recently dead of coral type)",
+        "position": 61
+      },
+      {
+        "target_field": "Mushroom Coral % (Live coral of coral type)",
+        "source_field": "Mushroom Coral % (Live coral of coral type)",
+        "position": 62
+      },
+      {
+        "target_field": "Bleaching Present (Y/N)",
+        "source_field": "Bleaching Present",
+        "position": 63
+      },
+      {
+        "target_field": "Bleaching Cause",
+        "source_field": "Bleaching Cause",
+        "position": 64
+      },
+      {
+        "target_field": "Bleach Impact (calculated via matrix)",
+        "source_field": "Bleaching Impact (calculated via matrix)",
+        "position": 65
+      },
+      {
+        "target_field": "Bleached Coral % (calculated via matrix)",
+        "source_field": "Bleached Coral % (calculated via matrix)",
+        "position": 66
+      },
+      {
+        "target_field": "Bleached Coral Code (calculated via matrix)",
+        "source_field": "Bleached Coral Code (calculated via matrix)",
+        "position": 67
+      },
+      {
+        "target_field": "Bleached Average Severity Index (calculated via matrix)",
+        "source_field": "Bleached Average Severity Index (calculated via matrix)",
+        "position": 68
+      },
+      {
+        "target_field": "Branching Bleached %",
+        "source_field": "Branching Bleached %",
+        "position": 69
+      },
+      {
+        "target_field": "Bushy Bleached %",
+        "source_field": "Bushy Bleached %",
+        "position": 70
+      },
+      {
+        "target_field": "Plate/Table Bleached %",
+        "source_field": "Plate/Table Bleached %",
+        "position": 71
+      },
+      {
+        "target_field": "Vase/Foliose Bleached %",
+        "source_field": "Vase/Foliose Bleached %",
+        "position": 72
+      },
+      {
+        "target_field": "Encrusting Bleached %",
+        "source_field": "Encrusting Bleached %",
+        "position": 73
+      },
+      {
+        "target_field": "Massive Bleached %",
+        "source_field": "Massive Bleached %",
+        "position": 74
+      },
+      {
+        "target_field": "Mushroom Bleached %",
+        "source_field": "Mushroom Bleached %",
+        "position": 75
+      },
+      {
+        "target_field": "Soft Bleached %",
+        "source_field": "Soft Bleached %",
+        "position": 76
+      },
+      {
+        "target_field": "Branching Bleach Severity",
+        "source_field": "Branching Bleaching Severity",
+        "position": 77
+      },
+      {
+        "target_field": "Bushy Bleach Severity",
+        "source_field": "Bushy Bleaching Severity",
+        "position": 78
+      },
+      {
+        "target_field": "Plate/Table Bleach Severity",
+        "source_field": "Plate/Table Bleaching Severity",
+        "position": 79
+      },
+      {
+        "target_field": "Vase/Foliose Bleach Severity",
+        "source_field": "Vase/Foliose Bleaching Severity",
+        "position": 80
+      },
+      {
+        "target_field": "Encrusting Bleach Severity",
+        "source_field": "Encrusting Bleaching Severity",
+        "position": 81
+      },
+      {
+        "target_field": "Massive Bleach Severity",
+        "source_field": "Massive Bleaching Severity",
+        "position": 82
+      },
+      {
+        "target_field": "Mushroom Bleach Severity",
+        "source_field": "Mushroom Bleaching Severity",
+        "position": 83
+      },
+      {
+        "target_field": "Soft Bleach Severity",
+        "source_field": "Soft Bleaching Severity",
+        "position": 84
+      },
+      {
+        "target_field": "COTS Seen (Adult)",
+        "source_field": "COTS (Adult)",
+        "position": 85
+      },
+      {
+        "target_field": "COTS Seen (Juvenile)",
+        "source_field": "COTS (Juvenile)",
+        "position": 86
+      },
+      {
+        "target_field": "% coral cover affected by COTS",
+        "source_field": "% Coral cover affected by COTS",
+        "position": 87
+      }
+    ],
+    "new_fields": [
+      {
+        "field": "error_flag",
+        "position": 105,
+        "default": 0
+      }
+    ],
+    "data_type_mappings": [
+      {
+        "field": "Program ID",
+        "data_type": "Integer"
+      },
+      {
+        "field": "Survey Program",
+        "data_type": "Character"
+      },
+      {
+        "field": "Observation Date",
+        "data_type": "Date"
+      },
+      {
+        "field": "Reef ID",
+        "data_type": "Character"
+      },
+      {
+        "field": "Reef Name",
+        "data_type": "Character"
+      },
+      {
+        "field": "COTS Cull Site",
+        "data_type": "Character"
+      },
+      {
+        "field": "Longitude",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Latitude",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Marine Park Zone",
+        "data_type": "Character"
+      },
+      {
+        "field": "Marine Park Mgmt Section",
+        "data_type": "Character"
+      },
+      {
+        "field": "Habitat",
+        "data_type": "Character"
+      },
+      {
+        "field": "Aspect",
+        "data_type": "Character"
+      },
+      {
+        "field": "Swim Type",
+        "data_type": "Character"
+      },
+      {
+        "field": "Water Depth (M)",
+        "data_type": "Character"
+      },
+      {
+        "field": "Visibility",
+        "data_type": "Character"
+      },
+      {
+        "field": "Tide",
+        "data_type": "Character"
+      },
+      {
+        "field": "Flood Plume",
+        "data_type": "Character"
+      },
+      {
+        "field": "Macroalgae",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Live Coral",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Live Coral Rock",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Recently Dead Coral",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Coral Rubble",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Live + R.Dead Coral %",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "RDC% of Total Coral Cover",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "LCC% of Total Coral Cover",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Total Hard Coral %",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "% Benthos Live Soft Coral",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "% Benthos Live Hard Coral",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Slime Amount",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Slime Height (cm)",
+        "data_type": "Character"
+      },
+      {
+        "field": "Entangled/Mat-Like Amount",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Entangled/Mat-Like Height (cm)",
+        "data_type": "Character"
+      },
+      {
+        "field": "Filamentous Amount",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Filamentous Height (cm)",
+        "data_type": "Character"
+      },
+      {
+        "field": "Leafy/Fleshy Amount",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Leafy/Fleshy Height (cm)",
+        "data_type": "Character"
+      },
+      {
+        "field": "Tree/Bush-Like Amount",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Tree/Bush-Like Height (cm)",
+        "data_type": "Character"
+      },
+      {
+        "field": "Soft Coral % (Live and Recently dead)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Soft Coral % (Recently dead of coral type)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Soft Coral % (Live coral of coral type)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Branching Coral % (Live and Recently dead)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Branching Coral % (Recently dead of coral type)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Branching Coral % (Live coral of coral type)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Bushy Coral % (Live and Recently dead)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Bushy Coral % (Recently dead of coral type)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Bushy Coral % (Live coral of coral type)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Plate/Table Coral % (Live and Recently dead)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Plate/Table Coral % (Recently dead of coral type)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Plate/Table Coral % (Live coral of coral type)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Vase/Foliose Coral % (Live and Recently dead)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Vase/Foliose Coral % (Recently dead of coral type)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Vase/Foliose Coral % (Live coral of coral type)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Encrusting Coral % (Live and Recently dead)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Encrusting Coral % (Recently dead of coral type)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Encrusting Coral % (Live coral of coral type)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Massive Coral % (Live and Recently dead)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Massive Coral % (Recently dead of coral type)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Massive Coral % (Live coral of coral type)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Mushroom Coral % (Live and Recently dead)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Mushroom Coral % (Recently dead of coral type)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Mushroom Coral % (Live coral of coral type)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Bleaching Present (Y/N)",
+        "data_type": "Character"
+      },
+      {
+        "field": "Bleaching Cause",
+        "data_type": "Character"
+      },
+      {
+        "field": "Bleach Impact (calculated via matrix)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Bleached Coral % (calculated via matrix)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Bleached Coral Code (calculated via matrix)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Bleached Average Severity Index (calculated via matrix)",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Branching Bleached %",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Bushy Bleached %",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Plate/Table Bleached %",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Vase/Foliose Bleached %",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Encrusting Bleached %",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Massive Bleached %",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Mushroom Bleached %",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Soft Bleached %",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Branching Bleach Severity",
+        "data_type": "Character"
+      },
+      {
+        "field": "Bushy Bleach Severity",
+        "data_type": "Character"
+      },
+      {
+        "field": "Plate/Table Bleach Severity",
+        "data_type": "Character"
+      },
+      {
+        "field": "Vase/Foliose Bleach Severity",
+        "data_type": "Character"
+      },
+      {
+        "field": "Encrusting Bleach Severity",
+        "data_type": "Character"
+      },
+      {
+        "field": "Massive Bleach Severity",
+        "data_type": "Character"
+      },
+      {
+        "field": "Mushroom Bleach Severity",
+        "data_type": "Character"
+      },
+      {
+        "field": "Soft Bleach Severity",
+        "data_type": "Character"
+      },
+      {
+        "field": "COTS Seen (Adult)",
+        "data_type": "Integer"
+      },
+      {
+        "field": "COTS Seen (Juvenile)",
+        "data_type": "Integer"
+      },
+      {
+        "field": "% coral cover affected by COTS",
+        "data_type": "Numeric"
+      }
+    ]
+  }
+}

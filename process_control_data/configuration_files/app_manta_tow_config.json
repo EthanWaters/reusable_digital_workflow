@@ -1,0 +1,120 @@
+{
+    "metadata": {
+      "author": "Ethan Waters",
+      "description": "Configuration for processing manta tow data for DST app",
+      "created": "2023-11-15",
+      "control_data_type": "manta_tow",
+      "GBRMPA_keyword": "Surveillance",
+      "legacy_sheet_index": 4,
+      "ID_col": "ID",
+      "output_directory": {
+        "control_data": "Output/control_data",
+        "spatial_data": "Output/spatial_data",
+        "reports": "Output/reports"
+      },
+      "input_directory": {
+        "control_data": "Input/control_data",
+        "serialised_spatial_path": "Input/spatial_data",
+        "app_to_research_names": "configuration_files/app_to_research_names_manta_tow.json",
+        "reports": "Input/reports"
+      }
+    },
+    "mappings": {
+      "transformations": [
+        {
+          "target_field": "date",
+          "source_field": "SurveyTime",
+          "position": 1
+        },
+        {
+          "target_field": "vessel_name",
+          "source_field": "VesselName",
+          "position": 2
+        },
+        {
+          "target_field": "vessel_voyage_number",
+          "source_field": "CrownOfThornsStarfishVoyageId",
+          "position": 3
+        },
+        {
+          "target_field": "reef_label",
+          "source_field": "ReefId",
+          "position": 4
+        },
+        {
+          "target_field": "reef_name",
+          "source_field": "ReefName",
+          "position": 5
+        },
+        {
+          "target_field": "distance",
+          "source_field": "TowDistance",
+          "position": 10
+        },
+        {
+          "target_field": "average_speed",
+          "source_field": "AverageSpeed",
+          "position": 11
+        },
+        {
+          "target_field": "cots",
+          "source_field": "CrownOfThornsStarfishCount",
+          "position": 12
+        },
+        {
+          "target_field": "scars",
+          "source_field": "FeedingScarCountRangeId",
+          "position": 13
+        },
+        {
+          "target_field": "hard_coral",
+          "source_field": "HardCoralProportionRangeDescription",
+          "position": 14
+        },
+        {
+          "target_field": "soft_coral",
+          "source_field": "SoftCoralProportionRangeDescription",
+          "position": 15
+        },
+        {
+          "target_field": "recently_dead_coral",
+          "source_field": "RecentlyDeadCoralProportionRangeDescription",
+          "position": 16
+        },
+        {
+          "target_field": "site_name",
+          "source_field": "CullSiteName",
+          "position": 17
+        }
+      ],
+      "new_fields": [
+        {
+          "field": "start_latitude",
+          "default": {"function_call": "st_coordinates(st_startpoint({DATAFRAME}$Geometry))[,\"Y\"]"},
+          "position": 6
+        },
+        {
+          "field": "stop_latitude",
+          "default":  {"function_call": "st_coordinates(st_endpoint({DATAFRAME}$Geometry))[,\"Y\"]"},
+          "position": 8
+        },
+        {
+          "field": "start_longitude",
+          "default":  {"function_call": "st_coordinates(st_startpoint({DATAFRAME}$Geometry))[,\"X\"]"},
+          "position": 7
+        },
+        {
+          "field": "stop_longitude",
+          "default":  {"function_call": "st_coordinates(st_endpoint({DATAFRAME}$Geometry))[,\"X\"]"},
+          "position": 9
+        },
+        {
+          "field": "error_flag",
+          "position": 18,
+          "default": 0
+        }
+      ]
+    }
+  }
+
+  
