@@ -63,7 +63,7 @@
         },
         {
           "target_field": "scars",
-          "source_field": "FeedingScarCountRangeId",
+          "source_field": "FeedingScarCountRangeDescription",
           "position": 13
         },
         {

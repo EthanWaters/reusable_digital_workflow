@@ -37,6 +37,8 @@ main <- function(configuration_path, db_host, db_port, db_name, db_user, db_pass
   db_user <- "root"
   db_password <- "csiro"
   
+  new_files <- c("Input/control_data/TAB#3 COTS_Surveillance_2024_1_22_9_9_7.json", "Input/control_data/TAB#5 COTS_Surveillance_2024_1_20_17_49_58.json", "Input/control_data/TAB#6 COTS_Surveillance_2024_1_20_17_49_21.json")
+  
   configuration <- fromJSON(configuration_path)
   control_data_type <- configuration$metadata$control_data_type
   calculate_site_rasters <- 0
@@ -91,6 +93,10 @@ main <- function(configuration_path, db_host, db_port, db_name, db_user, db_pass
     for(i in coral_cover_cols){
       transformed_data_df[,i] <- get_coral_cover(transformed_data_df[,i])
     }
+  }
+  
+  if ("Feeding Scars" %in% colnames(transformed_data_df)){
+    transformed_data_df[["Feeding Scars"]] <- get_feeding_scar_from_description(transformed_data_df[["Feeding Scars"]])
   }
 
     
