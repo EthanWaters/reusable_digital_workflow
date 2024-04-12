@@ -123,7 +123,7 @@ main <- function(configuration_path, db_host, db_port, db_name, db_user, db_pass
   verified_new_df_test <- separate_new_control_app_data(verified_data_df, legacy_df, control_data_type)
   ### CHECK 
   
-  ### WRITE TO SQL SERVER sdfsdf 
+  ### WRITE TO SQL SERVER 
   
 }
   
