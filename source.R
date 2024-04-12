@@ -90,6 +90,11 @@ get_start_and_end_coords <- function(start_lat, stop_lat, start_long, stop_long)
   
 }
 
+get_feeding_scar_from_description <- function(scar_desctiptions){
+  
+  return(tolower(substr(scar_desctiptions, 1, 1)))
+  
+}
 
 get_worst_case_feeding_scar <- function(scars){
   
@@ -105,14 +110,13 @@ get_worst_case_feeding_scar <- function(scars){
 }
 
 get_coral_cover <- function(coral){
-  pattern <- "[1-9][+0-9]?-"
+  pattern <- "(?:[1-9]\\-)|0|(?:(?:[1-9]\\+))"
   matches <- str_extract(coral, pattern)
 }
 
 get_median_coral_cover <- function(coral){
   
-  pattern <- "[1-9][+0-9]?-"
-  matches <- str_extract(coral, pattern)
+  matches <- get_coral_cover(coral)
   ordered_coral_cover <- c("0", "1-", "1+", "2-", "2+", "3-", "3+", "4-", "4+", "5-", "5+")
   matches <- na.omit(matches)
   numerical_values <- match(matches, ordered_coral_cover)
@@ -197,7 +201,7 @@ site_numbers_to_names <- function(numbers, reef_names){
 aggregate_manta_tows_site_resolution <- function(data_df) {
   col_names <- colnames(data_df)
   
-  aggregated_data <- formatted_data_df %>%
+  aggregated_data <- data_df %>%
     group_by(Vessel, Voyage, `Reef ID`, `Nearest Site`) %>%
     dplyr::summarize(
       `Tow date` = min(`Tow date`),
@@ -214,7 +218,7 @@ aggregate_manta_tows_site_resolution <- function(data_df) {
       `Soft Coral` = get_median_coral_cover(`Soft Coral`),
       `Recently Dead Coral` = get_median_coral_cover(`Recently Dead Coral`),
       `Nearest Site` = `Nearest Site`,
-      `error_flag` = any(`error_flag`)
+      `error_flag` = as.numeric(any(as.logical(`error_flag`)))
     ) %>%
     unnest_wider(coords) %>%
     select(all_of(col_names))%>%
@@ -256,11 +260,17 @@ contribute_to_metadata_report <- function(key, data, parent_key=NULL, report_pat
 }
 
 separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data_type){
+  if("ID" %in% colnames(new_data_df)){
+    ID_col <- colnames(new_data_df)[1]
+  } else {
+    ID_col <- ""
+  } 
   
-  ID_col <- colnames(new_data_df)[1]
   column_names <- colnames(legacy_data_df)
   verified_data_df <- data.frame(matrix(ncol = length(column_names), nrow = 0))
+  perfect_duplicates <- data.frame(matrix(ncol = length(column_names), nrow = 0))
   colnames(verified_data_df) <- column_names 
+  colnames(perfect_duplicates) <- column_names 
   
   # If there is a unique ID then perfect duplicates can easily be removed.
   if(has_authorative_ID){
@@ -299,6 +309,7 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
     non_discrepancy_ids <- c(perfect_duplicates[[ID_col]], new_entries[[ID_col]])
     discrepancies_new <- new_data_df[!(new_data_df[[ID_col]] %in% non_discrepancy_ids),]
     discrepancies_legacy <- legacy_data_df[!(legacy_data_df[[ID_col]] %in% non_discrepancy_ids),]
+    verified_discrepancies <- compare_discrepancies_directly(discrepancies_new, discrepancies_legacy)
     
   } else {
     
@@ -319,12 +330,17 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
     # There can be many to many perfect matches. This means that there will be 
     # multiple indices referring to the same row for perfect duplicates. 
     # unique() should be utilised when subsetting the input dataframes.
-    separated_close_matches <- vectorised_separate_close_matches(close_match_rows)
-    perfect_duplicates <- new_data_df[unique(separated_close_matches$perfect[,2]),]
-    new_entries_i <- unique(c(separated_close_matches$discrepancies[,2],separated_close_matches$perfect[,2]))
-    
-    # This will contain any new entries and any rows that could not be separated
-    new_entries <- new_data_df[-new_entries_i,]
+    if(nrow(close_match_rows) > 0){
+      separated_close_matches <- vectorised_separate_close_matches(close_match_rows)
+      perfect_duplicates <- new_data_df[unique(separated_close_matches$perfect[,2]),]
+      new_entries_i <- unique(c(separated_close_matches$discrepancies[,2],separated_close_matches$perfect[,2]))
+      
+      # This will contain any new entries and any rows that could not be separated
+      new_entries <- new_data_df[-new_entries_i,]
+      verified_discrepancies <- compare_discrepancies(new_data_df, legacy_data_df, separated_close_matches$discrepancies)
+    } else {
+      new_entries <- new_data_df
+    }
     
   }
   
@@ -336,7 +352,6 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
   # be left as is. 
   
   verified_data_df <- rbind(verified_data_df, perfect_duplicates)
-  verified_discrepancies <- compare_discrepancies(new_data_df, legacy_data_df, separated_close_matches$discrepancies)
   verified_data_df <- rbind(verified_data_df, verified_discrepancies)
   verified_data_df <- rbind(verified_data_df, new_entries)
   
@@ -347,8 +362,15 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
 
 
 separate_new_control_app_data <- function(new_data_df, legacy_data_df, control_data_type){
+  new_data_df <- data.frame(new_data_df, check.names = FALSE)
+  legacy_data_df <- data.frame(legacy_data_df, check.names = FALSE)
   
-  ID_col <- colnames(new_data_df)[1]
+  if("ID" %in% colnames(new_data_df)){
+    ID_col <- colnames(new_data_df)[1]
+  } else {
+    ID_col <- ""
+  } 
+  
   column_names <- colnames(legacy_data_df)
   verified_data_df <- data.frame(matrix(ncol = length(column_names), nrow = 0))
   colnames(verified_data_df) <- column_names 
@@ -370,13 +392,16 @@ separate_new_control_app_data <- function(new_data_df, legacy_data_df, control_d
   # There can be many to many perfect matches. This means that there will be 
   # multiple indices referring to the same row for perfect duplicates. 
   # unique() should be utilised when subsetting the input dataframes.
-  separated_close_matches <- vectorised_separate_close_matches(close_match_rows)
-  perfect_duplicates <- new_data_df[unique(separated_close_matches$perfect[,2]),]
-  Non_new_entries_i <- unique(c(separated_close_matches$discrepancies[,2],separated_close_matches$perfect[,2]))
-  
-  # This will contain any new entries and any rows that could not be separated
-  new_entries <- new_data_df[-Non_new_entries_i,]
-  
+  if(nrow(close_match_rows) > 0){
+    separated_close_matches <- vectorised_separate_close_matches(close_match_rows)
+    perfect_duplicates <- new_data_df[unique(separated_close_matches$perfect[,2]),]
+    new_entries_i <- unique(c(separated_close_matches$discrepancies[,2],separated_close_matches$perfect[,2]))
+    
+    # This will contain any new entries and any rows that could not be separated
+    new_entries <- new_data_df[-new_entries_i,]
+  } else {
+    new_entries <- new_data_df
+  }
   # Given that it is not possible to definitively know if a change / discrepancy 
   # was intentional or not both new and change entries will pass through the 
   # same validation checks and if passed will be accepted as usable and assumed to be . If failed, 
@@ -445,6 +470,23 @@ compare_discrepancies <- function(new_data_df, legacy_data_df, discrepancies){
   
 }
 
+compare_discrepancies_directly <- function(new_data_df, legacy_data_df){
+  # compare the rows identified as discrepancies from the new and legacy 
+  # dataframes. Most changes should be QA and either still meet the requirements 
+  # or now meet the requirements and hence will not be flagged as an error. 
+  # However a minor number of cases a row is mistakingly changed to no longer be
+  # useable, when this occurs the original row will be used implace of the new 
+  # one. 
+  
+  legacy_error_flag <- legacy_data_df[, "error_flag"]
+  new_error_flag <- new_data_df[, "error_flag"]
+  
+  is_legacy_rows <- ifelse((new_error_flag == 1) & (legacy_error_flag == 0), 1, 0)
+  is_legacy_rows <- as.logical(is_legacy_rows)
+  output <- rbind(new_data_df[!is_legacy_rows,], legacy_data_df[is_legacy_rows,])
+  return(output)
+  
+}
 
 vectorised_separate_close_matches <- function(close_match_rows){
   # Separate the close matching rows with a vectorized process. Duplicates in 
