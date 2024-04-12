@@ -111,7 +111,6 @@ main <- function(configuration_path, db_host, db_port, db_name, db_user, db_pass
   legacy_df <- set_data_type(legacy_df, app_to_research_config$mappings$data_type_mappings) 
   formatted_data_df <- set_data_type(transformed_data_df, app_to_research_config$mappings$data_type_mappings) 
   verified_data_df <- verify_entries(formatted_data_df, configuration)
-  legacy_df <- verify_entries(legacy_df, configuration) 
   verified_data_df <- flag_duplicates(verified_data_df)
   
   ### AGGREGATION 
