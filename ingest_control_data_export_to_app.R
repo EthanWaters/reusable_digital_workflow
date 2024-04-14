@@ -120,11 +120,11 @@ main <- function(configuration_path, db_host, db_port, db_name, db_user, db_pass
     verified_data_df <- aggregate_culls_site_resolution(verified_data_df)
   }
   
-  verified_new_df_test <- separate_new_control_app_data(verified_data_df, legacy_df, control_data_type)
-  ### CHECK 
+  verified_new_df <- separate_new_control_app_data(verified_data_df, legacy_df, control_data_type)
+  verified_data_df <- map_all_fields(verified_data_df, verified_data_df, app_to_research_config$mapping$reverse_transformation)
   
   ### WRITE TO SQL SERVER 
-  
+  dbWriteTable(conn, "your_table", data, append = TRUE, row.names = FALSE)
 }
   
   
