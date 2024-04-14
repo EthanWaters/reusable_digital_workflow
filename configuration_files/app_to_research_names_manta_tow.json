@@ -97,6 +97,98 @@
           "position": 18
         }
         ],
+        "reverse_transformation": [
+          {
+            "target_field": "date",
+            "source_field": "Tow date",
+            "position": 1
+          },
+          {
+            "target_field": "vessel_name",
+            "source_field": "Vessel",
+            "position": 2
+          },
+          {
+            "target_field": "vessel_voyage_number",
+            "source_field": "Voyage",
+            "position": 3
+          },
+          {
+            "target_field": "reef_label",
+            "source_field": "Reef ID",
+            "position": 4
+          },
+          {
+            "target_field": "reef_name",
+            "source_field": "Reef",
+            "position": 5
+          },
+          {
+            "target_field": "distance",
+            "source_field": "Distance (metres)",
+            "position": 10
+          },
+          {
+            "target_field": "start_latitude",
+            "source_field": "Start Lat",
+            "position": 6
+          },
+          {
+            "target_field": "start_longitude",
+            "source_field": "Start Lng",
+            "position": 7
+          },
+          {
+            "target_field": "stop_latitude",
+            "source_field": "End Lat",
+            "position": 8
+          },
+          {
+            "target_field": "stop_longitude",
+            "source_field": "End Lng",
+            "position": 9
+          },
+          {
+            "target_field": "average_speed",
+            "source_field": "Average Speed (km/h)",
+            "position": 11
+          },
+          {
+            "target_field": "cots",
+            "source_field": "COTS Observed",
+            "position": 12
+          },
+          {
+            "target_field": "scars",
+            "source_field": "Feeding Scars",
+            "position": 13
+          },
+          {
+            "target_field": "hard_coral",
+            "source_field": "Hard Coral",
+            "position": 14
+          },
+          {
+            "target_field": "soft_coral",
+            "source_field": "Soft Coral",
+            "position": 15
+          },
+          {
+            "target_field": "recently_dead_coral",
+            "source_field": "Recently Dead Coral",
+            "position": 16
+          },
+          {
+            "target_field": "site_name",
+            "source_field": "Nearest Site",
+            "position": 17
+          },
+          {
+            "target_field": "error_flag",
+            "source_field": "error_flag",
+            "position": 18
+          }
+          ],
         "data_type_mappings": [
           {
             "field": "Reef ID",
