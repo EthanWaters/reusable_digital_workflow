@@ -35,7 +35,7 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     
     configuration <- fromJSON(configuration_path)
     
-    most_recent_report_path <- find_recent_file(configuration$metadata$output_directory$reports, "Report", "json")
+    most_recent_report_path <- find_recent_file(configuration$metadata$output_directory$reports, configuration$metadata$control_data_type, "json")
     most_recent_leg_path <- find_recent_file(configuration$metadata$output_directory$control_data, configuration$metadata$control_data_type, "csv")
     most_recent_new_path <- find_recent_file(configuration$metadata$input_directory$control_data, configuration$metadata$GBRMPA_keyword, "csv")
     most_recent_kml_path <- find_recent_file(configuration$metadata$input_directory$spatial_data, "sites", "kml")
@@ -76,15 +76,16 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     calculate_site_rasters <- 1
     if (is.null(kml_path)) {
       kml_path <- most_recent_kml_path
-      tryCatch({
-        if(basename(kml_path) == basename(previous_kml_path)){
-          calculate_site_rasters <- 0
-        } 
-      }, error = function(e) {
-        print("Error comparing previous and most recent kml paths")
-        calculate_site_rasters <- 1
-      })
-    } 
+    }
+    tryCatch({
+      if(basename(kml_path) == basename(previous_kml_path)){
+        calculate_site_rasters <- 0
+      } 
+    }, error = function(e) {
+      print("Error comparing previous and most recent kml paths")
+      calculate_site_rasters <- 1
+    })
+   
     
     new_data_df <- rio::import(new_path)
     if(is_legacy_data_available){
