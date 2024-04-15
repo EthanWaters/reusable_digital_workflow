@@ -1794,6 +1794,7 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_s
     tryCatch({
       base::message("Loading previously saved raster data ...")
       site_regions <- readRDS(spatial_file)
+      crs <- projection(site_regions[[1]])
       load_site_rasters_failed <- FALSE
       base::message("Loaded data successfully")
     }, error = function(e) {
