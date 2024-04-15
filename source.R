@@ -91,9 +91,7 @@ get_start_and_end_coords <- function(start_lat, stop_lat, start_long, stop_long)
 }
 
 get_feeding_scar_from_description <- function(scar_desctiptions){
-  
   return(tolower(substr(scar_desctiptions, 1, 1)))
-  
 }
 
 get_worst_case_feeding_scar <- function(scars){

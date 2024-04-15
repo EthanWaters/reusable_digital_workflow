@@ -1,5 +1,5 @@
 
-main <- function(configuration_path, db_host, db_port, db_name, db_user, db_password, new_files) {
+main <- function(configuration_path, connection_string, new_files) {
     # Initialize -------------------------------------------------------------
   source("source.R")
   library("tools")
@@ -31,12 +31,8 @@ main <- function(configuration_path, db_host, db_port, db_name, db_user, db_pass
   library("doParallel")
   library("DBI")
   
-  db_host <- "127.0.0.1"
-  db_port <- "3306"
-  db_name <- "cotscontrolcentre"
-  db_user <- "root"
-  db_password <- "csiro"
   
+  connection_string <- "MariaDB://root:csiro@127.0.0.1:3306/cotscontrolcentre"
   new_files <- c("Input/control_data/TAB#3 COTS_Surveillance_2024_1_22_9_9_7.json", "Input/control_data/TAB#5 COTS_Surveillance_2024_1_20_17_49_58.json", "Input/control_data/TAB#6 COTS_Surveillance_2024_1_20_17_49_21.json")
   
   configuration <- fromJSON(configuration_path)
@@ -55,7 +51,7 @@ main <- function(configuration_path, db_host, db_port, db_name, db_user, db_pass
     new_data_df <- sf::st_sf(new_data_df)
   } 
 
-  con <- dbConnect(RMariaDB::MariaDB(), dbname = db_name, user = db_user, password = db_password, host = db_host, port = db_port)
+  con <- dbConnect(connection_string)
   legacy_df <- get_app_data_database(con, configuration$metadata$control_data_type)
   
   serialised_spatial_path <- find_recent_file(configuration$metadata$input_directory$serialised_spatial_path, "site", "rds")
@@ -132,14 +128,10 @@ main <- function(configuration_path, db_host, db_port, db_name, db_user, db_pass
 
 args <- commandArgs(trailingOnly = TRUE)
 configuration_path <- args[1]
-db_host <- args[2]
-db_port <- args[3]
-db_name <- args[4]
-db_user <- args[5]
-db_password <- args[6]
-new_files <- args[-c(1:6)]
+connection_string <- args[2]
+new_files <- args[-c(1:2)]
 
-main(configuration_path, db_host, db_port, db_name, db_user, db_password, new_files)
+main(configuration_path, connection_string, new_files)
 
 
 

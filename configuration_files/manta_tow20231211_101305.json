@@ -4,6 +4,7 @@
     "description": ["Configuration for manta tow data"],
     "created": ["2023-11-15"],
     "control_data_type": ["manta_tow"],
+    "GBRMPA_keyword": ["Surveillance"],
     "legacy_sheet_index": [4],
     "ID_col": ["ID"],
     "is_ID_preferred": [false],
