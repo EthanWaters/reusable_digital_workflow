@@ -447,13 +447,13 @@ flag_duplicates <- function(new_data_df){
     grandparent <- as.character(sys.call(sys.parent()))[1]
     parent <- as.character(match.call())[1]
     warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have been flagged as duplicates", 
-                     toString(data_df[is_duplicate, 1]), "and the following indexes", toString((1:nrow(data_df))[is_duplicate]))
+                     toString(new_data_df[is_duplicate, 1]), "and the following indexes", toString((1:nrow(new_data_df))[is_duplicate]))
     base::message(warning)
     if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
       # Append the warning to an existing matrix 
       warnings <- data.frame(
-        ID = data_df[is_duplicate, 1],
-        index = (1:nrow(data_df))[is_duplicate],
+        ID = new_data_df[is_duplicate, 1],
+        index = (1:nrow(new_data_df))[is_duplicate],
         message = "flagged as duplicates"
       )
       contribute_to_metadata_report("Duplicates", warnings, parent_key = "Warning")
@@ -1155,7 +1155,7 @@ verify_integers_positive <- function(data_df) {
   # as such. All relevant columns were set as integers in the set_data_type 
   # function
   
-  is_integer <- sapply(output_df[1,],is.integer)
+  is_integer <- sapply(data_df[1,],is.integer)
   if(any(is_integer)){
     col_check <- apply(data_df[,is_integer], 2, function(x) x < 0)
     col_check <- ifelse(is.na(col_check), FALSE, col_check)
