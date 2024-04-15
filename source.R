@@ -1485,7 +1485,7 @@ set_data_type <- function(data_df, mapping){
     
     # Convert the column to the specified data type
     if(tolower(data_type) == "date"){
-      output_df[[column_name]] <- parse_date_time(data_df[[column_name]], orders = c('dmy', 'ymd', 'ymd_HMS', '%d/%b/%Y %I:%M:%S %p', '%Y/%b/%d %I:%M:%S %p', '%I:%M:%S'))
+      output_df[[column_name]] <- parse_date_time(data_df[[column_name]], orders = c('dmy_HMS', "%d/%m/%Y %I:%M:%S %p", 'dmy'))
     } else if (tolower(data_type) == "time") {
       time <- as.POSIXct(data_df[[column_name]], format = "%H:%M:%S")
       output_df[[column_name]] <- format(time, '%H:%M:%S')

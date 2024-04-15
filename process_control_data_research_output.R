@@ -1,5 +1,5 @@
 
-main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path = NULL) {
+main <- function(configuration_path, aggregate = TRUE, new_path = NULL, kml_path = NULL, leg_path = NULL) {
   tryCatch({
     # Initialize -------------------------------------------------------------
     source("source.R")
@@ -16,7 +16,6 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     library("fastmatch")
     library("lubridate")
     library("rlang")
-    # library("inline")
     library("purrr")
     library("jsonlite")
     library("sf")
@@ -198,16 +197,28 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
 
 
 args <- commandArgs(trailingOnly = TRUE)
-new_path <- args[1]
-configuration_path <- args[2]
-kml_path <- args[3]
-if(length(args) >= 4){
-  leg_path <- args[4]
-} else{
-  leg_path <- NULL
+configuration_path <- args[1]
+
+# Initialize optional arguments as NULL
+new_path <- NULL
+kml_path <- NULL
+leg_path <- NULL
+aggregate <- TRUE
+
+# Loop through the arguments to find optional ones
+for (i in 2:length(args)) {
+  if (startsWith(args[i], "--new=")) {
+    new_path <- sub("--new=", "", args[i])
+  } else if (startsWith(args[i], "--kml=")) {
+    kml_path <- sub("--kml=", "", args[i])
+  } else if (startsWith(args[i], "--leg=")) {
+    leg_path <- sub("--leg=", "", args[i])
+  } else if (startsWith(args[i], "--aggregate=")) {
+    aggregate <- sub("--aggregate=", "", args[i])
+  }
 }
 
-main(new_path, configuration_path, kml_path, leg_path)
+main(configuration_path, aggregate , new_path, kml_path, leg_path)
 
 
 
