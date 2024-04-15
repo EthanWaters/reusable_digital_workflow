@@ -27,7 +27,6 @@ main <- function(configuration_path, aggregate = TRUE, new_path = NULL, kml_path
     library("lwgeom")
     library("stars")
     library("stringr")
-    library("gmailr")
     library("future")
     library("foreach")
     library("doParallel")
@@ -141,6 +140,10 @@ main <- function(configuration_path, aggregate = TRUE, new_path = NULL, kml_path
       legacy_df <- set_data_type(legacy_df, configuration$mappings$data_type_mappings) 
     }
     formatted_data_df <- set_data_type(transformed_data_df, configuration$mappings$data_type_mappings) 
+    
+    if(configuration$metadata$control_data_type == "manta_tow"){
+      formatted_data_df <- seperate_date_time_manta_tow(formatted_data_df)
+    }
     
     verified_data_df <- verify_entries(formatted_data_df, configuration)
     if(is_new && is_legacy_data_available){
