@@ -59,6 +59,17 @@ get_app_data_database <- function(con, control_data_type){
 }
 
 
+seperate_date_time_manta_tow <- function(data_df){
+  
+  date_time <- data_df$`Tow date`
+  is_date_time_na <- is.na(date_time)
+  data_df$`Tow Time`[!is_date_time_na] <- format(date_time[!is_date_time_na], format = "%H:%M:%S")
+  
+  data_df$`Tow date`[!is_date_time_na] <- date(date_time[!is_date_time_na])
+  return(data_df)
+}
+
+
 get_reef_label <- function(names){
   reef_label_pattern <- "\\b(1[0-9]|2[0-9]|10)-\\d{3}[a-z]?\\b"
   reef_labels <- sapply(str_extract(names, reef_id_pattern), toString)
@@ -434,13 +445,13 @@ flag_duplicates <- function(new_data_df){
     grandparent <- as.character(sys.call(sys.parent()))[1]
     parent <- as.character(match.call())[1]
     warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have been flagged as duplicates", 
-                     toString(data_df[is_duplicate, 1]), "and the following indexes", toString((1:nrow(data_df))[is_duplicate]))
+                     toString(new_data_df[is_duplicate, 1]), "and the following indexes", toString((1:nrow(new_data_df))[is_duplicate]))
     base::message(warning)
     if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
       # Append the warning to an existing matrix 
       warnings <- data.frame(
-        ID = data_df[is_duplicate, 1],
-        index = (1:nrow(data_df))[is_duplicate],
+        ID = new_data_df[is_duplicate, 1],
+        index = (1:nrow(new_data_df))[is_duplicate],
         message = "flagged as duplicates"
       )
       contribute_to_metadata_report("Duplicates", warnings, parent_key = "Warning")
@@ -1142,7 +1153,7 @@ verify_integers_positive <- function(data_df) {
   # as such. All relevant columns were set as integers in the set_data_type 
   # function
   
-  is_integer <- sapply(output_df[1,],is.integer)
+  is_integer <- sapply(data_df[1,],is.integer)
   if(any(is_integer)){
     col_check <- apply(data_df[,is_integer], 2, function(x) x < 0)
     col_check <- ifelse(is.na(col_check), FALSE, col_check)
@@ -1483,7 +1494,7 @@ set_data_type <- function(data_df, mapping){
     
     # Convert the column to the specified data type
     if(tolower(data_type) == "date"){
-      output_df[[column_name]] <- parse_date_time(data_df[[column_name]], orders = c('dmy', 'ymd', 'ymd_HMS', '%d/%b/%Y %I:%M:%S %p', '%Y/%b/%d %I:%M:%S %p', '%I:%M:%S'))
+      output_df[[column_name]] <- parse_date_time(data_df[[column_name]], orders = c('dmy_HM','dmy_HMS', 'dmy', 'ymd'))
     } else if (tolower(data_type) == "time") {
       time <- as.POSIXct(data_df[[column_name]], format = "%H:%M:%S")
       output_df[[column_name]] <- format(time, '%H:%M:%S')
@@ -1533,7 +1544,6 @@ update_config_file <- function(data_df, configuration_path, new_mappings_to_add=
   if (!all(data_colnames %in% expected_source_names)) {
     warning <- "Column names in 'data_df' do not match the expected source names. New json configuration file will be created with most appropriate mapping. Please check after process is complete."
     warning(warning)
-    send_error_email("Auth\\", "ethankwaters@gmail", warning, "CCIP Reusable Workflow - configuration File out-of-date")
     closest_matches <- get_closest_matches(data_colnames, expected_source_names)
     # Replace the original source values in new_json_data with closest matches
     
@@ -1782,6 +1792,7 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_s
     tryCatch({
       base::message("Loading previously saved raster data ...")
       site_regions <- readRDS(spatial_file)
+      crs <- projection(site_regions[[1]])
       load_site_rasters_failed <- FALSE
       base::message("Loaded data successfully")
     }, error = function(e) {

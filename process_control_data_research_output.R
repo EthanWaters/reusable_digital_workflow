@@ -1,5 +1,5 @@
 
-main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path = NULL) {
+main <- function(configuration_path, aggregate = TRUE, new_path = NULL, kml_path = NULL, leg_path = NULL) {
   tryCatch({
     # Initialize -------------------------------------------------------------
     source("source.R")
@@ -16,7 +16,6 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     library("fastmatch")
     library("lubridate")
     library("rlang")
-    # library("inline")
     library("purrr")
     library("jsonlite")
     library("sf")
@@ -28,14 +27,13 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     library("lwgeom")
     library("stars")
     library("stringr")
-    library("gmailr")
     library("future")
     library("foreach")
     library("doParallel")
     
     configuration <- fromJSON(configuration_path)
     
-    most_recent_report_path <- find_recent_file(configuration$metadata$output_directory$reports, "Report", "json")
+    most_recent_report_path <- find_recent_file(configuration$metadata$output_directory$reports, configuration$metadata$control_data_type, "json")
     most_recent_leg_path <- find_recent_file(configuration$metadata$output_directory$control_data, configuration$metadata$control_data_type, "csv")
     most_recent_new_path <- find_recent_file(configuration$metadata$input_directory$control_data, configuration$metadata$GBRMPA_keyword, "csv")
     most_recent_kml_path <- find_recent_file(configuration$metadata$input_directory$spatial_data, "sites", "kml")
@@ -76,15 +74,16 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     calculate_site_rasters <- 1
     if (is.null(kml_path)) {
       kml_path <- most_recent_kml_path
-      tryCatch({
-        if(basename(kml_path) == basename(previous_kml_path)){
-          calculate_site_rasters <- 0
-        } 
-      }, error = function(e) {
-        print("Error comparing previous and most recent kml paths")
-        calculate_site_rasters <- 1
-      })
-    } 
+    }
+    tryCatch({
+      if(basename(kml_path) == basename(previous_kml_path)){
+        calculate_site_rasters <- 0
+      } 
+    }, error = function(e) {
+      print("Error comparing previous and most recent kml paths")
+      calculate_site_rasters <- 1
+    })
+   
     
     new_data_df <- rio::import(new_path)
     if(is_legacy_data_available){
@@ -142,6 +141,10 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
     }
     formatted_data_df <- set_data_type(transformed_data_df, configuration$mappings$data_type_mappings) 
     
+    if(configuration$metadata$control_data_type == "manta_tow"){
+      formatted_data_df <- seperate_date_time_manta_tow(formatted_data_df)
+    }
+    
     verified_data_df <- verify_entries(formatted_data_df, configuration)
     if(is_new && is_legacy_data_available){
       legacy_df <- verify_entries(legacy_df, configuration) 
@@ -197,16 +200,28 @@ main <- function(configuration_path, new_path = NULL, kml_path = NULL, leg_path 
 
 
 args <- commandArgs(trailingOnly = TRUE)
-new_path <- args[1]
-configuration_path <- args[2]
-kml_path <- args[3]
-if(length(args) >= 4){
-  leg_path <- args[4]
-} else{
-  leg_path <- NULL
+configuration_path <- args[1]
+
+# Initialize optional arguments as NULL
+new_path <- NULL
+kml_path <- NULL
+leg_path <- NULL
+aggregate <- TRUE
+
+# Loop through the arguments to find optional ones
+for (i in 2:length(args)) {
+  if (startsWith(args[i], "--new=")) {
+    new_path <- sub("--new=", "", args[i])
+  } else if (startsWith(args[i], "--kml=")) {
+    kml_path <- sub("--kml=", "", args[i])
+  } else if (startsWith(args[i], "--leg=")) {
+    leg_path <- sub("--leg=", "", args[i])
+  } else if (startsWith(args[i], "--aggregate=")) {
+    aggregate <- sub("--aggregate=", "", args[i])
+  }
 }
 
-main(new_path, configuration_path, kml_path, leg_path)
+main(configuration_path, aggregate , new_path, kml_path, leg_path)
 
 
 
