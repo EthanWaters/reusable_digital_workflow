@@ -540,8 +540,8 @@ vectorised_separate_close_matches <- function(close_match_rows){
   discrepancies_indices <<- matrix(,ncol=3, nrow =0)
   perfect_duplicate_indices <<- matrix(,ncol=3, nrow =0)
   error_indices <<- matrix(,ncol=3, nrow =0)
-  
-  
+  mistake_duplicates <- matrix(,ncol=3, nrow =0)
+  one_to_many_e <- matrix(,ncol=3, nrow =0)
   
   ### ---------- 
   #one-one close matches
@@ -665,8 +665,9 @@ vectorised_separate_close_matches <- function(close_match_rows){
     
     if(nrow(one_to_many_e) > 0){ 
       one_to_many_indices <- unique(c(which(close_match_rows_updated[,y_df_col] %fin% one_to_many_e[,y_df_col]), which(close_match_rows_updated[,x_df_col] %fin% one_to_many_e[,x_df_col])))
-    }
     
+      }
+        
     one_to_one_indices <- unique(c(which(close_match_rows_updated[,y_df_col] %fin% one_to_one_e[,y_df_col]), which(close_match_rows_updated[,x_df_col] %fin% one_to_one_e[,x_df_col])))
     
     perfect_duplicate_indices <- rbind(perfect_duplicate_indices, one_to_one_e, many_to_many_e)
