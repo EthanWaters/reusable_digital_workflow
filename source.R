@@ -36,6 +36,72 @@ import_data <- function(data, index=1){
   return(out)
 }
 
+get_vessel_short_name <- function(string) {
+  # Split the string into words
+  words <- strsplit(string, "\\s+")[[1]]
+  
+  # Extract the first letter from each word
+  first_letters <- substr(words, 1, 1)
+  
+  # Combine the first letters into a single string
+  result <- paste(first_letters, collapse = "")
+  if (length(words) == 1) {
+    result <- words
+  }
+  return(result)
+}
+
+# Function to check and append records to the Vessel table. Returns the Id of 
+# the vessel
+append_to_vessel <- function(con, entry) {
+  
+  vessel_name <- entry$Vessel
+  
+  # Check if the vessel already exists
+  vessel_exists <- dbGetQuery(con, paste("SELECT COUNT(*) FROM Vessel WHERE name = '", vessel_name, "'", sep = ""))$'COUNT(*)'
+  
+  if (vessel_exists == 0) {
+    # Vessel does not exist, insert new record
+    short_name <- get_vessel_short_name(vessel_name)
+    dbExecute(con, "INSERT INTO Vessel (name, short_name) VALUES (?, ?)", list(vessel_name, short_name))
+  }
+  
+  vessel_id <- dbGetQuery(con, paste("SELECT id FROM Vessel WHERE name = '", vessel_name, "'", sep = ""))$id
+  return(vessel_id)
+}
+
+# Function to check and append records to the Voyage table
+append_to_voyage <- function(con, vessel_id, entry) {
+  # Check if the voyage already exists
+  voyage <- entry$Voyage
+  voyage_exists <- dbGetQuery(con, paste("SELECT COUNT(*) FROM Voyage WHERE Vessel_id = ", vessel_id, " AND vessel_voyage_number = '", voyage, "'", sep = ""))$'COUNT(*)'
+  
+  start_date <- NA
+  end_date <- NA
+  if(all(c("Voyage Start", "Voyage End") %in% colnames(entry))){
+    start_date <- entry$`Voyage Start`
+    end_date <- entry$`Voyage End`
+  }
+    
+  
+  if (voyage_exists == 0) {
+    # Voyage does not exist, insert new record
+    dbExecute(con, "INSERT INTO Voyage (vessel_id, vessel_voyage_number, start_date, stop_date) VALUES (?, ?, ?, ?)", list(vessel_id, voyage, start_date, stop_date))
+  }
+
+  voyage_id <- dbGetQuery(con, paste("SELECT id FROM Voyage WHERE vessel_id = ", vessel_id, " AND vessel_voyage_number = '", voyage, "'", sep = ""))$id
+  
+}
+
+# Function to append data to the Data table
+append_to_data <- function(con, control_data_type, vessel_id, voyage_id, entry) {
+  
+  columns <- dbListFields(con, control_data_type)
+  
+  # Insert new record into the Data table
+  dbExecute(con, paste("INSERT INTO Data (", columns,") VALUES (?, ?)", sep=""), voyage_id, data_value)
+}
+
 
 get_app_data_database <- function(con, control_data_type){
   if(control_data_type == "manta_tow"){
