@@ -117,10 +117,22 @@ main <- function(configuration_path, connection_string, new_files) {
   }
   
   verified_new_df <- separate_new_control_app_data(verified_data_df, legacy_df, control_data_type)
-  verified_data_df <- map_all_fields(verified_data_df, verified_data_df, app_to_research_config$mapping$reverse_transformation)
+  verified_new_df <- map_all_fields(verified_new_df, verified_new_df, app_to_research_config$mapping$reverse_transformation)
   
-  ### WRITE TO SQL SERVER 
-  dbWriteTable(conn, "your_table", data, append = TRUE, row.names = FALSE)
+  for (i in 1:nrow(verified_new_df)) {
+    entry <- verified_new_df[i,]
+    
+    if(control_data_type != "RHIS"){
+      
+      # Append to Vessel and voyage table if needed
+      vessel_id <- append_to_vessel(con, entry)
+      voyage_id <- append_to_voyage(con, vessel_id, entry)
+    }
+    # Append to Data table
+    append_to_data(con, control_data_type, vessel_id, voyage_id, entry)
+  }
+  
+  dbDisconnect(con)
 }
   
   
