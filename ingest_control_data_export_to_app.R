@@ -32,7 +32,17 @@ main <- function(configuration_path, connection_string, new_files) {
   library("DBI")
   
   
+  
   connection_string <- "MariaDB://root:csiro@127.0.0.1:3306/cotscontrolcentre"
+  components <- unlist(strsplit(connection_string, "://|:|@|/", perl = TRUE))
+  
+  # Extract the individual components of connection string
+  username <- components[2]
+  password <- components[3]
+  hostname <- components[4]
+  port <- components[5]
+  database_name <- components[6]
+  
   new_files <- c("Input/control_data/TAB#3 COTS_Surveillance_2024_1_22_9_9_7.json", "Input/control_data/TAB#5 COTS_Surveillance_2024_1_20_17_49_58.json", "Input/control_data/TAB#6 COTS_Surveillance_2024_1_20_17_49_21.json")
   
   configuration <- fromJSON(configuration_path)
@@ -51,7 +61,7 @@ main <- function(configuration_path, connection_string, new_files) {
     new_data_df <- sf::st_sf(new_data_df)
   } 
 
-  con <- dbConnect(connection_string)
+  con <- DBI::dbConnect(RMySQL::MySQL(), user = username,password = password,host = hostname,port = as.integer(port),dbname = database_name)
   legacy_df <- get_app_data_database(con, configuration$metadata$control_data_type)
   
   serialised_spatial_path <- find_recent_file(configuration$metadata$input_directory$serialised_spatial_path, "site", "rds")
