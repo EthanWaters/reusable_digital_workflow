@@ -133,7 +133,7 @@ main <- function(configuration_path, aggregate = TRUE, new_path = NULL, kml_path
     json_data <- toJSON(metadata_json_output, pretty = TRUE)
     writeLines(json_data, file.path(getwd(), configuration$metadata$output_directory$reports, paste(configuration$metadata$control_data_type, "_Report_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = "")))
     
-    configuration <- update_config_file(new_data_df, configuration_path)
+    # configuration <- update_config_file(new_data_df, configuration_path)
     
     transformed_data_df <- map_data_structure(new_data_df, configuration$mappings$transformations, configuration$mappings$new_fields)
     if(is_legacy_data_available){
@@ -175,7 +175,7 @@ main <- function(configuration_path, aggregate = TRUE, new_path = NULL, kml_path
       print(paste("Error seperating control data. All data has been treated as new entries.", conditionMessage(e)))
     })
     
-    # Save workflow output
+    # Save workflow outputc
     tryCatch({
       if (!dir.exists(configuration$metadata$output_directory$control_data)) {
         dir.create(configuration$metadata$output_directory$control_data, recursive = TRUE)
