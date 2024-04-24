@@ -51,6 +51,22 @@ get_vessel_short_name <- function(string) {
   return(result)
 }
 
+get_file_keyword <- function(input_string) {
+  # Convert the input string to lowercase for case-insensitive matching
+  input_string <- tolower(input_string)
+  if (grepl("cull|dive", input_string)) {
+    return("cull")
+  }
+  if (grepl("manta|surveillance", input_string)) {
+    return("manta_tow")
+  }
+  if (grepl("rhis|survey|health", input_string)) {
+    return("rhis")
+  }
+  return(NA)
+}
+
+
 # Function to check and append records to the Vessel table. Returns the Id of 
 # the vessel
 append_to_vessel <- function(con, entry) {
