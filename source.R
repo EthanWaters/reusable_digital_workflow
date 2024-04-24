@@ -98,8 +98,13 @@ append_to_data <- function(con, control_data_type, vessel_id, voyage_id, entry) 
   
   columns <- dbListFields(con, control_data_type)
   
+  entry["vessel_id"] <- vessel_id
+  entry["voyage_id"] <- voyage_id
+  
+  input_placeholder <- paste(rep("?", n), collapse = ",")
+  present <- columns[colnames(entry) %in% columns]
   # Insert new record into the Data table
-  dbExecute(con, paste("INSERT INTO Data (", columns,") VALUES (?, ?)", sep=""), voyage_id, data_value)
+  dbExecute(con, paste("INSERT INTO ", control_data_type, " (", columns,") VALUES (", input_placeholder ,")", sep=""), list(entry[,present]))
 }
 
 
