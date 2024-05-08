@@ -138,7 +138,7 @@ seperate_date_time_manta_tow <- function(data_df){
 
 get_reef_label <- function(names){
   reef_label_pattern <- "\\b(1[0-9]|2[0-9]|10)-\\d{3}[a-z]?\\b"
-  reef_labels <- sapply(str_extract(names, reef_id_pattern), toString)
+  reef_labels <- sapply(str_extract(names, reef_label_pattern), toString)
   return(reef_labels)
 }
 

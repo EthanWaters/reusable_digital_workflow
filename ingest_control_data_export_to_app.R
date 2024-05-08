@@ -32,7 +32,7 @@ main <- function(configuration_path, connection_string, new_files) {
   library("DBI")
   
   
-  
+  configuration_path <- "D:\\COTS\\on_water_PWA\\cots_on_water_pwa_draft\\back_end\\reusable_digital_workflow\\configuration_files\\app_manta_tow_config.json"
   connection_string <- "MariaDB://root:csiro@127.0.0.1:3306/cotscontrolcentre"
   components <- unlist(strsplit(connection_string, "://|:|@|/", perl = TRUE))
   
@@ -65,27 +65,7 @@ main <- function(configuration_path, connection_string, new_files) {
   legacy_df <- get_app_data_database(con, configuration$metadata$control_data_type)
   
   serialised_spatial_path <- find_recent_file(configuration$metadata$input_directory$serialised_spatial_path, "site", "rds")
-  
-  # create list to export as json file with metadata about workflow
-  metadata_json_output <- list()    
-  metadata_json_output[["timestamp"]] = Sys.time()
-  metadata_json_output[["inputs"]] = list(
-    configuration_path = configuration_path,
-    serialised_spatial_path = serialised_spatial_path
-  )
-  
-  # record inputs to workflow
-  metadata_json_output[["decisions"]] = list(
-    has_authorative_ID = has_authorative_ID,
-    is_legacy_data_available = is_legacy_data_available,
-    is_new = is_new, 
-    calculate_site_rasters = calculate_site_rasters
-  )
-  
-  # save metadata json file 
-  json_data <- toJSON(metadata_json_output, pretty = TRUE)
-  writeLines(json_data, file.path(getwd(), configuration$metadata$output_directory$reports, paste(configuration$metadata$control_data_type, "_Report_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = "")))
-  
+
   transformed_data_df <- map_data_structure(new_data_df, configuration$mappings$transformations, configuration$mappings$new_fields)
 
   # Convert column names of both legacy (app data) and new data (json export) to
