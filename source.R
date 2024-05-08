@@ -51,6 +51,22 @@ get_vessel_short_name <- function(string) {
   return(result)
 }
 
+get_file_keyword <- function(input_string) {
+  # Convert the input string to lowercase for case-insensitive matching
+  input_string <- tolower(input_string)
+  if (grepl("cull|dive", input_string)) {
+    return("cull")
+  }
+  if (grepl("manta|surveillance", input_string)) {
+    return("manta_tow")
+  }
+  if (grepl("rhis|survey|health", input_string)) {
+    return("rhis")
+  }
+  return(NA)
+}
+
+
 # Function to check and append records to the Vessel table. Returns the Id of 
 # the vessel
 append_to_vessel <- function(con, entry) {
@@ -98,8 +114,13 @@ append_to_data <- function(con, control_data_type, vessel_id, voyage_id, entry) 
   
   columns <- dbListFields(con, control_data_type)
   
+  entry["vessel_id"] <- vessel_id
+  entry["voyage_id"] <- voyage_id
+  
+  input_placeholder <- paste(rep("?", n), collapse = ",")
+  present <- columns[colnames(entry) %in% columns]
   # Insert new record into the Data table
-  dbExecute(con, paste("INSERT INTO Data (", columns,") VALUES (?, ?)", sep=""), voyage_id, data_value)
+  dbExecute(con, paste("INSERT INTO ", control_data_type, " (", columns,") VALUES (", input_placeholder ,")", sep=""), list(entry[,present]))
 }
 
 

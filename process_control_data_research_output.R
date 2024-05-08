@@ -1,5 +1,5 @@
 
-main <- function(configuration_path, aggregate = TRUE, new_path = NULL, kml_path = NULL, leg_path = NULL) {
+main <- function(new_path, configuration_path = NULL, aggregate = TRUE, kml_path = NULL, leg_path = NULL) {
   tryCatch({
     # Initialize -------------------------------------------------------------
     source("source.R")
@@ -31,11 +31,11 @@ main <- function(configuration_path, aggregate = TRUE, new_path = NULL, kml_path
     library("foreach")
     library("doParallel")
     
-    configuration <- fromJSON(configuration_path)
-    
+    keyword <- get_file_keyword(new_path) 
     most_recent_report_path <- find_recent_file(configuration$metadata$output_directory$reports, configuration$metadata$control_data_type, "json")
     most_recent_leg_path <- find_recent_file(configuration$metadata$output_directory$control_data, configuration$metadata$control_data_type, "csv")
-    most_recent_new_path <- find_recent_file(configuration$metadata$input_directory$control_data, configuration$metadata$GBRMPA_keyword, "csv")
+    configuration_path <- find_recent_file("configuration_files/", keyword, ".json")
+    configuration <- fromJSON(configuration_path)
     most_recent_kml_path <- find_recent_file(configuration$metadata$input_directory$spatial_data, "sites", "kml")
     
     previous_kml_path <- NULL
@@ -46,10 +46,6 @@ main <- function(configuration_path, aggregate = TRUE, new_path = NULL, kml_path
       serialised_spatial_path <- previous_report$outputs$spatial_data
     } 
     
-    
-    if (is.null(new_path)) {
-      new_path <- most_recent_new_path
-    }
     if (is.null(leg_path)) {
       leg_path <- most_recent_leg_path
     }
@@ -200,18 +196,18 @@ main <- function(configuration_path, aggregate = TRUE, new_path = NULL, kml_path
 
 
 args <- commandArgs(trailingOnly = TRUE)
-configuration_path <- args[1]
+new_path <- args[1]
 
 # Initialize optional arguments as NULL
-new_path <- NULL
+configuration_path <- NULL
 kml_path <- NULL
 leg_path <- NULL
 aggregate <- TRUE
 
 # Loop through the arguments to find optional ones
 for (i in 2:length(args)) {
-  if (startsWith(args[i], "--new=")) {
-    new_path <- sub("--new=", "", args[i])
+  if (startsWith(args[i], "--config=")) {
+    new_path <- sub("--config=", "", args[i])
   } else if (startsWith(args[i], "--kml=")) {
     kml_path <- sub("--kml=", "", args[i])
   } else if (startsWith(args[i], "--leg=")) {
