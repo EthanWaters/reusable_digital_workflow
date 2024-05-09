@@ -58,6 +58,60 @@
           "target_field": "site_name",
           "source_field": "CullSiteName"
         }
+      ],
+      "reverse_transformation": [
+        {
+          "source_field": "date",
+          "target_field": "SurveyTime"
+        },
+        {
+          "source_field": "vessel_name",
+          "target_field": "VesselName"
+        },
+        {
+          "source_field": "vessel_voyage_number",
+          "target_field": "CrownOfThornsStarfishVoyageId"
+        },
+        {
+          "source_field": "reef_label",
+          "target_field": "reef_label"
+        },
+        {
+          "source_field": "reef_name",
+          "target_field": "ReefName"
+        },
+        {
+          "source_field": "distance",
+          "target_field": "TowDistance"
+        },
+        {
+          "source_field": "average_speed",
+          "target_field": "AverageSpeed"
+        },
+        {
+          "source_field": "cots",
+          "target_field": "CrownOfThornsStarfishCount"
+        },
+        {
+          "source_field": "scars",
+          "target_field": "FeedingScarCountRangeId"
+        },
+        {
+          "source_field": "hard_coral",
+          "target_field": "HardCoralProportionRangeId"
+        },
+        {
+          "source_field": "soft_coral",
+          "target_field": "SoftCoralProportionRangeId"
+        },
+        {
+          "source_field": "recently_dead_coral",
+          "target_field": "RecentlyDeadCoralProportionRangeId"
+        },
+        {
+          "source_field": "site_name",
+          "target_field": "CullSiteName"
+        }
       ]
     }
   }

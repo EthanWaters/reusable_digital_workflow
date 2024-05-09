@@ -196,7 +196,7 @@
           },
           {
             "field": "Tow date",
-            "data_type": "date"
+            "data_type": "datetime"
           },
           {
             "field": "Vessel",

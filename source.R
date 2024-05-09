@@ -317,7 +317,7 @@ aggregate_manta_tows_site_resolution <- function(data_df) {
       `error_flag` = as.numeric(any(as.logical(`error_flag`)))
     ) %>%
     unnest_wider(coords) %>%
-    select(all_of(col_names))%>%
+    dplyr::select(all_of(col_names)) %>%
     dplyr::distinct()
   
   
@@ -1582,10 +1582,13 @@ set_data_type <- function(data_df, mapping){
     
     # Convert the column to the specified data type
     if(tolower(data_type) == "date"){
-      output_df[[column_name]] <- parse_date_time(data_df[[column_name]], orders = c('dmy_HM','dmy_HMS', 'dmy', 'ymd'))
+      output_df[[column_name]] <- parse_date_time(data_df[[column_name]], orders = c('dmy', 'ymd'))
     } else if (tolower(data_type) == "time") {
       time <- as.POSIXct(data_df[[column_name]], format = "%H:%M:%S")
       output_df[[column_name]] <- format(time, '%H:%M:%S')
+    } else if (tolower(data_type) == "datetime") {
+      output_df[[column_name]] <- format(parse_date_time(data_df[[column_name]], orders = c('dmy_HM','dmy_HMS', 'ymd_HM','ymd_HMS')), "%Y-%m-%d %H:%M:%S")
+    
     } else {
       output_df[[column_name]] <- as(data_df[[column_name]], tolower(data_type))
     }
