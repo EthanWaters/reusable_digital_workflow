@@ -37,18 +37,24 @@ import_data <- function(data, index=1){
 }
 
 get_vessel_short_name <- function(string) {
-  # Split the string into words
-  words <- strsplit(string, "\\s+")[[1]]
-  
-  # Extract the first letter from each word
-  first_letters <- substr(words, 1, 1)
-  
-  # Combine the first letters into a single string
-  result <- paste(first_letters, collapse = "")
-  if (length(words) == 1) {
-    result <- words
+  # Function to extract short name from a single string
+  extract_short_name <- function(s) {
+    words <- strsplit(s, "\\s+")[[1]]
+    first_letters <- substr(words, 1, 1)
+    result <- paste(first_letters, collapse = "")
+    if (length(words) == 1) {
+      result <- words
+    }
+    return(result)
   }
-  return(result)
+  
+  # If input is a vector, apply extract_short_name to each element
+  if (is.vector(string)) {
+    sapply(string, extract_short_name)
+  } else {
+    # If input is a single string, directly apply extract_short_name
+    extract_short_name(string)
+  }
 }
 
 get_file_keyword <- function(input_string) {
@@ -69,17 +75,32 @@ get_file_keyword <- function(input_string) {
 
 # Function to check and append records to the Vessel table. Returns the Id of 
 # the vessel
+append_to_vessel <- function(con, data_df) {
+  
+  #check what vessels exist already
+  db_df <- dbReadTable(con, "vessel", row.names = FALSE)
+  is_new <- !(data_df$vessel_name %in% db_df$name)
+  if (any(is_new)){
+    unique_names <- unique(data_df$vessel_name[is_new])
+    unique_short_names <- get_vessel_short_name(unique_names)
+    ids <- (max(db_df$id) + 1):(max(db_df$id)+length(unique_names))
+    vessels_to_apppend <- data.frame(id = ids, name = unique_names, short_name = unique_short_names, row.names =  NULL)
+    dbAppendTable(con, "vessel", vessels_to_apppend, row.names = NULL)
+  }
+}
+
 append_to_vessel <- function(con, entry) {
   
-  vessel_name <- entry$Vessel
+  vessel_name <- entry$vessel_name
+  
   
   # Check if the vessel already exists
-  vessel_exists <- dbGetQuery(con, paste("SELECT COUNT(*) FROM Vessel WHERE name = '", vessel_name, "'", sep = ""))$'COUNT(*)'
+  vessel_exists <- dbGetQuery(con, paste("SELECT COUNT(*) FROM vessel WHERE name = '", vessel_name, "'", sep = ""))$'COUNT(*)'
   
   if (vessel_exists == 0) {
     # Vessel does not exist, insert new record
     short_name <- get_vessel_short_name(vessel_name)
-    dbExecute(con, "INSERT INTO Vessel (name, short_name) VALUES (?, ?)", list(vessel_name, short_name))
+    dbSendQuery(con, "INSERT INTO vessel (name, short_name) VALUES (?, ?)", vessel_name, short_name)
   }
   
   vessel_id <- dbGetQuery(con, paste("SELECT id FROM Vessel WHERE name = '", vessel_name, "'", sep = ""))$id
@@ -89,8 +110,8 @@ append_to_vessel <- function(con, entry) {
 # Function to check and append records to the Voyage table
 append_to_voyage <- function(con, vessel_id, entry) {
   # Check if the voyage already exists
-  voyage <- entry$Voyage
-  voyage_exists <- dbGetQuery(con, paste("SELECT COUNT(*) FROM Voyage WHERE Vessel_id = ", vessel_id, " AND vessel_voyage_number = '", voyage, "'", sep = ""))$'COUNT(*)'
+  voyage <- entry$vessel_voyage_number
+  voyage_exists <- dbGetQuery(con, paste("SELECT COUNT(*) FROM voyage WHERE Vessel_id = ", vessel_id, " AND vessel_voyage_number = '", voyage, "'", sep = ""))$'COUNT(*)'
   
   start_date <- NA
   end_date <- NA
@@ -98,14 +119,29 @@ append_to_voyage <- function(con, vessel_id, entry) {
     start_date <- entry$`Voyage Start`
     end_date <- entry$`Voyage End`
   }
-    
   
   if (voyage_exists == 0) {
     # Voyage does not exist, insert new record
-    dbExecute(con, "INSERT INTO Voyage (vessel_id, vessel_voyage_number, start_date, stop_date) VALUES (?, ?, ?, ?)", list(vessel_id, voyage, start_date, stop_date))
+    dbExecute(con, "INSERT INTO voyage (vessel_id, vessel_voyage_number, start_date, stop_date) VALUES (?, ?, ?, ?)", list(vessel_id, voyage, start_date, stop_date))
   }
 
-  voyage_id <- dbGetQuery(con, paste("SELECT id FROM Voyage WHERE vessel_id = ", vessel_id, " AND vessel_voyage_number = '", voyage, "'", sep = ""))$id
+  voyage_id <- dbGetQuery(con, paste("SELECT id FROM voyage WHERE vessel_id = ", vessel_id, " AND vessel_voyage_number = '", voyage, "'", sep = ""))$id
+  
+}
+
+
+# Function to check and append records to the Site table
+append_to_site <- function(con, entry, reef_id) {
+  # Check if the site already exists
+  site_name <- entry$site_name
+  site_exists <- dbGetQuery(con, paste("SELECT COUNT(*) FROM site WHERE name = '", site_name, "'", sep = ""))$'COUNT(*)'
+  
+  if (site_exists == 0) {
+    # Voyage does not exist, insert new record
+    dbExecute(con, "INSERT INTO site (name, latitude, longitude, reef_id) VALUES (?, ?, ?, ?)", list(site_name, NA, NA, reef_id))
+  }
+  
+  site_id <- dbGetQuery(con, paste("SELECT id FROM site WHERE name = '", site_name, "'", sep = ""))$id
   
 }
 

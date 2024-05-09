@@ -33,7 +33,7 @@ main <- function(configuration_path, connection_string, new_files) {
   
   
   configuration_path <- "D:\\COTS\\on_water_PWA\\cots_on_water_pwa_draft\\back_end\\reusable_digital_workflow\\configuration_files\\app_manta_tow_config.json"
-  connection_string <- "MariaDB://root:csiro@127.0.0.1:3306/cotscontrolcentre"
+  connection_string <- "MySQL://root:csiro@127.0.0.1:3306/cotscontrolcentre"
   components <- unlist(strsplit(connection_string, "://|:|@|/", perl = TRUE))
   
   # Extract the individual components of connection string
@@ -108,18 +108,25 @@ main <- function(configuration_path, connection_string, new_files) {
   
   verified_new_df <- separate_new_control_app_data(verified_data_df, legacy_df, control_data_type)
   verified_new_df <- map_all_fields(verified_new_df, verified_new_df, app_to_research_config$mapping$reverse_transformation)
-  
+  dbSendQuery(con, "SET GLOBAL local_infile = true;")
   for (i in 1:nrow(verified_new_df)) {
     entry <- verified_new_df[i,]
+    tryCatch({
+      if(control_data_type != "RHIS"){
+        
+        # Append to Vessel and voyage table if needed
+        vessel_id <- append_to_vessel(con, entry)
+        voyage_id <- append_to_voyage(con, vessel_id, entry)
+        reef_id <- dbGetQuery(con, paste("SELECT id FROM reef WHERE reef_label = ", get_reef_label(entry$reef_name), sep = ""))$id
+        site_id <- append_to_site(con, entry, reef_id)
+        
+      }
+      # Append to Data table
+      append_to_data(con, control_data_type, vessel_id, voyage_id, site_id, entry)
+    }, error = function(e) {
+      print(paste("Error uploading entry",i , ":", conditionMessage(e)))
+    })
     
-    if(control_data_type != "RHIS"){
-      
-      # Append to Vessel and voyage table if needed
-      vessel_id <- append_to_vessel(con, entry)
-      voyage_id <- append_to_voyage(con, vessel_id, entry)
-    }
-    # Append to Data table
-    append_to_data(con, control_data_type, vessel_id, voyage_id, entry)
   }
   
   dbDisconnect(con)
