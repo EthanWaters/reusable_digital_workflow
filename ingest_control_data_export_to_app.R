@@ -133,6 +133,13 @@ main <- function(configuration_path, connection_string, new_files) {
         vessel_id = verified_df$vessel_id
       )
       
+      voyage_df <- voyage_df %>%
+        group_by(vessel_voyage_number, vessel_id) %>%
+        mutate(
+          start_date = if_else(is.na(start_date), names(sort(table(start_date), decreasing = TRUE))[1], start_date),
+          stop_date = if_else(is.na(stop_date), names(sort(table(stop_date), decreasing = TRUE))[1], stop_date)
+        )
+      
       append_to_table_unique(con, "voyage", voyage_df)
       voyage_ids <- get_id_by_row(con, "voyage", voyage_df)
       verified_df$voyage_id <- voyage_id
