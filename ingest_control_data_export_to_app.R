@@ -101,25 +101,23 @@ main <- function(configuration_path, connection_string, new_files) {
   formatted_data_df <- set_data_type(transformed_data_df, app_to_research_config$mappings$data_type_mappings) 
   verified_data_df <- verify_entries(formatted_data_df, configuration)
   verified_data_df <- flag_duplicates(verified_data_df)
-  
   ### AGGREGATION 
-  if (control_data_type == "manta_tow"){
-    verified_data_df <- aggregate_manta_tows_site_resolution(verified_data_df)
-  } else if (control_data_type == "cull") { 
-    verified_data_df <- aggregate_culls_site_resolution(verified_data_df)
-  }
-  
+
   verified_new_df <- separate_new_control_app_data(verified_data_df, legacy_df, control_data_type)
   verified_new_df <- map_all_fields(verified_new_df, verified_new_df, app_to_research_config$mapping$reverse_transformation)
-  dbSendQuery(con, "SET GLOBAL local_infile = true;")
+  verified_data_df$start_date <- voyage_dates$start_date
+  verified_data_df$stop_date <- voyage_dates$stop_date
+  
+  if (control_data_type == "manta_tow"){
+    verified_data_df_test <- aggregate_manta_tows_site_resolution_app(verified_data_df)
+  } else if (control_data_type == "cull") { 
+    verified_data_df <- aggregate_culls_site_resolution_app(verified_data_df)
+  }
 
   tryCatch({
     if(control_data_type != "RHIS"){
       
-      # Append to Vessel and voyage table if needed
-      vessel_id <- append_to_vessel(con, entry)
-      
-      vessel_df <- dataframe(
+      vessel_df <- data.frame(
         name = verified_new_df$vessel_name,
         short_name = get_vessel_short_name(verified_new_df$vessel_name)
       )
@@ -128,7 +126,7 @@ main <- function(configuration_path, connection_string, new_files) {
       vessel_ids <- get_id_by_row(con, "vessel", vessel_df)
       verified_new_df$vessel_id <- vessel_ids
       
-      voyage_df <- dataframe(
+      voyage_df <- data.frame(
         vessel_voyage_number = verified_new_df$vessel_voyage_number,
         start_date = voyage_dates$start_date,
         end_date = voyage_dates$end_date,
@@ -136,13 +134,31 @@ main <- function(configuration_path, connection_string, new_files) {
       )
       append_to_table_unique(con, "voyage", voyage_df)
       voyage_ids <- get_id_by_row(con, "voyage", voyage_df)
+      verified_new_df$voyage_id <- voyage_id
       
-      reef_id <- dbGetQuery(con, paste("SELECT id FROM reef WHERE reef_label = ", get_reef_label(entry$reef_name), sep = ""))$id
-      site_id <- append_to_site(con, entry, reef_id)
+      reef_df <- data.frame(
+        reef_label = verified_new_df$reef_label
+      )
+      reef_ids <- get_id_by_row(con, "reef", reef_df)
+      verified_new_df$reef_id <- reef_ids
       
-    }
-    # Append to Data table
-    append_to_data(con, control_data_type, vessel_id, voyage_id, site_id, entry)
+      
+      site_df <- data.frame(
+        name = verified_new_df$site_name,
+        latitude = rep(NA, nrow(verified_new_df)),
+        longitude = rep(NA, nrow(verified_new_df)),
+        reef_id = verified_new_df$reef_id
+      )
+      site_to_append_df <- site_df[!is.na(site_df$reef_id) & !is.na(site_df$name),]
+      append_to_table_unique(con, "site", site_to_append_df)
+      site_ids <- get_id_by_row(con, "site", site_df)
+      verified_new_df$site_id <- site_ids
+    } 
+    
+    column_names <- dbListFields(con, control_data_type)
+    data_df <- 
+    append_to_table_unique(con, control_data_type, data_df)
+    
   }, error = function(e) {
     print(paste("Error uploading entry",i , ":", conditionMessage(e)))
   })
