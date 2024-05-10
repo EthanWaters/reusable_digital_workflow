@@ -54,6 +54,9 @@ main <- function(configuration_path, connection_string, new_files) {
     new_data_df <- rbind(new_data_df, fromJSON(new_files[i]))
   }
   
+  voyage_dates <- get_voyage_dates_strings(new_data_df$CrownOfThornsStarfishVoyageTitle)
+  
+  
   # create geometry initially if manta tow so that start and end point 
   # coordinates can be derived from the geospatial line
   if(control_data_type == "manta_tow"){
@@ -109,29 +112,40 @@ main <- function(configuration_path, connection_string, new_files) {
   verified_new_df <- separate_new_control_app_data(verified_data_df, legacy_df, control_data_type)
   verified_new_df <- map_all_fields(verified_new_df, verified_new_df, app_to_research_config$mapping$reverse_transformation)
   dbSendQuery(con, "SET GLOBAL local_infile = true;")
-  for (i in 1:nrow(verified_new_df)) {
-    entry <- verified_new_df[i,]
-    tryCatch({
-      if(control_data_type != "RHIS"){
-        
-        # Append to Vessel and voyage table if needed
-        vessel_id <- append_to_vessel(con, entry)
-        
-        # append new vessels 
-        append_to_table_unique()
-        
-        voyage_id <- append_to_voyage(con, vessel_id, entry)
-        reef_id <- dbGetQuery(con, paste("SELECT id FROM reef WHERE reef_label = ", get_reef_label(entry$reef_name), sep = ""))$id
-        site_id <- append_to_site(con, entry, reef_id)
-        
-      }
-      # Append to Data table
-      append_to_data(con, control_data_type, vessel_id, voyage_id, site_id, entry)
-    }, error = function(e) {
-      print(paste("Error uploading entry",i , ":", conditionMessage(e)))
-    })
-    
-  }
+
+  tryCatch({
+    if(control_data_type != "RHIS"){
+      
+      # Append to Vessel and voyage table if needed
+      vessel_id <- append_to_vessel(con, entry)
+      
+      vessel_df <- dataframe(
+        name = verified_new_df$vessel_name,
+        short_name = get_vessel_short_name(verified_new_df$vessel_name)
+      )
+      
+      append_to_table_unique(con, "vessel", vessel_df)
+      vessel_ids <- get_id_by_row(con, "vessel", vessel_df)
+      verified_new_df$vessel_id <- vessel_ids
+      
+      voyage_df <- dataframe(
+        vessel_voyage_number = verified_new_df$vessel_voyage_number,
+        start_date = voyage_dates$start_date,
+        end_date = voyage_dates$end_date,
+        vessel_id = verified_new_df$vessel_id,
+      )
+      append_to_table_unique(con, "voyage", voyage_df)
+      voyage_ids <- get_id_by_row(con, "voyage", voyage_df)
+      
+      reef_id <- dbGetQuery(con, paste("SELECT id FROM reef WHERE reef_label = ", get_reef_label(entry$reef_name), sep = ""))$id
+      site_id <- append_to_site(con, entry, reef_id)
+      
+    }
+    # Append to Data table
+    append_to_data(con, control_data_type, vessel_id, voyage_id, site_id, entry)
+  }, error = function(e) {
+    print(paste("Error uploading entry",i , ":", conditionMessage(e)))
+  })
   
   dbDisconnect(con)
 }

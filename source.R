@@ -104,6 +104,24 @@ get_id_by_row <- function(con, table_name, data_df) {
   return(merged_df$id)
 }
 
+get_voyage_dates_strings <- function(strings) {
+  
+  date_df <- data.frame(start_date = character(), stop_date = character(), stringsAsFactors = FALSE)
+  # Extract dates from each string
+  for (string in strings) {
+    dates <- str_extract_all(string, "\\b\\d{2}/\\d{2}/\\d{4}\\b")[[1]]
+    if (length(dates) != 2) {
+      dates <- c(NA, NA)
+    }
+    date_df <- rbind(date_df, setNames(as.data.frame(t(dates)), c("start_date", "stop_date")))
+  }
+  
+  date_df$start_date <- parse_date_time(date_df$start_date, orders = c('dmy', 'ymd'))
+  date_df$stop_date <- parse_date_time(date_df$stop_date, orders = c('dmy', 'ymd'))
+  
+  return(date_df)
+}
+
 
 append_to_vessel <- function(con, entry) {
   
