@@ -58,6 +58,7 @@ get_vessel_short_name <- function(string) {
 }
 
 get_file_keyword <- function(input_string) {
+  
   # Convert the input string to lowercase for case-insensitive matching
   input_string <- tolower(input_string)
   if (grepl("cull|dive", input_string)) {
@@ -73,27 +74,40 @@ get_file_keyword <- function(input_string) {
 }
 
 
-# Function to check and append records to the Vessel table. Returns the Id of 
-# the vessel
-append_to_vessel <- function(con, data_df) {
+# Function to check and append records to the Vessel table. data_df is expected 
+# to have the same column names and order as the table that is being referenced
+append_to_table_unique <- function(con, table_name, data_df) {
   
   #check what vessels exist already
-  db_df <- dbReadTable(con, "vessel", row.names = FALSE)
-  is_new <- !(data_df$vessel_name %in% db_df$name)
-  if (any(is_new)){
-    unique_names <- unique(data_df$vessel_name[is_new])
-    unique_short_names <- get_vessel_short_name(unique_names)
-    ids <- (max(db_df$id) + 1):(max(db_df$id)+length(unique_names))
-    vessels_to_apppend <- data.frame(id = ids, name = unique_names, short_name = unique_short_names, row.names =  NULL)
-    dbAppendTable(con, "vessel", vessels_to_apppend, row.names = NULL)
+  db_df <- dbReadTable(con, table_name, row.names = FALSE)
+  unique_df <- distinct(data_df)
+  data_to_apppend <- anti_join(unique_df, db_df[,-which(colnames(db_df) %in% "id")])
+  if (nrow(data_to_apppend) > 0){
+    append_cmd  <-  sqlAppendTable( con = con , table = table_name , values = data_to_apppend , row.names = FALSE )
+    dbExecute( conn = con , statement = append_cmd )
   }
 }
+
+
+# get the Ids of rows that meet search criteria in search column 
+get_id_by_cell <- function(con, table_name, search_column, search_term) {
+  entry_id <- dbGetQuery(con, paste("SELECT id FROM ", table_name,  " WHERE ", search_column, " = '", search_term, "'", sep = ""))$id
+  return(entry_id)
+}
+
+
+# retrieve IDs from a database table based on matching rows in an input 
+# dataframe, using a left join operation 
+get_id_by_row <- function(con, table_name, data_df) {
+  db_df <- dbReadTable(con, table_name, row.names = FALSE)
+  merged_df <- left_join(data_df, db_df %>% dplyr::select(c(colnames(data_df), id)), by = colnames(data_df))
+  return(merged_df$id)
+}
+
 
 append_to_vessel <- function(con, entry) {
   
   vessel_name <- entry$vessel_name
-  
-  
   # Check if the vessel already exists
   vessel_exists <- dbGetQuery(con, paste("SELECT COUNT(*) FROM vessel WHERE name = '", vessel_name, "'", sep = ""))$'COUNT(*)'
   

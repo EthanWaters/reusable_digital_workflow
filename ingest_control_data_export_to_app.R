@@ -30,7 +30,7 @@ main <- function(configuration_path, connection_string, new_files) {
   library("foreach")
   library("doParallel")
   library("DBI")
-  
+  library("RMySQL")
   
   configuration_path <- "D:\\COTS\\on_water_PWA\\cots_on_water_pwa_draft\\back_end\\reusable_digital_workflow\\configuration_files\\app_manta_tow_config.json"
   connection_string <- "MySQL://root:csiro@127.0.0.1:3306/cotscontrolcentre"
@@ -61,7 +61,7 @@ main <- function(configuration_path, connection_string, new_files) {
     new_data_df <- sf::st_sf(new_data_df)
   } 
 
-  con <- DBI::dbConnect(RMySQL::MySQL(), user = username,password = password,host = hostname,port = as.integer(port),dbname = database_name)
+  con <- DBI::dbConnect(RMySQL::MySQL(), user = username,password = password,host = hostname,port = as.integer(port),dbname = database_name, load_data_local_infile = TRUE)
   legacy_df <- get_app_data_database(con, configuration$metadata$control_data_type)
   
   serialised_spatial_path <- find_recent_file(configuration$metadata$input_directory$serialised_spatial_path, "site", "rds")
@@ -116,6 +116,10 @@ main <- function(configuration_path, connection_string, new_files) {
         
         # Append to Vessel and voyage table if needed
         vessel_id <- append_to_vessel(con, entry)
+        
+        # append new vessels 
+        append_to_table_unique()
+        
         voyage_id <- append_to_voyage(con, vessel_id, entry)
         reef_id <- dbGetQuery(con, paste("SELECT id FROM reef WHERE reef_label = ", get_reef_label(entry$reef_name), sep = ""))$id
         site_id <- append_to_site(con, entry, reef_id)
