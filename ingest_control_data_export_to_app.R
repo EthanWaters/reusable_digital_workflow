@@ -109,50 +109,51 @@ main <- function(configuration_path, connection_string, new_files) {
   verified_new_df$stop_date <- voyage_dates$stop_date
   
   if (control_data_type == "manta_tow"){
-    verified_data_df_test <- aggregate_manta_tows_site_resolution_app(verified_new_df)
+    verified_df <- aggregate_manta_tows_site_resolution_app(verified_new_df)
   } else if (control_data_type == "cull") { 
-    verified_data_df <- aggregate_culls_site_resolution_app(verified_new_df)
+    verified_df <- aggregate_culls_site_resolution_app(verified_new_df)
   }
 
   tryCatch({
     if(control_data_type != "RHIS"){
       
       vessel_df <- data.frame(
-        name = verified_new_df$vessel_name,
-        short_name = get_vessel_short_name(verified_new_df$vessel_name)
+        name = verified_df$vessel_name,
+        short_name = get_vessel_short_name(verified_df$vessel_name)
       )
       
       append_to_table_unique(con, "vessel", vessel_df)
       vessel_ids <- get_id_by_row(con, "vessel", vessel_df)
-      verified_new_df$vessel_id <- vessel_ids
+      verified_df$vessel_id <- vessel_ids
       
       voyage_df <- data.frame(
-        vessel_voyage_number = verified_new_df$vessel_voyage_number,
-        start_date = voyage_dates$start_date,
-        end_date = voyage_dates$end_date,
-        vessel_id = verified_new_df$vessel_id,
+        vessel_voyage_number = as.numeric(verified_df$vessel_voyage_number),
+        start_date = as.character(verified_df$start_date),
+        stop_date = as.character(verified_df$stop_date),
+        vessel_id = verified_df$vessel_id
       )
+      
       append_to_table_unique(con, "voyage", voyage_df)
       voyage_ids <- get_id_by_row(con, "voyage", voyage_df)
-      verified_new_df$voyage_id <- voyage_id
+      verified_df$voyage_id <- voyage_id
       
       reef_df <- data.frame(
-        reef_label = verified_new_df$reef_label
+        reef_label = verified_df$reef_label
       )
       reef_ids <- get_id_by_row(con, "reef", reef_df)
-      verified_new_df$reef_id <- reef_ids
+      verified_df$reef_id <- reef_ids
       
       
       site_df <- data.frame(
-        name = verified_new_df$site_name,
-        latitude = rep(NA, nrow(verified_new_df)),
-        longitude = rep(NA, nrow(verified_new_df)),
-        reef_id = verified_new_df$reef_id
+        name = verified_df$site_name,
+        latitude = rep(NA, nrow(verified_df)),
+        longitude = rep(NA, nrow(verified_df)),
+        reef_id = verified_df$reef_id
       )
       site_to_append_df <- site_df[!is.na(site_df$reef_id) & !is.na(site_df$name),]
       append_to_table_unique(con, "site", site_to_append_df)
       site_ids <- get_id_by_row(con, "site", site_df)
-      verified_new_df$site_id <- site_ids
+      verified_df$site_id <- site_ids
     } 
     
     column_names <- dbListFields(con, control_data_type)

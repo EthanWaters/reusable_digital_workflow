@@ -165,11 +165,13 @@ get_reef_label <- function(names){
 get_start_and_end_coords_research <- function(start_lat, stop_lat, start_long, stop_long){
   output <- get_start_and_end_coords_base(start_lat, stop_lat, start_long, stop_long)
   names(output) <- c("Start Lat", "End Lat", "Start Lng", "End Lng")
+  return(output)
 }
 
 get_start_and_end_coords_app <- function(start_lat, stop_lat, start_long, stop_long){
   output <- get_start_and_end_coords_base(start_lat, stop_lat, start_long, stop_long)
   names(output) <- c("start_latitude", "stop_latitude", "start_longitude", "stop_longitude")
+  return(output)
 }
 
 get_start_and_end_coords_base <- function(start_lat, stop_lat, start_long, stop_long){
@@ -315,7 +317,7 @@ aggregate_manta_tows_site_resolution_app <- function(data_df) {
       vessel_name = vessel_name, 
       vessel_voyage_number = vessel_voyage_number,
       reef_label = reef_label,
-      coords = list(get_start_and_end_coords(start_latitude, start_longitude, stop_latitude, stop_latitude)),
+      coords = list(get_start_and_end_coords_app(start_latitude, start_longitude, stop_latitude, stop_latitude)),
       distance = sum(distance),
       average_speed = mean(average_speed),
       cots = sum(cots),
@@ -338,7 +340,7 @@ aggregate_manta_tows_site_resolution_app <- function(data_df) {
 
 
 # across(c(Vessel, Voyage, `Reef ID`, `Nearest Site`), first),
-aggregate_manta_tows_site_resolution <- function(data_df) {
+aggregate_manta_tows_site_resolution_research <- function(data_df) {
   col_names <- colnames(data_df)
   
   aggregated_data <- data_df %>%
@@ -349,7 +351,7 @@ aggregate_manta_tows_site_resolution <- function(data_df) {
       Vessel = Vessel, 
       Voyage = Voyage,
       `Reef ID` = `Reef ID`,
-      coords = list(get_start_and_end_coords(`Start Lat`, `Start Lng`, `End Lat`, `End Lng`)),
+      coords = list(get_start_and_end_coords_research(`Start Lat`, `Start Lng`, `End Lat`, `End Lng`)),
       `Distance (metres)` = sum(`Distance (metres)`),
       `Average Speed (km/h)` = mean(`Average Speed (km/h)`),
       `COTS Observed` = sum(`COTS Observed`),
