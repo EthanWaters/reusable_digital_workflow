@@ -162,8 +162,17 @@ get_reef_label <- function(names){
   return(reef_labels)
 }
 
+get_start_and_end_coords_research <- function(start_lat, stop_lat, start_long, stop_long){
+  output <- get_start_and_end_coords_base(start_lat, stop_lat, start_long, stop_long)
+  names(output) <- c("Start Lat", "End Lat", "Start Lng", "End Lng")
+}
 
-get_start_and_end_coords <- function(start_lat, stop_lat, start_long, stop_long){
+get_start_and_end_coords_app <- function(start_lat, stop_lat, start_long, stop_long){
+  output <- get_start_and_end_coords_base(start_lat, stop_lat, start_long, stop_long)
+  names(output) <- c("start_latitude", "stop_latitude", "start_longitude", "stop_longitude")
+}
+
+get_start_and_end_coords_base <- function(start_lat, stop_lat, start_long, stop_long){
   
   start_coords <- cbind(start_long, start_lat)
   start_points <- lapply(1:length(start_lat), function(i) st_point(c(start_long[i], start_lat[i])))
@@ -181,10 +190,7 @@ get_start_and_end_coords <- function(start_lat, stop_lat, start_long, stop_long)
   stop_lat <-  st_coordinates(stop_points[max_index[2]])[2]
   stop_long <-  st_coordinates(stop_points[max_index[2]])[1]
   output <- list(start_lat, start_long, stop_lat, stop_long)
-  names(output) <- c("Start Lat", "End Lat", "Start Lng", "End Lng")
-  
   return(output)
-  
 }
 
 get_feeding_scar_from_description <- function(scar_desctiptions){
@@ -291,6 +297,45 @@ site_numbers_to_names <- function(numbers, reef_names){
   labels <- get_reef_label(reef_names)
   site_names <- paste(toupper(short_hand), labels, numbers, sep="_")
 }
+
+
+aggregate_culls_site_resolution_app <- function(data_df) {
+  
+}
+
+  
+aggregate_manta_tows_site_resolution_app <- function(data_df) {
+  col_names <- colnames(data_df_test)
+  
+  aggregated_data <- data_df_test  %>%
+    group_by(vessel_name, vessel_voyage_number, reef_label, site_name) %>%
+    dplyr::summarize(
+      date = min(date),
+      reef_name = first(reef_name), 
+      vessel_name = vessel_name, 
+      vessel_voyage_number = vessel_voyage_number,
+      reef_label = reef_label,
+      coords = list(get_start_and_end_coords(start_latitude, start_longitude, stop_latitude, stop_latitude)),
+      distance = sum(distance),
+      average_speed = mean(average_speed),
+      cots = sum(cots),
+      scars =  get_worst_case_feeding_scar(scars),
+      hard_coral = get_median_coral_cover(hard_coral),
+      soft_coral = get_median_coral_cover(soft_coral),
+      recently_dead_coral = get_median_coral_cover(recently_dead_coral),
+      site_name = site_name,
+      error_flag = as.numeric(any(as.logical(error_flag))),
+      start_date = min(start_date),
+      stop_date = min(stop_date)
+    ) %>%
+    unnest_wider(coords) %>%
+    dplyr::select(all_of(col_names)) %>%
+    dplyr::distinct()
+  
+  
+  return(aggregated_data)
+}
+
 
 # across(c(Vessel, Voyage, `Reef ID`, `Nearest Site`), first),
 aggregate_manta_tows_site_resolution <- function(data_df) {

@@ -105,13 +105,13 @@ main <- function(configuration_path, connection_string, new_files) {
 
   verified_new_df <- separate_new_control_app_data(verified_data_df, legacy_df, control_data_type)
   verified_new_df <- map_all_fields(verified_new_df, verified_new_df, app_to_research_config$mapping$reverse_transformation)
-  verified_data_df$start_date <- voyage_dates$start_date
-  verified_data_df$stop_date <- voyage_dates$stop_date
+  verified_new_df$start_date <- voyage_dates$start_date
+  verified_new_df$stop_date <- voyage_dates$stop_date
   
   if (control_data_type == "manta_tow"){
-    verified_data_df_test <- aggregate_manta_tows_site_resolution_app(verified_data_df)
+    verified_data_df_test <- aggregate_manta_tows_site_resolution_app(verified_new_df)
   } else if (control_data_type == "cull") { 
-    verified_data_df <- aggregate_culls_site_resolution_app(verified_data_df)
+    verified_data_df <- aggregate_culls_site_resolution_app(verified_new_df)
   }
 
   tryCatch({
