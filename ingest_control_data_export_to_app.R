@@ -150,21 +150,23 @@ main <- function(configuration_path, connection_string, new_files) {
       reef_ids <- get_id_by_row(con, "reef", reef_df)
       verified_df$reef_id <- reef_ids
       
-      
       site_df <- data.frame(
         name = verified_df$site_name,
-        latitude = rep(NA, nrow(verified_df)),
-        longitude = rep(NA, nrow(verified_df)),
         reef_id = verified_df$reef_id
       )
-      site_to_append_df <- site_df[!is.na(site_df$reef_id) & !is.na(site_df$name),]
+      site_ids <- get_id_by_row(con, "site", site_df)
+      site_to_append_df <- site_df[is.na(site_ids),]
+      site_to_append_df <- na.omit(site_to_append_df)
       append_to_table_unique(con, "site", site_to_append_df)
       site_ids <- get_id_by_row(con, "site", site_df)
       verified_df$site_id <- site_ids
     } 
     
     column_names <- dbListFields(con, control_data_type)
-    data_df <- 
+    data_df <- data_df[,column_names]
+    data_df <- na.omit(verified_df)
+    data_df <- data_df[!(data_df$error_flag == 1),]
+    data_df <- as.data.frame(data_df, check.name = FALSE)
     append_to_table_unique(con, control_data_type, data_df)
     
   }, error = function(e) {
