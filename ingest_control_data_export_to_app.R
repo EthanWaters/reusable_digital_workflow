@@ -163,11 +163,11 @@ main <- function(configuration_path, connection_string, new_files) {
     } 
     
     column_names <- dbListFields(con, control_data_type)
-    data_df <- data_df[,column_names]
-    data_df <- na.omit(verified_df)
+    data_df <- verified_df[,which(colnames(verified_df) %in% column_names)]
+    data_df <- na.omit(data_df)
     data_df <- data_df[!(data_df$error_flag == 1),]
     data_df <- as.data.frame(data_df, check.name = FALSE)
-    append_to_table_unique(con, control_data_type, data_df)
+    append_to_table_unique(con, "manta_tow", data_df)
     
   }, error = function(e) {
     print(paste("Error uploading entry",i , ":", conditionMessage(e)))
