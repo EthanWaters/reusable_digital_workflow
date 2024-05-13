@@ -503,7 +503,7 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
 }
 
 
-separate_new_control_app_data <- function(new_data_df, legacy_data_df, control_data_type){
+separate_new_control_app_data <- function(new_data_df, legacy_data_df, configuration){
   new_data_df <- data.frame(new_data_df, check.names = FALSE)
   legacy_data_df <- data.frame(legacy_data_df, check.names = FALSE)
   
