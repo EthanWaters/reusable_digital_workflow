@@ -140,8 +140,8 @@ main <- function(script_dir, configuration_path, connection_string, new_files) {
         
         append_to_table_unique(con, "voyage", voyage_df)
         voyage_ids <- get_id_by_row(con, "voyage", voyage_df)
-        verified_df$voyage_id <- voyage_id
-        
+        verified_df$voyage_id <- voyage_ids
+
         reef_df <- data.frame(
           reef_label = verified_df$reef_label
         )
@@ -152,6 +152,7 @@ main <- function(script_dir, configuration_path, connection_string, new_files) {
           name = verified_df$site_name,
           reef_id = verified_df$reef_id
         )
+
         site_ids <- get_id_by_row(con, "site", site_df)
         site_to_append_df <- site_df[is.na(site_ids),]
         site_to_append_df <- na.omit(site_to_append_df)
@@ -159,7 +160,7 @@ main <- function(script_dir, configuration_path, connection_string, new_files) {
         site_ids <- get_id_by_row(con, "site", site_df)
         verified_df$site_id <- site_ids
       } 
-      
+
       column_names <- dbListFields(con, control_data_type)
       data_df <- verified_df[,which(colnames(verified_df) %in% column_names)]
       data_df <- na.omit(data_df)
