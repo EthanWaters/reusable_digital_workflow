@@ -307,9 +307,9 @@ aggregate_culls_site_resolution_app <- function(data_df) {
 
   
 aggregate_manta_tows_site_resolution_app <- function(data_df) {
-  col_names <- colnames(data_df_test)
+  col_names <- colnames(data_df)
   
-  aggregated_data <- data_df_test  %>%
+  aggregated_data <- data_df  %>%
     group_by(vessel_name, vessel_voyage_number, reef_label, site_name) %>%
     dplyr::summarize(
       date = min(date),
@@ -507,28 +507,22 @@ separate_new_control_app_data <- function(new_data_df, legacy_data_df, configura
   new_data_df <- data.frame(new_data_df, check.names = FALSE)
   legacy_data_df <- data.frame(legacy_data_df, check.names = FALSE)
   
-  if("ID" %in% colnames(new_data_df)){
-    ID_col <- colnames(new_data_df)[1]
-  } else {
-    ID_col <- ""
-  } 
-  
   column_names <- colnames(legacy_data_df)
   verified_data_df <- data.frame(matrix(ncol = length(column_names), nrow = 0))
   colnames(verified_data_df) <- column_names 
   
-  # Determine additional columns required by the new data format and remove 
-  # from comparison. Even when "Nearest Site" exists in the legacy version we 
-  # do not want to compare it to see if it has changed. It is recalculated 
-  # every single workflow run through based on the available KML file.
-  required_columns <- intersect(c(configuration$mappings$new_fields$field, ID_col), names(new_data_df))
+  if("ID" %in% colnames(new_data_df)){
+    temp_new_df <- new_data_df[ , -which(names(new_data_df) %in% c("ID"))]
+    temp_legacy_df <- legacy_data_df[ , -which(names(legacy_data_df) %in% c("ID"))]
+  } else {
+    temp_new_df <- new_data_df
+    temp_legacy_df <- legacy_data_df
+  } 
   
-  # find close matching rows (distance of two) based on all columns except ID. ID is not 
+  # find close matching rows (distance of three) based on all columns except ID. ID is not 
   # because it will always be null if the data is exported from powerBI. 
   distance <- 3
-  
-  temp_new_df <- new_data_df[ , -which(names(new_data_df) %in% required_columns)]
-  temp_legacy_df <- legacy_data_df[ , -which(names(legacy_data_df) %in% required_columns)]
+ 
   close_match_rows <- matrix_close_matches_vectorised(temp_legacy_df, temp_new_df, distance)
   
   # There can be many to many perfect matches. This means that there will be 
@@ -536,6 +530,7 @@ separate_new_control_app_data <- function(new_data_df, legacy_data_df, configura
   # unique() should be utilised when subsetting the input dataframes.
   if(nrow(close_match_rows) > 0){
     separated_close_matches <- vectorised_separate_close_matches(close_match_rows)
+    print(head(separated_close_matches))
     perfect_duplicates <- new_data_df[unique(separated_close_matches$perfect[,2]),]
     new_entries_i <- unique(c(separated_close_matches$discrepancies[,2],separated_close_matches$perfect[,2]))
     

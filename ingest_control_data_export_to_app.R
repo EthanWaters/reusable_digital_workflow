@@ -56,8 +56,6 @@ main <- function(script_dir, configuration_path, connection_string, new_files) {
     
     voyage_dates <- get_voyage_dates_strings(new_data_df$CrownOfThornsStarfishVoyageTitle)
     
-    print(head(voyage_dates))
-    
     # create geometry initially if manta tow so that start and end point 
     # coordinates can be derived from the geospatial line
     if(control_data_type == "manta_tow"){
@@ -106,10 +104,8 @@ main <- function(script_dir, configuration_path, connection_string, new_files) {
     ### AGGREGATION 
     verified_new_df <- separate_new_control_app_data(verified_data_df, legacy_df, control_data_type)
     verified_new_df <- map_all_fields(verified_new_df, verified_new_df, app_to_research_config$mapping$reverse_transformation)
-    print("=======")
     verified_new_df$start_date <- voyage_dates$start_date
     verified_new_df$stop_date <- voyage_dates$stop_date
-    print("=======")
     if (control_data_type == "manta_tow"){
       verified_df <- aggregate_manta_tows_site_resolution_app(verified_new_df)
     } else if (control_data_type == "cull") { 
