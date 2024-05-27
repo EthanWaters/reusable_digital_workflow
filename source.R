@@ -1827,14 +1827,18 @@ extract_dates <- function(input){
 
 find_recent_file <- function(directory_path, keyword, file_extension) {
   # Get a list of files in the directory
-  files <- list.files(file.path(getwd(),directory_path), pattern = paste0(keyword, ".*\\.", file_extension), full.names = TRUE)
-  if (length(files) == 0) {
-    cat("No matching files found.\n")
-    return(NULL)
-  }
-  date_objects <- extract_dates(files)
-  most_recent_index <- which.max(date_objects)
-  return(files[most_recent_index])
+  tryCatch({
+    files <- list.files(file.path(getwd(),directory_path), pattern = paste0(keyword, ".*\\.", file_extension), full.names = TRUE)
+    if (length(files) == 0) {
+      cat("No matching files found.\n")
+      return(NULL)
+    }
+    date_objects <- extract_dates(files)
+    most_recent_index <- which.max(date_objects)
+    return(files[most_recent_index])
+  }, error = function(e) {
+    print(paste("Failed to find recent file: ",  conditionMessage(e)))
+  })
 }
 
 save_spatial_as_raster <- function(output_path, serialized_spatial_path){
