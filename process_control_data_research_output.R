@@ -190,7 +190,7 @@ main <- function(new_path, configuration_path = NULL, aggregate = TRUE, kml_path
   
     })
   }, error = function(e) {
-    send_error_email("Auth\\", "ethankwaters@gmail", "TEST")
+    print(paste("Critical Error in workflow could not be resolved:", conditionMessage(e)))
   })
 }
 
