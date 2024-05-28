@@ -32,8 +32,6 @@ main <- function(new_path, configuration_path = NULL, aggregate = TRUE, kml_path
     library("doParallel")
     
     keyword <- get_file_keyword(new_path) 
-    most_recent_report_path <- find_recent_file(configuration$metadata$output_directory$reports, configuration$metadata$control_data_type, "json")
-    most_recent_leg_path <- find_recent_file(configuration$metadata$output_directory$control_data, configuration$metadata$control_data_type, "csv")
 
     if (is.null(configuration_path)) {
       configuration_path <- find_recent_file("configuration_files/", keyword, ".json")
@@ -41,6 +39,9 @@ main <- function(new_path, configuration_path = NULL, aggregate = TRUE, kml_path
     }
     
     most_recent_kml_path <- find_recent_file(configuration$metadata$input_directory$spatial_data, "sites", "kml")
+    most_recent_report_path <- find_recent_file(configuration$metadata$output_directory$reports, configuration$metadata$control_data_type, "json")
+    most_recent_leg_path <- find_recent_file(configuration$metadata$output_directory$control_data_unaggregated, configuration$metadata$control_data_type, "csv")
+    
     
     previous_kml_path <- NULL
     serialised_spatial_path <- NULL
@@ -178,11 +179,11 @@ main <- function(new_path, configuration_path = NULL, aggregate = TRUE, kml_path
     
     # Save workflow outputc
     tryCatch({
-      if (!dir.exists(configuration$metadata$output_directory$control_data)) {
-        dir.create(configuration$metadata$output_directory$control_data, recursive = TRUE)
+      if (!dir.exists(configuration$metadata$output_directory$control_data_unaggregated)) {
+        dir.create(configuration$metadata$output_directory$control_data_unaggregated, recursive = TRUE)
       }
       
-      output_directory <- configuration$metadata$output_directory$control_data
+      output_directory <- configuration$metadata$output_directory$control_data_unaggregated
       data_type <- configuration$metadata$control_data_type
       timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
       file_name <- paste(data_type, "_", timestamp, ".csv", sep = "")

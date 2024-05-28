@@ -1,214 +1,211 @@
 {
-    "metadata": {
-      "author": "Ethan Waters",
-      "description": "Configuration for manta tow data",
-      "created": "2023-11-15",
-      "control_data_type": "manta_tow",
-      "GBRMPA_keyword": "Surveillance",
-      "legacy_sheet_index": 4,
-      "ID_col": "ID",
-      "is_ID_preferred": false,
-      "assign_sites": true,
-      "output_directory": {
-        "control_data": "Output/control_data",
-        "spatial_data": "Output/spatial_data",
-        "reports": "Output/reports"
-      },
-      "input_directory": {
-        "control_data": "Input/control_data",
-        "spatial_data": "Input/spatial_data",
-        "reports": "Input/reports"
-      }
+  "metadata": {
+    "author": ["Ethan Waters"],
+    "description": ["Configuration for manta tow data"],
+    "created": ["2023-11-15"],
+    "control_data_type": ["manta_tow"],
+    "GBRMPA_keyword": ["Surveillance"],
+    "legacy_sheet_index": [4],
+    "ID_col": ["ID"],
+    "is_ID_preferred": [false],
+    "assign_sites": [true],
+    "output_directory": {
+      "control_data_aggregated": ["Output/control_data/site_aggregation"],
+      "control_data_unaggregated": ["Output/control_data/unaggregated"],
+      "spatial_data": ["Output/spatial_data"],
+      "reports": ["Output/reports"]
     },
-    "mappings": {
-      "transformations": [
-        {
-          "target_field": "ID",
-          "source_field": "COTS Surveillance Id",
-          "position": 1
-        },
-        {
-          "target_field": "Tow date",
-          "source_field": "Tow time",
-          "position": 2
-        },
-        {
-          "target_field": "Vessel",
-          "source_field": "Vessel",
-          "position": 4
-        },
-        {
-          "target_field": "Voyage",
-          "source_field": "Voyage",
-          "position": 5
-        },
-        {
-          "target_field": "Reef ID",
-          "source_field": "Reef labe",
-          "position": 6
-        },
-        {
-          "target_field": "Reef",
-          "source_field": "Reef name",
-          "position": 7
-        },
-        {
-          "target_field": "Start Lat",
-          "source_field": "Start lat",
-          "position": 8
-        },
-        {
-          "target_field": "Start Lng",
-          "source_field": "Start long",
-          "position": 9
-        },
-        {
-          "target_field": "End Lat",
-          "source_field": "End lat",
-          "position": 10
-        },
-        {
-          "target_field": "End Lng",
-          "source_field": "End long",
-          "position": 11
-        },
-        {
-          "target_field": "Distance (metres)",
-          "source_field": "Distance (m)",
-          "position": 12
-        },
-        {
-          "target_field": "Average Speed (km/h)",
-          "source_field": "Average speed (km/h)",
-          "position": 13
-        },
-        {
-          "target_field": "COTS Observed",
-          "source_field": "COTS observed",
-          "position": 14
-        },
-        {
-          "target_field": "Feeding Scars",
-          "source_field": "Feeding scars",
-          "position": 15
-        },
-        {
-          "target_field": "Hard Coral",
-          "source_field": "Hard coral",
-          "position": 16
-        },
-        {
-          "target_field": "Soft Coral",
-          "source_field": "Soft coral",
-          "position": 17
-        },
-        {
-          "target_field": "Recently Dead Coral",
-          "source_field": "Dead coral",
-          "position": 18
-        }
-      ],
-      "new_fields": [
-        {
-            "field": "Tow Time",
-            "position": 3,
-            "default": "12:00:00"
-        },
-        {
-            "field": "Nearest Site",
-            "position": 19,
-            "default": null
-        },
-        {
-            "field": "error_flag",
-            "position": 20,
-            "default": 0
-        }
-      ],
-      "data_type_mappings": [
-        {
-          "field": "Reef ID",
-          "data_type": "character"
-        },
-        {
-          "field": "ID",
-          "data_type": "integer"
-        },
-        {
-          "field": "Tow date",
-          "data_type": "date"
-        },
-        {
-          "field": "Tow Time",
-          "data_type": "time"
-        },
-        {
-          "field": "Vessel",
-          "data_type": "character"
-        },
-        {
-          "field": "Voyage",
-          "data_type": "character"
-        },
-        {
-          "field": "Reef",
-          "data_type": "character"
-        },
-        {
-          "field": "Start Lat",
-          "data_type": "numeric"
-        },
-        {
-          "field": "Start Lng",
-          "data_type": "numeric"
-        },
-        {
-          "field": "End Lat",
-          "data_type": "numeric"
-        },
-        {
-          "field": "End Lng",
-          "data_type": "numeric"
-        },
-        {
-          "field": "Distance (metres)",
-          "data_type": "numeric"
-        },
-        {
-          "field": "Average Speed (km/h)",
-          "data_type": "numeric"
-        },
-        {
-          "field": "COTS Observed",
-          "data_type": "integer"
-        },
-        {
-          "field": "Feeding Scars",
-          "data_type": "character"
-        },
-        {
-          "field": "Hard Coral",
-          "data_type": "character"
-        },
-        {
-          "field": "Soft Coral",
-          "data_type": "character"
-        },
-        {
-          "field": "Recently Dead Coral",
-          "data_type": "character"
-        },
-        {
-          "field": "Nearest Site",
-          "data_type": "numeric"
-        },
-        {
-          "field": "error_flag",
-          "data_type": "numeric"
-        }
-      ]
-      
+    "input_directory": {
+      "control_data": ["Input/control_data"],
+      "spatial_data": ["Input/spatial_data"],
+      "reports": ["Input/reports"]
     }
+  },
+  "mappings": {
+    "transformations": [
+      {
+        "target_field": "ID",
+        "source_field": "COTS Surveillance id",
+        "position": 1
+      },
+      {
+        "target_field": "Tow date",
+        "source_field": "Tow time",
+        "position": 2
+      },
+      {
+        "target_field": "Vessel",
+        "source_field": "Vessel",
+        "position": 4
+      },
+      {
+        "target_field": "Voyage",
+        "source_field": "Voyage",
+        "position": 5
+      },
+      {
+        "target_field": "Reef ID",
+        "source_field": "Reef label",
+        "position": 6
+      },
+      {
+        "target_field": "Reef",
+        "source_field": "Reef name",
+        "position": 7
+      },
+      {
+        "target_field": "Start Lat",
+        "source_field": "Start lat",
+        "position": 8
+      },
+      {
+        "target_field": "Start Lng",
+        "source_field": "Start long",
+        "position": 9
+      },
+      {
+        "target_field": "End Lat",
+        "source_field": "End lat",
+        "position": 10
+      },
+      {
+        "target_field": "End Lng",
+        "source_field": "End long",
+        "position": 11
+      },
+      {
+        "target_field": "Distance (metres)",
+        "source_field": "Distance (m)",
+        "position": 12
+      },
+      {
+        "target_field": "Average Speed (km/h)",
+        "source_field": "Average speed (km/h)",
+        "position": 13
+      },
+      {
+        "target_field": "COTS Observed",
+        "source_field": "COTS observed",
+        "position": 14
+      },
+      {
+        "target_field": "Feeding Scars",
+        "source_field": "Feeding scars",
+        "position": 15
+      },
+      {
+        "target_field": "Hard Coral",
+        "source_field": "Hard coral",
+        "position": 16
+      },
+      {
+        "target_field": "Soft Coral",
+        "source_field": "Soft coral",
+        "position": 17
+      },
+      {
+        "target_field": "Recently Dead Coral",
+        "source_field": "Recently dead coral",
+        "position": 18
+      }
+    ],
+    "new_fields": [
+      {
+        "field": "Tow Time",
+        "position": 3,
+        "default": "12:00:00"
+      },
+      {
+        "field": "Nearest Site",
+        "position": 19
+      },
+      {
+        "field": "error_flag",
+        "position": 20,
+        "default": "0"
+      }
+    ],
+    "data_type_mappings": [
+      {
+        "field": "Reef ID",
+        "data_type": "character"
+      },
+      {
+        "field": "ID",
+        "data_type": "integer"
+      },
+      {
+        "field": "Tow date",
+        "data_type": "date"
+      },
+      {
+        "field": "Tow Time",
+        "data_type": "time"
+      },
+      {
+        "field": "Vessel",
+        "data_type": "character"
+      },
+      {
+        "field": "Voyage",
+        "data_type": "character"
+      },
+      {
+        "field": "Reef",
+        "data_type": "character"
+      },
+      {
+        "field": "Start Lat",
+        "data_type": "numeric"
+      },
+      {
+        "field": "Start Lng",
+        "data_type": "numeric"
+      },
+      {
+        "field": "End Lat",
+        "data_type": "numeric"
+      },
+      {
+        "field": "End Lng",
+        "data_type": "numeric"
+      },
+      {
+        "field": "Distance (metres)",
+        "data_type": "numeric"
+      },
+      {
+        "field": "Average Speed (km/h)",
+        "data_type": "numeric"
+      },
+      {
+        "field": "COTS Observed",
+        "data_type": "integer"
+      },
+      {
+        "field": "Feeding Scars",
+        "data_type": "character"
+      },
+      {
+        "field": "Hard Coral",
+        "data_type": "character"
+      },
+      {
+        "field": "Soft Coral",
+        "data_type": "character"
+      },
+      {
+        "field": "Recently Dead Coral",
+        "data_type": "character"
+      },
+      {
+        "field": "Nearest Site",
+        "data_type": "numeric"
+      },
+      {
+        "field": "error_flag",
+        "data_type": "numeric"
+      }
+    ]
   }
-
-  
+}
