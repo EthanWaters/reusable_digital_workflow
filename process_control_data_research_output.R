@@ -46,16 +46,12 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
       previous_report <- fromJSON(most_recent_report_path)
       previous_kml_path <- previous_report$inputs$kml_path
     } 
-    
-    if (is.null(leg_path)) {
-      leg_path <- most_recent_leg_path
-    }
-    
-    
+
     # Attempt to use legacy data where possible. 
     is_new <- 0
     is_legacy_data_available <- 1
     if (is.null(leg_path)) {
+      leg_path <- most_recent_leg_path
       if(is.null(most_recent_leg_path)){
         is_new <- 1
         is_legacy_data_available <- 0
@@ -64,24 +60,9 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
       }
     } 
     
-    # Reduce computation time by only assigning sites to raster pixels when needed.
-    # If the previous output utilised the most up-to-date kml file, then there 
-    # will be a saved serialised version of the raster data that can be utilised 
-    # instead of calculating it again as this is by far the most time consuming 
-    # part of the process. 
-    calculate_site_rasters <- 1
     if (is.null(kml_path)) {
       kml_path <- most_recent_kml_path
     }
-    tryCatch({
-      if(basename(kml_path) == basename(previous_kml_path)){
-        calculate_site_rasters <- 0
-      } 
-    }, error = function(e) {
-      print("Error comparing previous and most recent kml paths")
-      calculate_site_rasters <- 1
-    })
-   
     
     new_data_df <- rio::import(new_path)
     if(is_legacy_data_available){
