@@ -1,15 +1,13 @@
 
-main <- function(new_path, configuration_path = NULL, aggregate = TRUE, kml_path = NULL, leg_path = NULL) {
+main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path = NULL) {
   tryCatch({
     # Initialize -------------------------------------------------------------
+
     source("source.R")
     library("tools")
     library("installr")
-    library("readxl")
     library("sets")
-    library("XML")
     library("methods")
-    library("xml2")
     library("rio")
     library("dplyr")
     library("stringr")
@@ -34,7 +32,7 @@ main <- function(new_path, configuration_path = NULL, aggregate = TRUE, kml_path
     keyword <- get_file_keyword(new_path) 
 
     if (is.null(configuration_path)) {
-      configuration_path <- find_recent_file("configuration_files/", keyword, ".json")
+      configuration_path <- find_recent_file("configuration_files/", paste("research_",keyword, sep=""), "json")
       configuration <- fromJSON(configuration_path)
     }
     
@@ -208,7 +206,6 @@ new_path <- args[1]
 configuration_path <- NULL
 kml_path <- NULL
 leg_path <- NULL
-aggregate <- TRUE
 
 # Loop through the arguments to find optional ones
 for (i in 2:length(args)) {
@@ -218,8 +215,6 @@ for (i in 2:length(args)) {
     kml_path <- sub("--kml=", "", args[i])
   } else if (startsWith(args[i], "--leg=")) {
     leg_path <- sub("--leg=", "", args[i])
-  } else if (startsWith(args[i], "--aggregate=")) {
-    aggregate <- sub("--aggregate=", "", args[i])
   }
 }
 

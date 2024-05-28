@@ -1833,8 +1833,9 @@ find_recent_file <- function(directory_path, keyword, file_extension) {
       cat("No matching files found.\n")
       return(NULL)
     }
-    date_objects <- extract_dates(files)
-    most_recent_index <- which.max(date_objects)
+    file_infos <- lapply(files, file.info)
+    creation_times <- sapply(file_infos, function(info) info$ctime)
+    most_recent_index <- which.max(creation_times)
     return(files[most_recent_index])
   }, error = function(e) {
     print(paste("Failed to find recent file: ",  conditionMessage(e)))
