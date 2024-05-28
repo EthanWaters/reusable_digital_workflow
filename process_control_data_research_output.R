@@ -39,14 +39,12 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
     most_recent_kml_path <- find_recent_file(configuration$metadata$input_directory$spatial_data, "sites", "kml")
     most_recent_report_path <- find_recent_file(configuration$metadata$output_directory$reports, configuration$metadata$control_data_type, "json")
     most_recent_leg_path <- find_recent_file(configuration$metadata$output_directory$control_data_unaggregated, configuration$metadata$control_data_type, "csv")
-    
+    serialised_spatial_path <- find_recent_file(configuration$metadata$output_directory$spatial_data, "site_regions", "rds")
     
     previous_kml_path <- NULL
-    serialised_spatial_path <- NULL
     if(!is.null(most_recent_report_path)){
       previous_report <- fromJSON(most_recent_report_path)
       previous_kml_path <- previous_report$inputs$kml_path
-      serialised_spatial_path <- previous_report$outputs$spatial_data
     } 
     
     if (is.null(leg_path)) {

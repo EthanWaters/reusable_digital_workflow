@@ -1953,7 +1953,7 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
   # compare two kml files and return the geometry collections that have been 
   # updated 
   update_kml <- FALSE
-  if(!is.null(kml_path_previous) && !is.null(spatial_file) && calculate_site_rasters){
+  if(!is.null(kml_path_previous) && !load_site_rasters_failed){
     previous_kml_layers <- st_layers(kml_path_previous)
     previous_layer_names_vec <- unlist(previous_kml_layers["name"])
     previous_kml_data <- setNames(lapply(previous_layer_names_vec, function(i)  st_read(kml_path_previous, layer = i)), previous_layer_names_vec)
@@ -1971,45 +1971,39 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
       calculate_site_rasters <- 0
     }
   }
-  
-  if(calculate_site_rasters){
-    if(!update_kml | load_site_rasters_failed){
-      base::message("Assigning sites to raster pixels for all reefs...")
-      kml_data_simplified <- simplify_kml_polyogns_rdp(kml_data)
-      site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
-    } else {
-      base::message("Updating raster pixels for reefs that have changed since last process date...")
-      kml_data_simplified <- simplify_kml_polyogns_rdp(kml_data_to_update)
-      updated_layer_names_vec <- names(kml_data_simplified)
-      updated_site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, updated_layer_names_vec, crs, raster_size, x_closest, is_standardised)
-      
-      site_regions_reef_ids <- get_reef_label(names(kml_data))
-      updated_site_regions_reef_ids <- get_reef_label(names(kml_data_to_update))
-      
-      index_reefs <- match(updated_site_regions_reef_ids, site_regions_reef_ids)
-      site_regions <- site_regions[-index_reefs]
-      site_regions <- c(site_regions, updated_site_regions)
-      site_regions <- site_regions[order(names(site_regions))]
+
+  if(!update_kml | load_site_rasters_failed){
+    base::message("Assigning sites to raster pixels for all reefs...")
+    kml_data_simplified <- simplify_kml_polyogns_rdp(kml_data)
+    site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
+  } else {
+    base::message("Updating raster pixels for reefs that have changed since last process date...")
+    kml_data_simplified <- simplify_kml_polyogns_rdp(kml_data_to_update)
+    updated_layer_names_vec <- names(kml_data_simplified)
+    updated_site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, updated_layer_names_vec, crs, raster_size, x_closest, is_standardised)
+    
+    site_regions_reef_ids <- get_reef_label(names(kml_data))
+    updated_site_regions_reef_ids <- get_reef_label(names(kml_data_to_update))
+    
+    index_reefs <- match(updated_site_regions_reef_ids, site_regions_reef_ids)
+    site_regions <- site_regions[-index_reefs]
+    site_regions <- c(site_regions, updated_site_regions)
+    site_regions <- site_regions[order(names(site_regions))]
+  }
+ 
+  base::message("Saving raster data as serialised binary file...")
+  tryCatch({
+    if (!dir.exists(spatial_directory)) {
+      dir.create(spatial_directory, recursive = TRUE)
     }
-    # The is for testing purposes 
-    assign("site_regions", site_regions, envir = .GlobalEnv)
+    saveRDS(site_regions, file.path(spatial_directory, paste("site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = "")), row.names = FALSE)
+    contribute_to_metadata_report("output", file.path(getwd(), paste(keyword,"_site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = "")))
+  }, error = function(e) {
+    print(paste("Error site regions raster data - Data saved in source directory", conditionMessage(e)))
+    saveRDS(site_regions, paste(keyword,"_site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = ""))
+    contribute_to_metadata_report("output", file.path(getwd(), paste(keyword,"_site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = "")))
+  })
     
-    
-    base::message("Saving raster data as serialised binary file...")
-    tryCatch({
-      if (!dir.exists(spatial_directory)) {
-        dir.create(spatial_directory, recursive = TRUE)
-      }
-      saveRDS(site_regions, file.path(spatial_directory, paste("site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = "")), row.names = FALSE)
-      contribute_to_metadata_report("output", file.path(getwd(), paste(keyword,"_site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = "")))
-    }, error = function(e) {
-      print(paste("Error site regions raster data - Data saved in source directory", conditionMessage(e)))
-      saveRDS(site_regions, paste(keyword,"_site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = ""))
-      contribute_to_metadata_report("output", file.path(getwd(), paste(keyword,"_site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = "")))
-    })
-    
-  } 
-  
   if(save_spatial_as_raster == 1 && !is.null(spatial_path)){
     base::message("Saving raster data as gtiff files...")
     raster_output <- file.path(spatial_directory, "rasters")
