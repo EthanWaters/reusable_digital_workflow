@@ -28,6 +28,7 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
     library("future")
     library("foreach")
     library("doParallel")
+    library("digest")
     
     keyword <- get_file_keyword(new_path) 
 
