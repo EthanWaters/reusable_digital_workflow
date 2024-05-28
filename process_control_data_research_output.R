@@ -54,6 +54,7 @@ main <- function(new_path, configuration_path = NULL, aggregate = TRUE, kml_path
       leg_path <- most_recent_leg_path
     }
     
+    
     # Attempt to use legacy data where possible. 
     is_new <- 0
     is_legacy_data_available <- 1
