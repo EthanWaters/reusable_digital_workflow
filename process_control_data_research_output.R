@@ -34,8 +34,12 @@ main <- function(new_path, configuration_path = NULL, aggregate = TRUE, kml_path
     keyword <- get_file_keyword(new_path) 
     most_recent_report_path <- find_recent_file(configuration$metadata$output_directory$reports, configuration$metadata$control_data_type, "json")
     most_recent_leg_path <- find_recent_file(configuration$metadata$output_directory$control_data, configuration$metadata$control_data_type, "csv")
-    configuration_path <- find_recent_file("configuration_files/", keyword, ".json")
-    configuration <- fromJSON(configuration_path)
+
+    if (is.null(configuration_path)) {
+      configuration_path <- find_recent_file("configuration_files/", keyword, ".json")
+      configuration <- fromJSON(configuration_path)
+    }
+    
     most_recent_kml_path <- find_recent_file(configuration$metadata$input_directory$spatial_data, "sites", "kml")
     
     previous_kml_path <- NULL
