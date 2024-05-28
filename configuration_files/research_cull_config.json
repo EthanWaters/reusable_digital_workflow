@@ -113,7 +113,8 @@
       {
         "field": "error_flag",
         "position": 18,
-        "default": 0
+        "default": 0,
+        "function_call": false
       }
     ],
     "data_type_mappings": [
@@ -147,7 +148,7 @@
       },
       {
         "field": "Survey Date",
-        "data_type": "date"
+        "data_type": "datetime"
       },
       {
         "field": "Depth (meters)",

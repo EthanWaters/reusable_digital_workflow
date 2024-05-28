@@ -113,16 +113,19 @@
       {
         "field": "Tow Time",
         "position": 3,
-        "default": "12:00:00"
+        "default": "seperate_date_time_manta_tow({DATAFRAME})",
+        "function_call": true
       },
       {
         "field": "Nearest Site",
-        "position": 19
+        "position": 19,
+        "function_call": false
       },
       {
         "field": "error_flag",
         "position": 20,
-        "default": "0"
+        "default": "0",
+        "function_call": false
       }
     ],
     "data_type_mappings": [

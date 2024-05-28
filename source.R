@@ -149,6 +149,7 @@ seperate_date_time_manta_tow <- function(data_df){
   
   date_time <- data_df$`Tow date`
   is_date_time_na <- is.na(date_time)
+  date_time <- format(parse_date_time(date_time[!is_date_time_na], orders = c('dmy_HM','dmy_HMS', 'ymd_HM','ymd_HMS', 'ymd', 'dmy')), "%Y-%m-%d %H:%M:%S")
   data_df$`Tow Time`[!is_date_time_na] <- format(date_time[!is_date_time_na], format = "%H:%M:%S")
   
   data_df$`Tow date`[!is_date_time_na] <- date(date_time[!is_date_time_na])
@@ -1746,19 +1747,30 @@ map_new_fields <- function(data_df, transformed_df, new_fields){
     default_value <- new_fields$default[i]
     
     # Call function written as string in configuration file
-    if("function_call" %in% names(default_value[[1]])){
-      
-      function_call <- default_value[[1]]$function_call
-      expression <- gsub("\\{DATAFRAME\\}", "data_df", function_call)
-      default_value <- eval(parse(text = expression))
-      
+    if(new_fields$function_call[i]){
+      default_value <- NA
     }
+    
     position <- new_fields$position[i]
     transformed_df[, position] <- default_value
     colnames(transformed_df)[position] <- new_field
   }
   return(transformed_df)
 }  
+
+
+get_new_field_default_values <- function(data_df, new_fields){
+  new_fields <- new_fields[new_fields$function_call == TRUE,]
+  for (i in seq_len(nrow(new_fields))) {
+        default_value <- new_fields$default[i]
+        expression <- gsub("\\{DATAFRAME\\}", "data_df", default_value)
+        default_value <- eval(parse(text = expression))
+        position <- new_fields$position[i]
+        data_df[, position] <- default_value
+  }
+  return(data_df)
+}
+
 
 map_all_fields <- function(data_df, transformed_df, mappings){
   closest_matches <- get_closest_matches(colnames(data_df), mappings$source_field)
@@ -1773,21 +1785,13 @@ map_all_fields <- function(data_df, transformed_df, mappings){
   
 }
 
+
 map_data_structure <- function(data_df, mappings, new_fields){
   
   transformed_df <- data.frame(matrix(ncol = nrow(mappings) + nrow(new_fields), nrow = nrow(data_df)))
-  data_colnames <- colnames(data_df)
-  is_already_mapped <- all(!is.na(match(mappings$target_field, data_colnames)))
-  if(is_already_mapped){
-    col_indices <- match(data_colnames, mappings$target_fields)
-    positions <- mappings$position[col_indices]
-    transformed_df <- data_df[,positions]
-    return(transformed_df)
-  }
-  
   transformed_df <- map_new_fields(data_df, transformed_df, new_fields)
   transformed_df <- map_all_fields(data_df, transformed_df, mappings)
-  
+  transformed_df <- get_new_field_default_values(transformed_df, new_fields)
   return(transformed_df)
 }
 

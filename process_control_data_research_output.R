@@ -104,8 +104,7 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
     metadata_json_output[["decisions"]] = list(
       has_authorative_ID = has_authorative_ID,
       is_legacy_data_available = is_legacy_data_available,
-      is_new = is_new, 
-      calculate_site_rasters = calculate_site_rasters
+      is_new = is_new
     )
     
     # save metadata json file 

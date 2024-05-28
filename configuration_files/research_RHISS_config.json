@@ -462,7 +462,8 @@
       {
         "field": "error_flag",
         "position": 105,
-        "default": 0
+        "default": 0,
+        "function_call": false
       }
     ],
     "data_type_mappings": [
@@ -476,7 +477,7 @@
       },
       {
         "field": "Observation Date",
-        "data_type": "Date"
+        "data_type": "Datetime"
       },
       {
         "field": "Reef ID",
