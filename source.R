@@ -144,16 +144,12 @@ get_app_data_database <- function(con, control_data_type){
   
 }
 
-
 seperate_date_time_manta_tow <- function(data_df){
-  
   date_time <- data_df$`Tow date`
   is_date_time_na <- is.na(date_time)
-  date_time <- format(parse_date_time(date_time[!is_date_time_na], orders = c('dmy_HM','dmy_HMS', 'ymd_HM','ymd_HMS', 'ymd', 'dmy')), "%Y-%m-%d %H:%M:%S")
-  data_df$`Tow Time`[!is_date_time_na] <- format(date_time[!is_date_time_na], format = "%H:%M:%S")
-  
-  data_df$`Tow date`[!is_date_time_na] <- date(date_time[!is_date_time_na])
-  return(data_df)
+  date_time <- parse_date_time(date_time[!is_date_time_na], orders = c('dmy_HM p','dmy_HMS p', 'ymd_HM p','ymd_HMS p','dmy_HM','dmy_HMS', 'ymd_HM','ymd_HMS', 'ymd', 'dmy'))
+  time <- format(date_time, "%H:%M:%S")
+  return(time)
 }
 
 
@@ -1624,12 +1620,13 @@ set_data_type <- function(data_df, mapping){
     
     # Convert the column to the specified data type
     if(tolower(data_type) == "date"){
-      output_df[[column_name]] <- parse_date_time(data_df[[column_name]], orders = c('dmy', 'ymd'))
+      dates <- parse_date_time(data_df[[column_name]], orders = c('dmy', 'ymd', 'dmy_HM','dmy_HMS', 'ymd_HM','ymd_HMS', 'dmy_HM p','dmy_HMS p', 'ymd_HM p','ymd_HMS p'))
+      output_df[[column_name]] <- format(as.Date(dates), "%Y-%m-%d")
     } else if (tolower(data_type) == "time") {
       time <- as.POSIXct(data_df[[column_name]], format = "%H:%M:%S")
       output_df[[column_name]] <- format(time, '%H:%M:%S')
     } else if (tolower(data_type) == "datetime") {
-      output_df[[column_name]] <- format(parse_date_time(data_df[[column_name]], orders = c('dmy_HM','dmy_HMS', 'ymd_HM','ymd_HMS')), "%Y-%m-%d %H:%M:%S")
+      output_df[[column_name]] <- format(parse_date_time(data_df[[column_name]], orders = c('dmy_HM','dmy_HMS', 'ymd_HM','ymd_HMS', 'dmy_HM p','dmy_HMS p', 'ymd_HM p','ymd_HMS p')), "%Y-%m-%d %H:%M:%S")
     
     } else {
       output_df[[column_name]] <- as(data_df[[column_name]], tolower(data_type))
