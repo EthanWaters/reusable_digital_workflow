@@ -1865,10 +1865,16 @@ get_spatial_differences <- function(kml_data, previous_kml_data){
   reef_id_pattern <- "\\b(1[0-9]|2[0-9]|10)-\\d{3}[a-z]?\\b"
   
   # Extract Reef IDs from each list
-  
   reef_ids <- get_reef_label(names(kml_data))
-  reef_ids_previous <- get_reef_label(names(previous_kml_data))
+  reef_ids_previous <- get_reef_label(names(previous_kml_data_test))
   
+  # Add any reefs that did not exist in the previous kml but exist in the 
+  # current kml
+  indices_not_in_previous <- which(!reef_ids %in% reef_ids_previous)
+  for (i in 1:length(indices_not_in_previous)) {
+    name <- names(kml_data)[[i]]
+    spatial_differences[[name]] <- kml_data[[i]]
+  }
   # Iterate through all IDS that exist in the new KML file. Any that have 
   # changed or do not exist in the previous data set will be added to the new 
   # one. It is intentional that cull sites that have been removed are not 
