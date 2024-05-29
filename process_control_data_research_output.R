@@ -26,6 +26,7 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
     library("stars")
     library("stringr")
     library("future")
+    library("furrr")
     library("foreach")
     library("doParallel")
     library("digest")

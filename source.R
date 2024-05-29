@@ -1945,9 +1945,10 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
     future_layers <- future_map(layer_names_vec, ~ st_read(kml_path, layer = .x))
     kml_data <- setNames(future_layers, layer_names_vec)
   }, error = function(e) {
+    print(paste("Error KML not loaded with parrallel processing", conditionMessage(e)))
     kml_data <- setNames(lapply(layer_names_vec, function(i)  st_read(kml_path, layer = i)), layer_names_vec)
   })
-  assign("kml_data", kml_data, envir = .GlobalEnv)
+  kml_data <<- kml_data
   base::message("Loaded KML file successfully")
   base::message("Compute checksum for kml")
   crs <- projection(kml_data[[1]])
@@ -1957,12 +1958,13 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
   
   # compare two kml files and return the geometry collections that have been 
   # updated 
+  calculate_site_rasters <- TRUE
   update_kml <- FALSE
   if(!is.null(kml_path_previous) && !load_site_rasters_failed){
     previous_kml_layers <- st_layers(kml_path_previous)
     previous_layer_names_vec <- unlist(previous_kml_layers["name"])
     previous_kml_data <- setNames(lapply(previous_layer_names_vec, function(i)  st_read(kml_path_previous, layer = i)), previous_layer_names_vec)
-    assign("previous_kml_data", previous_kml_data, envir = .GlobalEnv)
+    previous_kml_data <<- previous_kml_data
     previous_crs <- projection(previous_kml_data[[1]])
     previous_checksum <- compute_checksum(previous_kml_data)
     if(checksum != previous_checksum){
@@ -1971,6 +1973,7 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
         tryCatch({
           if(length(kml_data_to_update) == 0){
             update_kml <- TRUE
+            calculate_site_rasters <- FALSE
           }
         }, error = function(e) {
           update_kml <- FALSE
@@ -1978,29 +1981,31 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
       } 
     } else {
       base::message("Checksum determined current and previous KML data are identical")
-      calculate_site_rasters <- 0
+      calculate_site_rasters <- FALSE
     }
   }
-
-  if(!update_kml | load_site_rasters_failed){
-    base::message("Assigning sites to raster pixels for all reefs...")
-    kml_data_simplified <- simplify_kml_polyogns_rdp(kml_data)
-    site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
-  } else {
-    base::message("Updating raster pixels for reefs that have changed since last process date...")
-    kml_data_simplified <- simplify_kml_polyogns_rdp(kml_data_to_update)
-    updated_layer_names_vec <- names(kml_data_simplified)
-    updated_site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, updated_layer_names_vec, crs, raster_size, x_closest, is_standardised)
-    
-    site_regions_reef_ids <- get_reef_label(names(kml_data))
-    updated_site_regions_reef_ids <- get_reef_label(names(kml_data_to_update))
-    
-    index_reefs <- match(updated_site_regions_reef_ids, site_regions_reef_ids)
-    site_regions <- site_regions[-index_reefs]
-    site_regions <- c(site_regions, updated_site_regions)
-    site_regions <- site_regions[order(names(site_regions))]
+  
+  if(calculate_site_rasters){
+    if(!update_kml | load_site_rasters_failed){
+      base::message("Assigning sites to raster pixels for all reefs...")
+      kml_data_simplified <- simplify_kml_polyogns_rdp(kml_data)
+      site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
+    } else {
+      base::message("Updating raster pixels for reefs that have changed since last process date...")
+      kml_data_simplified <- simplify_kml_polyogns_rdp(kml_data_to_update)
+      updated_layer_names_vec <- names(kml_data_simplified)
+      updated_site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, updated_layer_names_vec, crs, raster_size, x_closest, is_standardised)
+      
+      site_regions_reef_ids <- get_reef_label(names(kml_data))
+      updated_site_regions_reef_ids <- get_reef_label(names(kml_data_to_update))
+      
+      index_reefs <- match(updated_site_regions_reef_ids, site_regions_reef_ids)
+      site_regions <- site_regions[-index_reefs]
+      site_regions <- c(site_regions, updated_site_regions)
+      site_regions <- site_regions[order(names(site_regions))]
+    }
   }
- 
+  
   base::message("Saving raster data as serialised binary file...")
   tryCatch({
     if (!dir.exists(spatial_directory)) {
