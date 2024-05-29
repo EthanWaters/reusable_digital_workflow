@@ -2023,10 +2023,10 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
     if (!dir.exists(spatial_directory)) {
       dir.create(spatial_directory, recursive = TRUE)
     }
-    saveRDS(site_regions, file.path(spatial_directory, paste("site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = "")), row.names = FALSE)
+    saveRDS(site_regions, file.path(spatial_directory, paste("site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = "")))
     contribute_to_metadata_report("output", file.path(getwd(), paste(keyword,"_site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = "")))
   }, error = function(e) {
-    print(paste("Error site regions raster data - Data saved in source directory", conditionMessage(e)))
+    print(paste("Error saving site regions raster data - Data saved in source directory", conditionMessage(e)))
     saveRDS(site_regions, paste(keyword,"_site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = ""))
     contribute_to_metadata_report("output", file.path(getwd(), paste(keyword,"_site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = "")))
   })
