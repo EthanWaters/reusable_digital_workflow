@@ -1862,19 +1862,21 @@ save_spatial_as_raster <- function(output_path, serialized_spatial_path){
 
 get_spatial_differences <- function(kml_data, previous_kml_data){
   spatial_differences <- list()
-  reef_id_pattern <- "\\b(1[0-9]|2[0-9]|10)-\\d{3}[a-z]?\\b"
-  
-  # Extract Reef IDs from each list
+
+    # Extract Reef IDs from each list
   reef_ids <- get_reef_label(names(kml_data))
-  reef_ids_previous <- get_reef_label(names(previous_kml_data_test))
+  reef_ids_previous <- get_reef_label(names(previous_kml_data))
   
   # Add any reefs that did not exist in the previous kml but exist in the 
   # current kml
   indices_not_in_previous <- which(!reef_ids %in% reef_ids_previous)
-  for (i in 1:length(indices_not_in_previous)) {
-    name <- names(kml_data)[[i]]
-    spatial_differences[[name]] <- kml_data[[i]]
+  if(length(indices_not_in_previous) > 0){
+    for (i in 1:length(indices_not_in_previous)) {
+      name <- names(kml_data)[[i]]
+      spatial_differences[[name]] <- kml_data[[i]]
+    }
   }
+
   # Iterate through all IDS that exist in the new KML file. Any that have 
   # changed or do not exist in the previous data set will be added to the new 
   # one. It is intentional that cull sites that have been removed are not 
@@ -1896,14 +1898,18 @@ get_spatial_differences <- function(kml_data, previous_kml_data){
         if (all(dim(reef) == dim(reef_previous))) {
           is_unchanged <- (all(reef_previous == reef)) && (reef_name_previous == reef_name)
         }
-        if(!is_unchanged){
-          name <- names(kml_data)[[index_reefs]]
-          spatial_differences[[name]] <- kml_data[[index_reefs]]
-        }
+
       }, error = function(e) {
+        print(paste("Error: ",  conditionMessage(e)))
+      },
+      warning = function(w) {
+        print(paste("Warning: ",  conditionMessage(w)))
+      })
+      
+      if(!is_unchanged){
         name <- names(kml_data)[[index_reefs]]
         spatial_differences[[name]] <- kml_data[[index_reefs]]
-      })
+      }
     }
   }
   return(spatial_differences)
@@ -1975,7 +1981,7 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
     previous_checksum <- compute_checksum(previous_kml_data)
     if(checksum != previous_checksum){
       if(previous_crs == crs){
-        kml_data_to_update <- get_spatial_differences(kml_data, previous_kml_data_test)
+        kml_data_to_update <- get_spatial_differences(kml_data, previous_kml_data)
         tryCatch({
           if(length(kml_data_to_update) == 0){
             update_kml <- TRUE
