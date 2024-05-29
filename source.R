@@ -1936,6 +1936,7 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
     })
   }
   
+  base::message("Loading kml file...")
   kml_layers <- st_layers(kml_path)
   layer_names_vec <- unlist(kml_layers["name"])
   kml_data <- NULL
@@ -1946,6 +1947,9 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
   }, error = function(e) {
     kml_data <- setNames(lapply(layer_names_vec, function(i)  st_read(kml_path, layer = i)), layer_names_vec)
   })
+  assign("kml_data", kml_data, envir = .GlobalEnv)
+  base::message("Loaded KML file successfully")
+  base::message("Compute checksum for kml")
   crs <- projection(kml_data[[1]])
   sf_use_s2(FALSE)
   checksum <- compute_checksum(kml_data)
@@ -1958,14 +1962,19 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
     previous_kml_layers <- st_layers(kml_path_previous)
     previous_layer_names_vec <- unlist(previous_kml_layers["name"])
     previous_kml_data <- setNames(lapply(previous_layer_names_vec, function(i)  st_read(kml_path_previous, layer = i)), previous_layer_names_vec)
+    assign("previous_kml_data", previous_kml_data, envir = .GlobalEnv)
     previous_crs <- projection(previous_kml_data[[1]])
     previous_checksum <- compute_checksum(previous_kml_data)
     if(checksum != previous_checksum){
       if(previous_crs == crs){
         kml_data_to_update <- get_spatial_differences(kml_data, previous_kml_data)
-        if(!is.na(kml_data_to_update) | !is.null(kml_data_to_update)){
-          update_kml <- TRUE
-        }
+        tryCatch({
+          if(length(kml_data_to_update) == 0){
+            update_kml <- TRUE
+          }
+        }, error = function(e) {
+          update_kml <- FALSE
+        })
       } 
     } else {
       base::message("Checksum determined current and previous KML data are identical")
