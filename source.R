@@ -1975,7 +1975,7 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
     previous_checksum <- compute_checksum(previous_kml_data)
     if(checksum != previous_checksum){
       if(previous_crs == crs){
-        kml_data_to_update <- get_spatial_differences(kml_data, previous_kml_data)
+        kml_data_to_update <- get_spatial_differences(kml_data, previous_kml_data_test)
         tryCatch({
           if(length(kml_data_to_update) == 0){
             update_kml <- TRUE
