@@ -38,7 +38,7 @@ import_data <- function(data, index=1){
 
 
 get_datetime_parse_order <- function(){
-  order <- c('%d/%m/%Y %I:%M:%S %p','%d/%m/%Y %H:%M:%S', '%Y/%m/%d %I:%M:%S %p','%Y/%m/%d %H:%M:%S','%d/%m/%Y %I:%M %p','%d/%m/%Y %H:%M', '%Y/%m/%d %I:%M %p','%Y/%m/%d %H:%M', 'dmy','ymd')
+  order <- c('%Y/%m/%d %I:%M:%S %p','%Y/%m/%d %H:%M:%S', '%d/%m/%Y %I:%M:%S %p', '%d/%m/%Y %H:%M:%S', '%Y/%m/%d %I:%M %p','%Y/%m/%d %H:%M', '%d/%m/%Y %I:%M %p','%d/%m/%Y %H:%M', 'ymd', 'dmy')
   return(order)
 }
 
@@ -1649,10 +1649,13 @@ set_data_type <- function(data_df, mapping){
     
     # Convert the column to the specified data type
     if(tolower(data_type) == "date"){
+      # NA will cause all dates to note parse. Remove NA from parsing but 
+      # then include them in the dataframe afterwards. 
       datetimes <- data_df[[column_name]]
-      datetimes <- datetimes[!is.na(datetimes)]
-      dates <- parse_date_time2(datetimes, orders = orders = get_datetime_parse_order())
-      output_df[[column_name]] <- format(as.Date(dates), "%d-%m-%Y")
+      datetimes_available <- datetimes[!is.na(datetimes)]
+      dates_available <- parse_date_time2(datetimes_available, orders = orders = get_datetime_parse_order())
+      datetimes[!is.na(datetimes)] <- dates_available
+      output_df[[column_name]] <- format(as.Date(datetimes), "%Y-%m-%d")
     } else if (tolower(data_type) == "time") {
       time <- as.POSIXct(data_df[[column_name]], format = "%H:%M:%S")
       output_df[[column_name]] <- format(time, '%H:%M:%S')
