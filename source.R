@@ -36,6 +36,13 @@ import_data <- function(data, index=1){
   return(out)
 }
 
+
+get_datetime_parse_order <- function(){
+  order <- c('%d/%m/%Y %I:%M:%S %p','%d/%m/%Y %H:%M:%S', '%Y/%m/%d %I:%M:%S %p','%Y/%m/%d %H:%M:%S','%d/%m/%Y %I:%M %p','%d/%m/%Y %H:%M', '%Y/%m/%d %I:%M %p','%Y/%m/%d %H:%M', 'dmy','ymd')
+  return(order)
+}
+
+
 get_vessel_short_name <- function(string) {
   # Function to extract short name from a single string
   extract_short_name <- function(s) {
@@ -147,7 +154,7 @@ get_app_data_database <- function(con, control_data_type){
 seperate_date_time_manta_tow <- function(data_df){
   date_time <- data_df$`Tow date`
   is_date_time_na <- is.na(date_time)
-  date_time <- parse_date_time(date_time[!is_date_time_na], orders = c('dmy_HMS p','dmy_HM p', 'ymd_HMS p','ymd_HM p','dmy_HMS','dmy_HM', 'ymd_HMS','ymd_HM', 'dmy','ymd'))
+  date_time <- parse_date_time(date_time[!is_date_time_na], orders = get_datetime_parse_order())
   time <- format(date_time, "%H:%M:%S")
   return(time)
 }
@@ -1643,18 +1650,18 @@ set_data_type <- function(data_df, mapping){
     # Convert the column to the specified data type
     if(tolower(data_type) == "date"){
       datetimes <- data_df[[column_name]]
-      dates <- parse_date_time2(datetimes, orders = orders = c('dmy_HMS p','dmy_HM p', 'ymd_HMS p','ymd_HM p','dmy_HMS','dmy_HM', 'ymd_HMS','ymd_HM', 'dmy','ymd'))
+      datetimes <- datetimes[!is.na(datetimes)]
+      dates <- parse_date_time2(datetimes, orders = orders = get_datetime_parse_order())
       output_df[[column_name]] <- format(as.Date(dates), "%d-%m-%Y")
     } else if (tolower(data_type) == "time") {
       time <- as.POSIXct(data_df[[column_name]], format = "%H:%M:%S")
       output_df[[column_name]] <- format(time, '%H:%M:%S')
     } else if (tolower(data_type) == "datetime") {
-      output_df[[column_name]] <- format(parse_date_time(data_df[[column_name]], orders = c('dmy_HMS p','dmy_HM p', 'ymd_HMS p','ymd_HM p','dmy_HMS','dmy_HM', 'ymd_HMS','ymd_HM', 'dmy','ymd')), "%Y-%m-%d %H:%M:%S")
+      output_df[[column_name]] <- format(parse_date_time(data_df[[column_name]], orders = get_datetime_parse_order()), "%Y-%m-%d %H:%M:%S")
     
     } else {
       output_df[[column_name]] <- as(data_df[[column_name]], tolower(data_type))
     }
-    
   }
   
   # Identify which rows have been coerced to NA and listed in metadata report. 
