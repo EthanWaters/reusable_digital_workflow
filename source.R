@@ -181,13 +181,19 @@ get_start_and_end_coords_base <- function(start_lat, stop_lat, start_long, stop_
   stop_points <- lapply(1:length(stop_lat), function(i) st_point(c(stop_long[i], stop_lat[i])))
   stop_points <- st_sfc(stop_points)
   
-  distance <- st_distance(start_points,stop_points)
-  max_index <- which(distance == max(distance), arr.ind=TRUE)[1,]
-  
-  start_lat <-  st_coordinates(start_points[max_index[1]])[2]
-  start_long <-  st_coordinates(start_points[max_index[1]])[1]
-  stop_lat <-  st_coordinates(stop_points[max_index[2]])[2]
-  stop_long <-  st_coordinates(stop_points[max_index[2]])[1]
+  distances <- st_distance(start_points,stop_points)
+  if(!any(is.na(distances))){
+    max_index <- which(distances == max(distances), arr.ind=TRUE)[1,]
+    start_lat <-  st_coordinates(start_points[max_index[1]])[2]
+    start_long <-  st_coordinates(start_points[max_index[1]])[1]
+    stop_lat <-  st_coordinates(stop_points[max_index[2]])[2]
+    stop_long <-  st_coordinates(stop_points[max_index[2]])[1]
+  } else {
+    start_lat <-  NA
+    start_long <-  NA
+    stop_lat <-  NA
+    stop_long <-  NA
+  }
   output <- list(start_lat, start_long, stop_lat, stop_long)
   return(output)
 }
