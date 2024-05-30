@@ -476,7 +476,28 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
       
       # This will contain any new entries and any rows that could not be separated
       new_entries <- new_data_df[-new_entries_i,]
+
+      if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
+        # Append the warning to an existing matrix 
+        new_info_df <- data.frame(
+          index = new_entries_i,
+          message = "New Entry to the dataset. Not present in previous dataset."
+        )
+        duplicate_info_df <- data.frame(
+          index = separated_close_matches$perfect[,2],
+          message = "Perfect duplicate. This entry was present in previous dataset."
+        )
+        discpreancies_info_df <- data.frame(
+          index = separated_close_matches$discrepancies[,2],
+          message = "Discrepancy. This row has changed since the last dataset"
+        )
+        contribute_to_metadata_report("New Entry", new_info_df, parent_key = "Data")
+        contribute_to_metadata_report("Perfect Duplicate", duplicate_info_df, parent_key = "Data")
+        contribute_to_metadata_report("Discrepancies", discpreancies_info_df, parent_key = "Data")
+      }
+
       verified_discrepancies <- compare_discrepancies(new_data_df, legacy_data_df, separated_close_matches$discrepancies)
+
     } else {
       new_entries <- new_data_df
     }
