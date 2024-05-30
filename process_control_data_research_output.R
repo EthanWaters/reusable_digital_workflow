@@ -174,7 +174,7 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
     })
     
     if(configuration$metadata$control_data_type == "manta_tow"){
-      verified_aggregated_df <- aggregate_manta_tows_site_resolution_research(data_df)  
+      verified_aggregated_df <- aggregate_manta_tows_site_resolution_research(verified_data_df)  
     } else if (configuration$metadata$control_data_type == "cull") {
       verified_aggregated_df <- aggregate_culls_site_resolution_research(verified_data_df) 
     }

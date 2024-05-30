@@ -349,7 +349,9 @@ aggregate_manta_tows_site_resolution_research <- function(data_df) {
   aggregated_data <- data_df %>%
     group_by(Vessel, Voyage, `Reef ID`, `Nearest Site`) %>%
     dplyr::summarize(
+      ID = min(ID),
       `Tow date` = min(`Tow date`),
+      `Tow Time` = min(`Tow Time`),
       Reef = first(Reef), 
       Vessel = Vessel, 
       Voyage = Voyage,
@@ -368,7 +370,7 @@ aggregate_manta_tows_site_resolution_research <- function(data_df) {
     unnest_wider(coords) %>%
     dplyr::select(all_of(col_names)) %>%
     dplyr::distinct()
-  
+
   
   return(aggregated_data)
 } 
