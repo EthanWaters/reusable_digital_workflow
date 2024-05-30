@@ -142,7 +142,7 @@ get_app_data_database <- function(con, control_data_type){
       "
   } else if (control_data_type == "cull") {
     query <- "
-      SELECT cull.date, vessel.name AS vessel_name, voyage.vessel_voyage_number, voyage.start_date, voyage.stop_date, reef.reef_label, reef.name AS reef_name, site.latitude, site.longitude, cull.average_depth, manta_tow.average_speed, cull.less_than_fifteen_centimeters, cull.fifteen_to_twenty_five_centimeters, cull.twenty_five_to_forty_centimeters, cull.greater_than_forty_centimeters, site.name AS site_name, cull.error_flag, cull.bottom_time
+      SELECT cull.date, vessel.name AS vessel_name, voyage.vessel_voyage_number, voyage.start_date, voyage.stop_date, reef.reef_label, reef.name AS reef_name, site.latitude, site.longitude, cull.average_depth, cull.less_than_fifteen_centimeters, cull.fifteen_to_twenty_five_centimeters, cull.twenty_five_to_forty_centimeters, cull.greater_than_forty_centimeters, site.name AS site_name, cull.error_flag, cull.bottom_time
       FROM cull
       INNER JOIN voyage ON cull.voyage_id = voyage.id
       INNER JOIN vessel ON voyage.vessel_id = vessel.id
@@ -319,7 +319,35 @@ site_numbers_to_names <- function(numbers, reef_names){
 
 
 aggregate_culls_site_resolution_app <- function(data_df) {
+  col_names <- colnames(data_df)
   
+  aggregated_data <- data_df  %>%
+    group_by(vessel_name, vessel_voyage_number, reef_label, site_name) %>%
+    dplyr::summarize(
+      date = min(date),
+      reef_name = first(reef_name), 
+      vessel_name = vessel_name, 
+      vessel_voyage_number = vessel_voyage_number,
+      reef_label = reef_label,
+      start_date = min(start_date),
+      stop_date = max(stop_date),
+      latitude = first(latitude),
+      longitude = first(longitude),
+      bottom_time = sum(bottom_time),
+      average_depth = mean(average_depth),
+      less_than_fifteen_centimeters = sum(less_than_fifteen_centimeters),
+      fifteen_to_twenty_five_centimeters = sum(fifteen_to_twenty_five_centimeters),
+      twenty_five_to_forty_centimeters = sum(twenty_five_to_forty_centimeters),
+      greater_than_forty_centimeters = sum(greater_than_forty_centimeters),
+      site_name = site_name,
+      error_flag = as.numeric(any(as.logical(error_flag)))
+    ) %>%
+    unnest_wider(coords) %>%
+    dplyr::select(all_of(col_names)) %>%
+    dplyr::distinct()
+  
+  
+  return(aggregated_data)
 }
 
   
@@ -388,18 +416,6 @@ aggregate_manta_tows_site_resolution_research <- function(data_df) {
   
   return(aggregated_data)
 } 
-
-aggregated_manta_tows <- function(data_df){
-  # Summarize the data
-  aggregated_data <- df %>%
-    group_by(vessel, voyage, reef, site) %>%
-    summarize(
-      mean_var1 = custom_mean(var1),
-      min_var2 = custom_min(var2)
-      # Add more custom aggregation functions for other variables as needed
-    ) %>%
-    ungroup()  # Ungroup the data after summarizing
-}
 
 
 contribute_to_metadata_report <- function(key, data, parent_key=NULL, report_path=NULL){
