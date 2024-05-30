@@ -576,7 +576,7 @@ flag_duplicates <- function(new_data_df){
       # Append the warning to an existing matrix 
       warnings <- data.frame(
         ID = new_data_df[is_duplicate, 1],
-        index = (1:nrow(new_data_df))[is_duplicate],
+        index = which(is_duplicate),
         message = "flagged as duplicates"
       )
       contribute_to_metadata_report("Duplicates", warnings, parent_key = "Warning")
@@ -967,26 +967,21 @@ verify_entries <- function(data_df, configuration){
   #verify long and lat separately
   data_df <- verify_lat_lng(data_df, max_val=160, min_val=138, columns=c("Longitude", "Start Lng", "End Lng"), ID_col)
   data_df <- verify_lat_lng(data_df, max_val=-5, min_val=-32, columns=c("Latitude", "Start Lat", "End Lat"), ID_col)
-  
+
   if (control_data_type == "manta_tow") {
-    
     data_df <- verify_tow_date(data_df)
     data_df <- verify_coral_cover(data_df)
     data_df <- verify_scar(data_df)
-    
   } else if (control_data_type == "cull") {
-    
     data_df <- verify_voyage_dates(data_df)
-    
   } else if (control_data_type == "RHISS") {
-    
     data_df <- verify_RHISS(data_df)
-    
   } 
   data_df <- verify_na_null(data_df, configuration)
   data_df$error_flag <- as.integer(data_df$error_flag)
   return(data_df)
 }
+
 
 verify_lat_lng <- function(data_df, max_val, min_val, columns, ID_col){
   for (col in columns) {
@@ -1010,14 +1005,12 @@ verify_lat_lng <- function(data_df, max_val, min_val, columns, ID_col){
           # Append the warning to an existing matrix 
           warnings <- data.frame(
             ID = data_df[out_of_range, 1],
-            index = (1:nrow(data_df))[out_of_range],
+            index = which(out_of_range),
             message = "Inappropriate Lat Long values"
           )
           contribute_to_metadata_report("Coordinates", warnings, parent_key = "Warning")
         }
-        
       }
-      
     }
   }
   return(data_df)
@@ -1031,22 +1024,22 @@ verify_scar <- function(data_df) {
   
   check_valid_scar <- data_df$`Feeding Scars` %in% valid_scar
   out_of_range <- ifelse(is.na(check_valid_scar), TRUE, check_valid_scar)
-  data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | !check_valid_scar)
+  data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | !out_of_range)
   
   
-  if (any(!check_valid_scar )) {
+  if (any(!out_of_range )) {
     grandparent <- as.character(sys.call(sys.parent()))[1]
     parent <- as.character(match.call())[1]
     warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid COTS scar:",
-                     toString(data_df[!check_valid_scar , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[!check_valid_scar ]))
+                     toString(data_df[!out_of_range , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[!out_of_range ]))
     base::message(warning)
     
     
     if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
       # Append the warning to an existing matrix 
       warnings <- data.frame(
-        ID = data_df[!check_valid_scar, 1],
-        index = (1:nrow(data_df))[!check_valid_scar],
+        ID = data_df[!out_of_range, 1],
+        index = which(!out_of_range),
         message = "Invalid COT Scar"
       )
       contribute_to_metadata_report("Scar", warnings, parent_key = "Warning")
@@ -1105,13 +1098,13 @@ verify_tow_date <- function(data_df){
       # Append the warning to an existing matrix 
       warnings <- data.frame(
         ID = data_df[dated_estimated, 1],
-        index = (1:nrow(data_df))[dated_estimated],
+        index = which(dated_estimated),
         message = "Invalid Tow Date. Date was successfully estimated."
       )
       contribute_to_metadata_report("Estimated Tow Date", warnings, parent_key = "Warning")
       warnings <- data.frame(
         ID = data_df[na_present, 1],
-        index = (1:nrow(data_df))[na_present],
+        index = which(na_present),
         message = "Invalid Tow Date. "
       )
       contribute_to_metadata_report("Invalid Tow Date", warnings, parent_key = "Warning")
@@ -1170,28 +1163,28 @@ verify_RHISS <- function(data_df) {
       # Append the warning to an existing matrix 
       warnings <- data.frame(
         ID = data_df[!check_tide, 1],
-        index = (1:nrow(data_df))[!check_tide],
+        index = which(!check_tide),
         message = "Invalid tide value"
       )
       contribute_to_metadata_report("Tide", warnings, parent_key = "Warning")
       
       warnings <- data.frame(
         ID = data_df[check_macroalgae, 1],
-        index = (1:nrow(data_df))[check_macroalgae],
+        index = which(check_macroalgae),
         message = "Invalid macroalgae"
       )
       contribute_to_metadata_report("Macroalgae", warnings, parent_key = "Warning")
       
       warnings <- data.frame(
         ID = data_df[!check_bleach_severity, 1],
-        index = (1:nrow(data_df))[!check_bleach_severity],
+        index = which(!check_bleach_severity),
         message = "Invalid Bleach Severity"
       )
       contribute_to_metadata_report("Bleach Severity", warnings, parent_key = "Warning")
       
       warnings <- data.frame(
         ID = data_df[check_descriptive_bleach_severity, 1],
-        index = (1:nrow(data_df))[check_descriptive_bleach_severity],
+        index = which(check_descriptive_bleach_severity),
         message = "Invalid Bleach Severity Description"
       )
       contribute_to_metadata_report("Bleach Severity Description", warnings, parent_key = "Warning")
@@ -1225,7 +1218,7 @@ verify_percentages <- function(data_df) {
         # Append the warning to an existing matrix 
         warnings <- data.frame(
           ID = data_df[check, 1],
-          index = (1:nrow(data_df))[check],
+          index = which(check),
           message = "Invalid Percentages"
         )
         contribute_to_metadata_report("Percentages", warnings, parent_key = "Warning")
@@ -1262,7 +1255,7 @@ verify_na_null <- function(data_df, configuration) {
       # Append the warning to an existing matrix 
       warnings <- data.frame(
         ID = data_df[check, 1],
-        index = (1:nrow(data_df))[check],
+        index = which(check),
         message = "NA or Null values present"
       )
       contribute_to_metadata_report("NA|NULL", warnings, parent_key = "Warning")
@@ -1298,7 +1291,7 @@ verify_integers_positive <- function(data_df) {
         # Append the warning to an existing matrix 
         warnings <- data.frame(
           ID = data_df[check, 1],
-          index = (1:nrow(data_df))[check],
+          index = which(check),
           message = "Non-positive integers present"
         )
         contribute_to_metadata_report("Integers", warnings, parent_key = "Warning")
@@ -1369,7 +1362,7 @@ verify_coral_cover <- function(data_df) {
       # Append the warning to an existing matrix 
       warnings <- data.frame(
         ID = data_df[error, 1],
-        index = (1:nrow(data_df))[error],
+        index = which(error),
         message = "Invalid coral cover values"
       )
       contribute_to_metadata_report("Coral Cover", warnings, parent_key = "Warning")
@@ -1398,7 +1391,7 @@ verify_reef <- function(data_df){
       # Append the warning to an existing matrix 
       warnings <- data.frame(
         ID = data_df[!correct_reef_id_format, 1],
-        index = (1:nrow(data_df))[!correct_reef_id_format],
+        index = which(!correct_reef_id_format),
         message = "Invalid reef ID"
       )
       contribute_to_metadata_report("Reef ID", warnings, parent_key = "Warning")
@@ -1464,13 +1457,13 @@ verify_voyage_dates <- function(data_df){
       # Append the warning to an existing matrix 
       warnings <- data.frame(
         ID = data_df[dated_estimated, 1],
-        index = (1:nrow(data_df))[dated_estimated],
+        index = which(dated_estimated),
         message = "Invalid Voyage Date. Date was successfully estimated."
       )
       contribute_to_metadata_report("Estimated Voyage Date", warnings, parent_key = "Warning")
       warnings <- data.frame(
         ID = data_df[na_present, 1],
-        index = (1:nrow(data_df))[na_present],
+        index = which(na_present),
         message = "Invalid Voyage Date. "
       )
       contribute_to_metadata_report("Invalid Voyage Date", warnings, parent_key = "Warning")
@@ -1486,7 +1479,7 @@ verify_voyage_dates <- function(data_df){
       # Append the warning to an existing matrix 
       warnings <- data.frame(
         ID = data_df[survey_date_error, 1],
-        index = (1:nrow(data_df))[survey_date_error],
+        index = which(survey_date_error),
         message = "Survey date outside voyage date range"
       )
       contribute_to_metadata_report("Survey Date", warnings, parent_key = "Warning")
@@ -1652,7 +1645,7 @@ set_data_type <- function(data_df, mapping){
       # Append the warning to an existing matrix 
       warnings <- data.frame(
         ID = data_df[coerced_na, 1],
-        index = (1:nrow(data_df))[coerced_na],
+        index = which(coerced_na),
         message = "Incorrect data type present. Values coerced to NA"
       )
       contribute_to_metadata_report("Data Type", warnings, parent_key = "Warning")
