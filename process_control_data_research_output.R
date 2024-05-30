@@ -117,7 +117,7 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
     
     transformed_data_df <- map_data_structure(new_data_df, configuration$mappings$transformations, configuration$mappings$new_fields)
     if(is_legacy_data_available){
-      legacy_df <- set_data_type(legacy_df, configuration$mappings$data_type_mappings) 
+      legacy_df <- set_data_type(legacy_df, configuration$mappings$data_type_mappings)
     }
     formatted_data_df <- set_data_type(transformed_data_df, configuration$mappings$data_type_mappings) 
     
@@ -169,6 +169,30 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
       print(paste("Error saving data - Data saved in source directory", conditionMessage(e)))
       write.csv(verified_data_df, paste(configuration$metadata$control_data_type,"_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv", sep = ""), row.names = FALSE)
   
+    })
+    
+    if(configuration$metadata$control_data_type == "manta_tow"){
+      verified_aggregated_df <- aggregate_manta_tows_site_resolution_research(verified_data_df)  
+    } else if (configuration$metadata$control_data_type == "cull") {
+      verified_aggregated_df <- aggregate_culls_site_resolution_research(verified_data_df) 
+    }
+    
+    tryCatch({
+      if (!dir.exists(configuration$metadata$output_directory$control_data_aggregated)) {
+        dir.create(configuration$metadata$output_directory$control_data_aggregated, recursive = TRUE)
+      }
+      
+      output_directory <- configuration$metadata$output_directory$control_data_aggregated
+      data_type <- configuration$metadata$control_data_type
+      timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+      file_name <- paste(data_type, "_", timestamp, ".csv", sep = "")
+      output_path <- file.path(output_directory, file_name)
+      write.csv(verified_aggregated_df, output_path, row.names = FALSE)
+      
+    }, error = function(e) {
+      print(paste("Error saving data - Data saved in source directory", conditionMessage(e)))
+      write.csv(verified_aggregated_df, paste(configuration$metadata$control_data_type,"_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv", sep = ""), row.names = FALSE)
+      
     })
   }, error = function(e) {
     print(paste("Critical Error in workflow could not be resolved:", conditionMessage(e)))
