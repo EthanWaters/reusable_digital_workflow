@@ -141,7 +141,14 @@ get_app_data_database <- function(con, control_data_type){
       INNER JOIN reef ON site.reef_id = reef.id
       "
   } else if (control_data_type == "cull") {
-    
+    query <- "
+      SELECT cull.date, vessel.name AS vessel_name, voyage.vessel_voyage_number, voyage.start_date, voyage.stop_date, reef.reef_label, reef.name AS reef_name, site.latitude, site.longitude, cull.average_depth, manta_tow.average_speed, cull.less_than_fifteen_centimeters, cull.fifteen_to_twenty_five_centimeters, cull.twenty_five_to_forty_centimeters, cull.greater_than_forty_centimeters, site.name AS site_name, cull.error_flag, cull.bottom_time
+      FROM cull
+      INNER JOIN voyage ON cull.voyage_id = voyage.id
+      INNER JOIN vessel ON voyage.vessel_id = vessel.id
+      INNER JOIN site ON cull.site_id = site.id
+      INNER JOIN reef ON site.reef_id = reef.id
+      "
   } else {
     
   }
