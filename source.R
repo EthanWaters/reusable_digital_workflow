@@ -147,7 +147,7 @@ get_app_data_database <- function(con, control_data_type){
 seperate_date_time_manta_tow <- function(data_df){
   date_time <- data_df$`Tow date`
   is_date_time_na <- is.na(date_time)
-  date_time <- parse_date_time(date_time[!is_date_time_na], orders = c('dmy_HM p','dmy_HMS p', 'ymd_HM p','ymd_HMS p','dmy_HM','dmy_HMS', 'ymd_HM','ymd_HMS', 'ymd', 'dmy'))
+  date_time <- parse_date_time(date_time[!is_date_time_na], orders = c('dmy_HMS p','dmy_HM p', 'ymd_HMS p','ymd_HM p','dmy_HMS','dmy_HM', 'ymd_HMS','ymd_HM', 'dmy','ymd'))
   time <- format(date_time, "%H:%M:%S")
   return(time)
 }
@@ -1642,13 +1642,14 @@ set_data_type <- function(data_df, mapping){
     
     # Convert the column to the specified data type
     if(tolower(data_type) == "date"){
-      dates <- parse_date_time(data_df[[column_name]], orders = c('dmy', 'ymd', 'dmy_HM','dmy_HMS', 'ymd_HM','ymd_HMS', 'dmy_HM p','dmy_HMS p', 'ymd_HM p','ymd_HMS p'))
-      output_df[[column_name]] <- format(as.Date(dates), "%Y-%m-%d")
+      datetimes <- data_df[[column_name]]
+      dates <- parse_date_time2(datetimes, orders = orders = c('dmy_HMS p','dmy_HM p', 'ymd_HMS p','ymd_HM p','dmy_HMS','dmy_HM', 'ymd_HMS','ymd_HM', 'dmy','ymd'))
+      output_df[[column_name]] <- format(as.Date(dates), "%d-%m-%Y")
     } else if (tolower(data_type) == "time") {
       time <- as.POSIXct(data_df[[column_name]], format = "%H:%M:%S")
       output_df[[column_name]] <- format(time, '%H:%M:%S')
     } else if (tolower(data_type) == "datetime") {
-      output_df[[column_name]] <- format(parse_date_time(data_df[[column_name]], orders = c('dmy_HM','dmy_HMS', 'ymd_HM','ymd_HMS', 'dmy_HM p','dmy_HMS p', 'ymd_HM p','ymd_HMS p')), "%Y-%m-%d %H:%M:%S")
+      output_df[[column_name]] <- format(parse_date_time(data_df[[column_name]], orders = c('dmy_HMS p','dmy_HM p', 'ymd_HMS p','ymd_HM p','dmy_HMS','dmy_HM', 'ymd_HMS','ymd_HM', 'dmy','ymd')), "%Y-%m-%d %H:%M:%S")
     
     } else {
       output_df[[column_name]] <- as(data_df[[column_name]], tolower(data_type))
