@@ -318,6 +318,41 @@ site_numbers_to_names <- function(numbers, reef_names){
 }
 
 
+aggregate_culls_site_resolution_research <- function(data_df) {
+  col_names <- colnames(data_df)
+  
+  aggregated_data <- data_df  %>%
+    group_by(Vessel, Voyage, `Reef ID`, `Site Name`) %>%
+    dplyr::summarize(
+      `Capture ID` = first(`Capture ID`),
+      `Survey Date` = min(`Survey Date`),
+      `Reef Name` = first(`Reef Name`), 
+      `Vessel` = Vessel, 
+      Voyage = Voyage,
+      `Site Name` = `Site Name`,
+      `Reef ID` = `Reef ID`,
+      `Voyage Start` = min(`Voyage Start`),
+      `Voyage End` = max(`Voyage End`),
+      Latitude = first(Latitude),
+      Longitude = first(Longitude),
+      Bottomtime = sum(Bottomtime),
+      `Depth (meters)` = mean(`Depth (meters)`),
+      `Cohort 1 (<15cm)` = sum(`Cohort 1 (<15cm)`),
+      `Cohort2 (15-25cm)` = sum(`Cohort2 (15-25cm)`),
+      `Cohort3 (25-40cm)` = sum(`Cohort3 (25-40cm)`),
+      `Cohort4 (>40cm)` = sum(`Cohort4 (>40cm)`),
+      `Nearest Site` = `Nearest Site`,
+      error_flag = as.numeric(any(as.logical(error_flag)))
+    ) %>%
+    unnest_wider(coords) %>%
+    dplyr::select(all_of(col_names)) %>%
+    dplyr::distinct()
+  
+  
+  return(aggregated_data)
+}
+
+
 aggregate_culls_site_resolution_app <- function(data_df) {
   col_names <- colnames(data_df)
   
