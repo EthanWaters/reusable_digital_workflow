@@ -1711,15 +1711,15 @@ set_data_type <- function(data_df, mapping){
       # then include them in the dataframe afterwards. 
       datetimes <- data_df[[column_name]]
       datetimes_available <- datetimes[!is.na(datetimes)]
-      dates_available <- parse_date_time2(datetimes_available, orders = get_datetime_parse_order())
+      dates_available <- parse_date_time(datetimes_available, orders = get_datetime_parse_order())
+      dates_available <- as.character(date(dates_available))
       datetimes[!is.na(datetimes)] <- dates_available
-      output_df[[column_name]] <- format(as.Date(datetimes), "%Y-%m-%d")
+      output_df[[column_name]] <- datetimes
     } else if (tolower(data_type) == "time") {
       time <- as.POSIXct(data_df[[column_name]], format = "%H:%M:%S")
       output_df[[column_name]] <- format(time, '%H:%M:%S')
     } else if (tolower(data_type) == "datetime") {
-      output_df[[column_name]] <- format(parse_date_time(data_df[[column_name]], orders = get_datetime_parse_order()), "%Y-%m-%d %H:%M:%S")
-    
+      output_df[[column_name]] <- as.character(parse_date_time(data_df[[column_name]], orders = get_datetime_parse_order()))
     } else {
       output_df[[column_name]] <- as(data_df[[column_name]], tolower(data_type))
     }
