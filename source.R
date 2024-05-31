@@ -1711,7 +1711,7 @@ set_data_type <- function(data_df, mapping){
       # then include them in the dataframe afterwards. 
       datetimes <- data_df[[column_name]]
       datetimes_available <- datetimes[!is.na(datetimes)]
-      dates_available <- parse_date_time2(datetimes_available, orders = orders = get_datetime_parse_order())
+      dates_available <- parse_date_time2(datetimes_available, orders = get_datetime_parse_order())
       datetimes[!is.na(datetimes)] <- dates_available
       output_df[[column_name]] <- format(as.Date(datetimes), "%Y-%m-%d")
     } else if (tolower(data_type) == "time") {
