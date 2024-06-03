@@ -472,8 +472,8 @@ contribute_to_metadata_report <- function(key, data, parent_key=NULL, report_pat
 }
 
 separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data_type){
-  if("ID" %in% colnames(new_data_df)){
-    ID_col <- colnames(new_data_df)[1]
+  if(any(grepl("ID", colnames(new_data_df)))){
+    ID_col <- colnames(new_data_df)[which(grepl("ID", colnames(new_data_df)))]
   } else {
     ID_col <- ""
   } 
@@ -553,14 +553,17 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
       if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
         # Append the warning to an existing matrix 
         new_info_df <- data.frame(
+          ID = ifelse(ID_col != "", new_data_df[[ID_col]][new_entries_i],NA),
           index = new_entries_i,
           message = "New Entry to the dataset. Not present in previous dataset."
         )
         duplicate_info_df <- data.frame(
+          ID = ifelse(ID_col != "", new_data_df[[ID_col]][separated_close_matches$perfect[,2]],NA),
           index = separated_close_matches$perfect[,2],
           message = "Perfect duplicate. This entry was present in previous dataset."
         )
         discpreancies_info_df <- data.frame(
+          ID = ifelse(ID_col != "", new_data_df[[ID_col]][separated_close_matches$discrepancies[,2]],NA),
           index = separated_close_matches$discrepancies[,2],
           message = "Discrepancy. This row has changed since the last dataset"
         )
@@ -602,9 +605,9 @@ separate_new_control_app_data <- function(new_data_df, legacy_data_df, configura
   verified_data_df <- data.frame(matrix(ncol = length(column_names), nrow = 0))
   colnames(verified_data_df) <- column_names 
   
-  if("ID" %in% colnames(new_data_df)){
-    temp_new_df <- new_data_df[ , -which(names(new_data_df) %in% c("ID"))]
-    temp_legacy_df <- legacy_data_df[ , -which(names(legacy_data_df) %in% c("ID"))]
+  if(any(grepl("ID", colnames(new_data_df)))){
+    temp_new_df <- new_data_df[ , -which(grepl("ID", colnames(new_data_df)))]
+    temp_legacy_df <- legacy_data_df[ , -which(grepl("ID", colnames(legacy_data_df)))]
   } else {
     temp_new_df <- new_data_df
     temp_legacy_df <- legacy_data_df

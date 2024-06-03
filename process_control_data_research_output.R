@@ -137,7 +137,7 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
         } else {
           verified_data_df$`Nearest Site` <- site_names_to_numbers(verified_data_df$`Site Name`)
         }
-        
+        verified_data_df$`Nearest Site` <- ifelse(is.na(verified_data_df$`Nearest Site`), -1, verified_data_df$`Nearest Site`)
       }
     }, error = function(e) {
       print(paste("Error assigning sites:", conditionMessage(e)))
@@ -151,8 +151,6 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
     }, error = function(e) {
       print(paste("Error seperating control data. All data has been treated as new entries.", conditionMessage(e)))
     })
-    
-    data_df$`Nearest Site` <- ifelse(is.na(data_df$`Nearest Site`), -1, data_df$`Nearest Site`)
     
     # Save workflow outputc
     tryCatch({
