@@ -2092,12 +2092,26 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
   
   if(calculate_site_rasters){
     if(!update_kml | load_site_rasters_failed){
-      base::message("Assigning sites to raster pixels for all reefs...")
-      kml_data_simplified <- simplify_kml_polyogns_rdp(kml_data)
+      tryCatch({
+        base::message("Simplifying kml polygons...")
+        kml_data_simplified <- simplify_kml_polyogns_rdp(kml_data)
+        base::message("Simplified kml polygons successfully")
+      }, error = function(e) {
+        print(paste("Error Simplifying kml polygons", conditionMessage(e)))
+        kml_data_simplified <- kml_data
+      })
       site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
     } else {
       base::message("Updating raster pixels for reefs that have changed since last process date...")
-      kml_data_simplified <- simplify_kml_polyogns_rdp(kml_data_to_update)
+      tryCatch({
+        base::message("Simplifying kml polygons...")
+        kml_data_simplified <- simplify_kml_polyogns_rdp(kml_data_to_update)
+        base::message("Simplified kml polygons successfully")
+      }, error = function(e) {
+        print(paste("Error Simplifying kml polygons", conditionMessage(e)))
+        kml_data_simplified <- kml_data_to_update
+      })
+
       updated_layer_names_vec <- names(kml_data_simplified)
       updated_site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, updated_layer_names_vec, crs, raster_size, x_closest, is_standardised)
       
