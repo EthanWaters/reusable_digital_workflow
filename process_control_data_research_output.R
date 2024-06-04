@@ -133,7 +133,7 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
     tryCatch({
       if(configuration$metadata$assign_sites){
         if(configuration$metadata$control_data_type == "manta_tow"){
-          verified_data_df <- assign_nearest_site_method_c(verified_data_df, kml_path, configuration$metadata$control_data_type, previous_kml_path, serialised_spatial_path, raster_size=0.0005, x_closest=1, is_standardised=0, save_spatial_as_raster=0)
+          verified_data_df <- assign_nearest_site_method_c(verified_data_df, kml_path, configuration$metadata$control_data_type, previous_kml_path, serialised_spatial_path, configuration$metadata$output_directory$spatial_data, raster_size=0.0005, x_closest=1, is_standardised=0, save_spatial_as_raster=0)
         } else {
           verified_data_df$`Nearest Site` <- site_names_to_numbers(verified_data_df$`Site Name`)
         }

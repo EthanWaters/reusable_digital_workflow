@@ -2014,21 +2014,20 @@ compute_checksum <- function(data) {
 }
 
 
-assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_previous=NULL, spatial_path=NULL, raster_size=0.0005, x_closest=1, is_standardised=0, save_spatial_as_raster=0){
+assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_previous=NULL, serialised_raster_path=NULL, spatial_output_path=NULL, raster_size=0.0005, x_closest=1, is_standardised=0, save_spatial_as_raster=0){
   # Assign nearest sites to manta tows with method developed by Cameron Fletcher
   
   # Acquire the directory to store raster outputs and the most recent spatial 
   # file that was saved as an R binary
   # if loading data fails calculate site regions
   load_site_rasters_failed <- TRUE
-  if(!is.null(spatial_path)){
-    if(file.info(spatial_path)$isdir){
+  if(!is.null(serialised_raster_path)){
+    if(file.info(serialised_raster_path)$isdir){
       print("Invalid path to serialized spatial data. Must be a file not a directory")
       spatial_file <- NULL
-      spatial_directory <- spatial_path
+      spatial_directory <- serialised_raster_path
     } else {
-      spatial_file <- spatial_path
-      spatial_directory <- dirname(spatial_path)
+      spatial_file <- serialised_raster_path
     }
 
     tryCatch({
@@ -2114,25 +2113,31 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
   
   base::message("Saving raster data as serialised binary file...")
   tryCatch({
-    if (!dir.exists(spatial_directory)) {
-      dir.create(spatial_directory, recursive = TRUE)
+    if (!dir.exists(spatial_output_path)) {
+      dir.create(spatial_output_path, recursive = TRUE)
     }
-    saveRDS(site_regions, file.path(spatial_directory, paste("site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = "")))
+    saveRDS(site_regions, file.path(spatial_output_path, paste("site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = "")))
     contribute_to_metadata_report("output", file.path(getwd(), paste(keyword,"_site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = "")))
   }, error = function(e) {
-    print(paste("Error saving site regions raster data - Data saved in source directory", conditionMessage(e)))
+    print(paste("Error saving site regions as rds - Data saved in source directory", conditionMessage(e)))
     saveRDS(site_regions, paste(keyword,"_site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = ""))
     contribute_to_metadata_report("output", file.path(getwd(), paste(keyword,"_site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = "")))
   })
-    
-  if(save_spatial_as_raster == 1 && !is.null(spatial_path)){
-    base::message("Saving raster data as gtiff files...")
-    raster_output <- file.path(spatial_directory, "rasters")
-    if (!dir.exists(raster_output)) {
-      dir.create(raster_output, recursive = TRUE)
+  
+  tryCatch({
+    if(save_spatial_as_raster == 1 && !is.null(spatial_output_path)){
+      base::message("Saving raster data as gtiff files...")
+      spatial_file <- file.path(spatial_output_path, paste("site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = ""))
+      raster_output <- file.path(spatial_output_path, "rasters")
+      if (!dir.exists(raster_output)) {
+        dir.create(raster_output, recursive = TRUE)
+      }
+      save_spatial_as_raster(raster_output, spatial_file)
     }
-    save_spatial_as_raster(raster_output, spatial_file)
-  }
+  }, error = function(e) {
+    print(paste("Error saving as rasters", conditionMessage(e)))
+  })
+  
   
   base::message("Assigning sites to data...")
   data_df <- get_centroids(data_df, crs)
