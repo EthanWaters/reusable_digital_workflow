@@ -2092,6 +2092,8 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
   
   if(calculate_site_rasters){
     if(!update_kml | load_site_rasters_failed){
+      
+      
       tryCatch({
         base::message("Simplifying kml polygons...")
         kml_data_simplified <- simplify_kml_polyogns_rdp(kml_data)
@@ -2100,9 +2102,11 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
         print(paste("Error Simplifying kml polygons", conditionMessage(e)))
         kml_data_simplified <- kml_data
       })
-      site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
+      site_regions <- assign_raster_pixel_to_sites_original(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
+    
     } else {
       base::message("Updating raster pixels for reefs that have changed since last process date...")
+      
       tryCatch({
         base::message("Simplifying kml polygons...")
         kml_data_simplified <- simplify_kml_polyogns_rdp(kml_data_to_update)
@@ -2111,17 +2115,32 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
         print(paste("Error Simplifying kml polygons", conditionMessage(e)))
         kml_data_simplified <- kml_data_to_update
       })
+      
+      tryCatch({
+        updated_layer_names_vec <- names(kml_data_simplified)
+        updated_site_regions <- assign_raster_pixel_to_sites_original(kml_data_simplified, updated_layer_names_vec, crs, raster_size, x_closest, is_standardised)
+        
+        site_regions_reef_ids <- get_reef_label(names(kml_data))
+        updated_site_regions_reef_ids <- get_reef_label(names(kml_data_to_update))
+        
+        index_reefs <- match(updated_site_regions_reef_ids, site_regions_reef_ids)
+        site_regions <- site_regions[-index_reefs]
+        site_regions <- c(site_regions, updated_site_regions)
+        site_regions <- site_regions[order(names(site_regions))]
+      }, error = function(e) {
+        print(paste("Error updating updating raster pixels for reefs. Will create new raster", conditionMessage(e)))
+        
+        tryCatch({
+          base::message("Simplifying kml polygons...")
+          kml_data_simplified <- simplify_kml_polyogns_rdp(kml_data)
+          base::message("Simplified kml polygons successfully")
+        }, error = function(e) {
+          print(paste("Error Simplifying kml polygons", conditionMessage(e)))
+          kml_data_simplified <- kml_data
+        })
+        site_regions <- assign_raster_pixel_to_sites_original(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
+      })
 
-      updated_layer_names_vec <- names(kml_data_simplified)
-      updated_site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, updated_layer_names_vec, crs, raster_size, x_closest, is_standardised)
-      
-      site_regions_reef_ids <- get_reef_label(names(kml_data))
-      updated_site_regions_reef_ids <- get_reef_label(names(kml_data_to_update))
-      
-      index_reefs <- match(updated_site_regions_reef_ids, site_regions_reef_ids)
-      site_regions <- site_regions[-index_reefs]
-      site_regions <- c(site_regions, updated_site_regions)
-      site_regions <- site_regions[order(names(site_regions))]
     }
   }
   
@@ -2139,7 +2158,7 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
   })
   
   tryCatch({
-    if(save_spatial_as_raster == 1 && !is.null(spatial_output_path)){
+    if(save_spatial_as_raster == 1 & !is.null(spatial_output_path)){
       base::message("Saving raster data as gtiff files...")
       spatial_file <- file.path(spatial_output_path, paste("site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = ""))
       raster_output <- file.path(spatial_output_path, "rasters")
@@ -2201,7 +2220,7 @@ get_centroids <- function(data_df, crs, precision=0){
 }
 
 
-assign_raster_pixel_to_sites_parallel <- function(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0){
+assign_raster_pixel_to_sites_multithread <- function(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0){
   # Produces same result as assign_raster_pixel_to_sites in a parallel manner
   
   if(is_standardised){
@@ -2234,13 +2253,13 @@ assign_raster_pixel_to_sites_parallel <- function(kml_data, layer_names_vec, crs
   # consider the curviture of the earth. 
   
   site_regions <- foreach(i = 1:length(kml_data), .combine = "c",  .export = c("assign_raster_pixel_to_sites_single", "rasterToPoints", "st_polygon", "raster", "values", "as.matrix", "st_multipoint", "st_sfc", "st_cast", "st_crs<-", "st_distance", "drop_units", "site_names_to_numbers", "xth_smallest")) %dopar% {
-    assign_raster_pixel_to_sites_single(rasters[[i]], kml_data[[i]], crs, x_closest)
+    assign_raster_pixel_to_sites_single_reef(rasters[[i]], kml_data[[i]], crs, x_closest)
   }
   site_regions <- setNames(site_regions, layer_names_vec)
   return(site_regions)
 }
 
-assign_raster_pixel_to_sites_single <- function(raster, site_poly, crs, x_closest){
+assign_raster_pixel_to_sites_single_reef <- function(raster, site_poly, crs, x_closest){
   
   raster::values(raster) <- 1
   pixel_coords <- rasterToPoints(raster)
@@ -2281,16 +2300,17 @@ assign_raster_pixel_to_sites <- function(kml_data, layer_names_vec, crs, raster_
     cl <- makeCluster(detectCores())
     registerDoParallel(cl)
     
-    site_regions <- assign_raster_pixel_to_sites_parallel(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0)
+    site_regions <- assign_raster_pixel_to_sites_multithread(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0)
     
   }, error = function(e) {
-    site_regions <- assign_raster_pixel_to_sites_non_parallel(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0)
+    base::message("Failed to perform assigning of sites with multithreading. Performing without...")
+    site_regions <<- assign_raster_pixel_to_sites_original(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0)
   })
   return(site_regions)
 }
 
 
-assign_raster_pixel_to_sites_non_parallel <- function(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0){
+assign_raster_pixel_to_sites_original <- function(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0){
   # This is a method of assigning sites to manta tows that was initially 
   # implemented in Mathmatica by Dr Cameron Fletcher. A set of rasters are 
   # created slightly larger than the bounding box of each layer in the KML file.
