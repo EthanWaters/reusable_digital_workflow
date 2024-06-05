@@ -257,10 +257,19 @@ This R code defines a data processing pipeline that ingests JSON exports from GB
 - **Output:**
     - A dataframe 
 - **Description:**
-    - Extract required data from Cots Control 
+    - Extract required data from Cots Control Centre databases to use as legacy dataset in reusable workflow. 
     
            
+#### Function: `seperate_date_time_manta_tow(data_df)`
+- **Input:**
+    - `data_df`: A dataframe containing control data.
+- **Output:**
+    - A vector of strings formatted to appropriately represent time  
+- **Description:**
+    - Extract time from . 
     
+         
+             
     
 #### Function: `separate_control_dataframe(new_data_df, legacy_data_df, control_data_type)`
 - **Input:**

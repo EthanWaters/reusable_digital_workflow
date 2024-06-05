@@ -133,6 +133,7 @@ get_voyage_dates_strings <- function(strings) {
 }
 
 
+# Extract required data from Cots Control Centre databases to use as legacy dataset in reusable workflow. 
 get_app_data_database <- function(con, control_data_type){
   if(control_data_type == "manta_tow"){
     query <- "
