@@ -101,7 +101,7 @@ main <- function(script_dir, configuration_path, connection_string, new_files) {
     verified_data_df <- flag_duplicates(verified_data_df)
     
     ### AGGREGATION 
-    verified_new_df <- separate_new_control_app_data(verified_data_df, legacy_df, control_data_type)
+    verified_new_df <- separate_new_control_app_data(verified_data_df, legacy_df)
     verified_new_df <- map_all_fields(verified_new_df, verified_new_df, app_to_research_config$mapping$reverse_transformation)
     verified_new_df$start_date <- voyage_dates$start_date
     verified_new_df$stop_date <- voyage_dates$stop_date

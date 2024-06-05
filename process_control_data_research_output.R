@@ -146,7 +146,7 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
     # separate entries and update any rows that were changed on accident. 
     tryCatch({
       if(is_legacy_data_available){
-        verified_data_df <- separate_control_dataframe(verified_data_df, legacy_df, configuration$metadata$control_data_type)
+        verified_data_df <- separate_control_dataframe(verified_data_df, legacy_df)
       }
     }, error = function(e) {
       print(paste("Error seperating control data. All data has been treated as new entries.", conditionMessage(e)))

@@ -391,21 +391,60 @@ Configuration files should not be altered, instead new alternative configuration
 - **Output:**
     - Dataframe of aggregated control data.
 - **Description:**
-    - aggregates cull data to the site level for a vessel voyage
-                     
+    - aggregates cull data to the site level for a vessel voyage for the research workflow 
+
+
+#### Function: `aggregate_culls_site_resolution_app(data_df)`
+- **Input:**
+    - `data_df`: dataframe of control data.
+- **Output:**
+    - Dataframe of aggregated control data.
+- **Description:**
+    - aggregates cull data to the site level for a vessel voyage for the app workflow
+           
+           
+#### Function: `aggregate_manta_tows_site_resolution_app(data_df)`
+- **Input:**
+    - `data_df`: dataframe of control data.
+- **Output:**
+    - Dataframe of aggregated control data.
+- **Description:**
+    - aggregates manta tow data to the site level for a vessel voyage for the research workflow 
+           
+           
+           
+#### Function: `aggregate_manta_tows_site_resolution_research(data_df)`
+- **Input:**
+    - `data_df`: dataframe of control data.
+- **Output:**
+    - Dataframe of aggregated control data.
+- **Description:**
+    - aggregates manta tow data to the site level for a vessel voyage for the app workflow
+                                
                
-#### Function: `separate_control_dataframe(new_data_df, legacy_data_df, control_data_type)`
+#### Function: `separate_control_dataframe(new_data_df, legacy_data_df)`
 - **Input:**
     - `new_data_df`: New control data exported from GBRMPA
     - `legacy_data_df`: Control data that most recently passed through workflow. In legacy format.
-    - `control_data_type`: Key word that specifies type of control data. Options: "manta_tow", "cull" or "RHISS" 
 - **Output:**
-    - None
+    - Dataframe of control program data
 - **Description:**
     - Separates the incoming control data into three categories, new, perfect duplicate and discrepancy. Can be done with the authoritative ID or without depending on its reliability. 
         - Separation assuming the ID is authoritative utilises identifiers that are constructed from the data within the rows and table joins to conclusivley separate all data. 
         - Separation assuming non-authoritative ID utilises `matrix_close_matches_vectorised` & `vectorised_separate_close_matches` to determine the number of variations in a row from the original legacy output compared with the new input. Most likely matches are then determined based on number of variations. 
-        Given that it is not possible to definitively know if a change / discrepancy was intentional or not both new and change entries will pass through the same validation checks and if passed will be accepted as usable and assumed to be. If failed, assumed to be a QA change. If failed, the data will be flagged. Failed discrepancies will check the original legacy entry, which if failed will be left as is.
+        Given that it is not possible to definitively know if a change / discrepancy was intentional or not both new and change entries will pass through the same validation checks and if passed will be accepted as usable and assumed to be. If checks are failed, the data will be flagged. Discrepancies flagged with errors are returned to their original state from the legacy dataset if the original state is not flagged as an error.
+
+
+#### Function: `separate_new_control_app_data(new_data_df, legacy_data_df)`
+- **Input:**
+    - `new_data_df`: New control data exported from GBRMPA
+    - `legacy_data_df`: Control data that most recently passed through workflow. In legacy format.
+- **Output:**
+    - Dataframe of new control program data
+- **Description:**
+    - Determines what incoming control data is new. This process for the app has far fewer assumptions and constraints than the research workflow.
+    - Separation assuming non-authoritative ID utilises `matrix_close_matches_vectorised` & `vectorised_separate_close_matches` to determine the number of variations in a row from the original legacy output compared with the new input. Most likely matches are then determined based on number of variations. Only new entries are returned  
+       
 
 #### Function: `flag_duplicates(new_data_df)`
 
