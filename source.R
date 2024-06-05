@@ -1819,12 +1819,11 @@ update_config_file <- function(data_df, configuration_path, new_mappings_to_add=
   }
   
   if(length(new_mappings_to_add) > 0){
-    configuration <- tryCatch({
+    tryCatch({
       configuration <- fromJSON(file.path(directory, paste(configuration$metadata$control_data_type, "_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = "")))
     }, error = function(e){
       tryCatch({
-        configuration <- fromJSON(file.path(paste(configuration$metadata$control_data_type, "_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = "")))
-        return(configuration)
+        configuration <<- fromJSON(file.path(paste(configuration$metadata$control_data_type, "_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = "")))
       })
     })
   }
@@ -2046,13 +2045,13 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
   kml_layers <- st_layers(kml_path)
   layer_names_vec <- unlist(kml_layers["name"])
   kml_data <- NULL
-  kml_data <- tryCatch({
+  tryCatch({
     plan(multisession)
     future_layers <- future_map(layer_names_vec, ~ st_read(kml_path, layer = .x))
     kml_data <- setNames(future_layers, layer_names_vec)
   }, error = function(e) {
     print(paste("Error KML not loaded with parrallel processing", conditionMessage(e)))
-    kml_data <- setNames(lapply(layer_names_vec, function(i)  st_read(kml_path, layer = i)), layer_names_vec)
+    kml_data <<- setNames(lapply(layer_names_vec, function(i)  st_read(kml_path, layer = i)), layer_names_vec)
     return(kml_data)
   })
   kml_data <<- kml_data
@@ -2077,15 +2076,14 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
     if(checksum != previous_checksum){
       if(previous_crs == crs){
         kml_data_to_update <- get_spatial_differences(kml_data, previous_kml_data)
-        update_kml <- tryCatch({
+        tryCatch({
           if(length(kml_data_to_update) == 0){
             calculate_site_rasters <- FALSE
           } else {
             update_kml <- TRUE
           }
         }, error = function(e) {
-          update_kml <- FALSE
-          return(update_kml)
+          update_kml <<- FALSE
         })
       } 
     } else {
@@ -2098,29 +2096,30 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
     if(!update_kml | load_site_rasters_failed){
       
       
-      kml_data_simplified <- tryCatch({
+      tryCatch({
         base::message("Simplifying kml polygons...")
         kml_data_simplified <- simplify_kml_polyogns_rdp(kml_data)
         base::message("Simplified kml polygons successfully")
+        
       }, error = function(e) {
         print(paste("Error Simplifying kml polygons", conditionMessage(e)))
-        return(kml_data)
+        kml_data_simplified <<- kml_data
       })
       site_regions <- assign_raster_pixel_to_sites_original(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
     
     } else {
       base::message("Updating raster pixels for reefs that have changed since last process date...")
       
-      kml_data_simplified <- tryCatch({
+      tryCatch({
         base::message("Simplifying kml polygons...")
         kml_data_simplified <- simplify_kml_polyogns_rdp(kml_data_to_update)
         base::message("Simplified kml polygons successfully")
       }, error = function(e) {
         print(paste("Error Simplifying kml polygons", conditionMessage(e)))
-        return(kml_data_to_update)
+        kml_data_simplified <<- kml_data_to_update
       })
       
-      site_regions <- tryCatch({
+      tryCatch({
         updated_layer_names_vec <- names(kml_data_simplified)
         updated_site_regions <- assign_raster_pixel_to_sites_original(kml_data_simplified, updated_layer_names_vec, crs, raster_size, x_closest, is_standardised)
         
@@ -2142,8 +2141,7 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
           print(paste("Error Simplifying kml polygons", conditionMessage(e)))
           kml_data_simplified <<- kml_data
         })
-        site_regions <- assign_raster_pixel_to_sites_original(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
-        return(site_regions)
+        site_regions <<- assign_raster_pixel_to_sites_original(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
       })
 
     }
