@@ -364,10 +364,10 @@ pre code {
 <div id="overview" class="section level2">
 <h2>1.0 Overview</h2>
 <p>The overall purpose of this codebase is to clean, wrangle and perform
-geospatial analysis on control program data from GBRMPA into a
-standardised form utilisation in research or decision support tools.
-<code>source.R</code> defines a large set of functions for this and
-generally serves one of the following purposes:</p>
+geospatial analysis on control program data from GBRMPA to produce a
+standardised output for utilisation in research or decision support
+tools. <code>source.R</code> defines a large set of functions for this
+and generally serves one of the following purposes:</p>
 <ol style="list-style-type: decimal">
 <li><code>Data Transformation</code></li>
 <li>Perform <code>Error Checking &amp; Processing</code></li>
@@ -382,12 +382,6 @@ produce several application specific reusable workflows</p>
 <li><code>ingest_control_data_export_to_app.R</code> See Section
 3.2</li>
 </ol>
-<p>This R code defines a data processing pipeline that imports, formats,
-and verifies data. It also creates a metadata report to document the
-pipeline. The <code>main()</code> function is the entry point of the
-pipeline. It takes as inputs the paths to the legacy data, new data ,KML
-data, and JSON configuration file. The data can then be assigned to the
-nearest sites.</p>
 </div>
 <div id="term-definitions" class="section level2">
 <h2>1.1 Term Definitions</h2>
@@ -579,6 +573,13 @@ LC_COLLATE=English_Australia.utf8;LC_CTYPE=English_Australia.utf8;LC_MONETARY=En
 <h2>3.0 Reusable Workflow Details</h2>
 <div id="reusable-workflow---process-control-data-for-research" class="section level3">
 <h3>3.1 Reusable Workflow - Process Control Data For Research</h3>
+<p>This R code defines a data processing pipeline that imports, formats,
+and verifies control data for research purposes. This process creates a
+metadata report to document pipeline outcomes. The <code>main()</code>
+function is the entry point of the pipeline. It takes as inputs the
+paths to the legacy data, new data ,KML data, and JSON configuration
+file. The control program data can then be assigned to the nearest cull
+sites.</p>
 <div id="data-transformation" class="section level4">
 <h4>3.1.1 Data Transformation</h4>
 <p>While an ideal scenario would involve a fully dynamic system capable
@@ -676,21 +677,20 @@ authoritative.</li>
 <div id="site-assignment" class="section level4">
 <h4>3.1.3 Site Assignment</h4>
 <p>The method traditionally employed for the assignment of control data
-observations to specific geographical regions was proposed by
-Dr. Cameron Fletcher at CSIRO. Dr. Fletcher’s approach has proven
-valuable for understanding ecological patterns across various reef
-environments. However, the method’s initial implementation relied on a
-Mathematica script, which introduced challenges of accessibility due to
-the proprietary nature of Mathematica software. This limitation not only
+observations to specific geographical regions was valuable for
+understanding ecological patterns across various reef environments.
+However, the method’s initial implementation relied on a Mathematica
+script, which introduced challenges of accessibility due to the
+proprietary nature of Mathematica software. This limitation not only
 hindered the wider adoption of the technique but also raised concerns
 about long-term sustainability and data processing bottlenecks. To
 overcome these hurdles and enhance the method’s usability, we undertook
-the task of reconstructing Dr. Fletcher’s approach using the open-source
-R programming language. This transformation aims to render the method
-more accessible, enabling researchers to employ it without the
-constraints posed by proprietary software. Our reimagined implementation
-closely follows the original approach, allowing us to efficiently
-process observations and alleviate potential bottlenecks associated with
+the task of reconstructing the approach with open-source programming
+language R. This transformation aims to render the method more
+accessible, enabling researchers to employ it without the constraints
+posed by proprietary software. Our reimagined implementation closely
+follows the original approach, allowing us to efficiently process
+observations and alleviate potential bottlenecks associated with
 external dependencies, ensuring a more streamlined data analysis
 workflow. The R implementation of Dr Cameron Fletcher’s site assignment
 was the accurate method for site assignment out of those tested.</p>
@@ -742,16 +742,35 @@ input.</p>
 <div id="export-data" class="section level4">
 <h4>3.1.4 Export Data</h4>
 <p>Output locations are defined in the configuration files and will be
-created if they do not already exist. The any output will be saved with
-the naming convention:
+created if they do not already exist. Any output will be saved with the
+naming convention:
 <code>Keyword</code><em><code>%Y%m%d</code></em><code>%H%M%S</code>.`File
 extension. Do NOT remove data outputs, simply take a copy. Previous
 outputs are utilised to reduce processing and reduce errors.</p>
 </div>
 </div>
+<div id="reusable-workflow---ingest-control-program-data" class="section level3">
+<h3>3.2 Reusable Workflow - Ingest Control Program Data</h3>
+<p>This R code defines a data processing pipeline that ingests JSON
+exports from GBRMPA owned PWAs then formats, verifies and exports the
+data for utilization in the Cots Control Centre Decision Support Tool.
+The <code>main()</code> function is the entry point of the pipeline and
+requires a list of JSON files to ingest, a path to the config file, and
+a connection string to connect to the database. This workflow was
+produced so that previous</p>
+</div>
+</div>
+<div id="configuration-file" class="section level2">
+<h2>4.0 Configuration file</h2>
+<p>Configuration files should not be altered, instead new alternative
+configuration files should be produced. Config files exist for both
+workflows that specify expected column transformations, new columns
+required, their default values and data types. Other config files exist
+to map database column names to research output column names to reuse
+aspects of the codebase.</p>
 </div>
 <div id="code-documentation" class="section level2">
-<h2>4.0 Code Documentation</h2>
+<h2>5.0 Code Documentation</h2>
 <div id="function-mainnew_path-configuration_path-kml_path-leg_path" class="section level4">
 <h4>Function:
 <code>main(new_path, configuration_path, kml_path, leg_path)</code></h4>
@@ -778,16 +797,15 @@ use.</li>
 </ul></li>
 </ul>
 </div>
-<div id="function-import_datadata-control_data_type-is_powerbi_export-sheet" class="section level4">
-<h4>Function:
-<code>import_data(data, control_data_type, is_powerBI_export, sheet)</code></h4>
+<div id="function-import_datadata-index1" class="section level4">
+<h4>Function: <code>import_data(data, index=1)</code></h4>
 <ul>
 <li><strong>Input:</strong>
 <ul>
 <li><code>data</code>: file path to the file containing data desired to
 be in dataframe format</li>
-<li><code>configuration</code>: dataframe containing metadata and column
-mappings for control data</li>
+<li><code>index</code>: Index of the Excel sheet to import<br />
+</li>
 </ul></li>
 <li><strong>Output:</strong>
 <ul>
@@ -798,6 +816,16 @@ mappings for control data</li>
 <li>This function reads data from a file and returns a dataframe. It
 determines the file type and reads the file using the appropriate
 method.</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-get_datetime_parse_order" class="section level4">
+<h4>Function: <code>get_datetime_parse_order()</code></h4>
+<ul>
+<li><strong>Output:</strong>
+<ul>
+<li>A vector of datetime formats to parse strings into date or datetime
+objects</li>
 </ul></li>
 </ul>
 </div>
@@ -821,6 +849,401 @@ inserted under. Warning by default, any string is valid.</li>
 <li>This function adds information to the XML metadata report from the
 information obtained in the previously executed function to the desired
 control data node.</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-get_vessel_short_namestring" class="section level4">
+<h4>Function: <code>get_vessel_short_name(string)</code></h4>
+<ul>
+<li><strong>Input:</strong>
+<ul>
+<li><code>string</code>: A string or vector of strings that are vessel
+names.<br />
+</li>
+</ul></li>
+<li><strong>Output:</strong>
+<ul>
+<li>A string or vector of string are short hand for vessel names.</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>Gets short hand of vessel names. This is the first letter of each
+word or the entire word if its a single word.</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-get_file_keywordstring" class="section level4">
+<h4>Function: <code>get_file_keyword(string)</code></h4>
+<ul>
+<li><strong>Input:</strong>
+<ul>
+<li><code>string</code>: A string.<br />
+</li>
+</ul></li>
+<li><strong>Output:</strong>
+<ul>
+<li>Key word to indicate control data type.</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>Extracts key word to indicate control data type from a string.</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-append_to_table_uniquecon-table_name-data_df" class="section level4">
+<h4>Function:
+<code>append_to_table_unique(con, table_name, data_df)</code></h4>
+<ul>
+<li><strong>Input:</strong>
+<ul>
+<li><code>con</code>: A database connection object from DBI
+package.</li>
+<li><code>table_name</code>: Name of table to append data as string.
+Case sensitive.</li>
+<li><code>data_df</code>: Dataframe to append.</li>
+</ul></li>
+<li><strong>Output:</strong>
+<ul>
+<li>None</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>Appends rows to table from dataframe that do not already exist in
+the database</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-get_id_by_cellcon-table_name-search_column-search_term" class="section level4">
+<h4>Function:
+<code>get_id_by_cell(con, table_name, search_column, search_term)</code></h4>
+<ul>
+<li><strong>Input:</strong>
+<ul>
+<li><code>con</code>: A database connection object from DBI
+package.</li>
+<li><code>table_name</code>: Name of table to append data as string.
+Case sensitive.</li>
+<li><code>search_column</code>: Name of column in database to check for
+value as string.</li>
+<li><code>search_term</code>: Value to search for in database.<br />
+</li>
+</ul></li>
+<li><strong>Output:</strong>
+<ul>
+<li>vector of IDs</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>Appends rows to table from dataframe that do not already exist in
+the database</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-get_id_by_rowcon-table_name-data_df" class="section level4">
+<h4>Function: <code>get_id_by_row(con, table_name, data_df)</code></h4>
+<ul>
+<li><strong>Input:</strong>
+<ul>
+<li><code>con</code>: A database connection object from DBI
+package.</li>
+<li><code>table_name</code>: Name of table to extract IDs. Case
+sensitive.</li>
+<li><code>data_df</code>: Dataframe to perform left join with.</li>
+</ul></li>
+<li><strong>Output:</strong>
+<ul>
+<li>vector of IDs</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>Retrieve IDs from a database table based on matching rows in an
+input dataframe, using a left join operation</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-get_voyage_dates_stringsstrings" class="section level4">
+<h4>Function: <code>get_voyage_dates_strings(strings)</code></h4>
+<ul>
+<li><strong>Input:</strong>
+<ul>
+<li><code>strings</code>: A vector of strings</li>
+</ul></li>
+<li><strong>Output:</strong>
+<ul>
+<li>A list containing two vectors of dates</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>Get voyage dates with regex from a vector of strings. This was
+initially created to ingest dates from strings in JSON files that do not
+have consistent formatting.</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-get_app_data_databasecon-control_data_type" class="section level4">
+<h4>Function:
+<code>get_app_data_database(con, control_data_type)</code></h4>
+<ul>
+<li><strong>Input:</strong>
+<ul>
+<li><code>con</code>: A database connection object from DBI
+package.</li>
+<li><code>control_data_type</code>: A string key word to indicate type
+of control data.</li>
+</ul></li>
+<li><strong>Output:</strong>
+<ul>
+<li>A dataframe</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>Extract required data from Cots Control Centre databases to use as
+legacy dataset in reusable workflow.</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-separate_date_timedate_time" class="section level4">
+<h4>Function: <code>separate_date_time(date_time)</code></h4>
+<ul>
+<li><strong>Input:</strong>
+<ul>
+<li><code>date_time</code>: A vector of datetimes.</li>
+</ul></li>
+<li><strong>Output:</strong>
+<ul>
+<li>A vector of strings formatted to appropriately represent time<br />
+</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>Parse datetimes and then extract the time component for a vector of
+datetimes.</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-get_reef_labelnames" class="section level4">
+<h4>Function: <code>get_reef_label(names)</code></h4>
+<ul>
+<li><strong>Input:</strong>
+<ul>
+<li><code>names</code>: A vector of strings.</li>
+</ul></li>
+<li><strong>Output:</strong>
+<ul>
+<li>A vector of GBRMPA reef IDs as strings. These are often referred to
+as reef labels.<br />
+</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>Extract GBRMPA reef IDs from a vector of strings.</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-get_start_and_end_coords_researchstart_lat-stop_lat-start_long-stop_long" class="section level4">
+<h4>Function:
+<code>get_start_and_end_coords_research(start_lat, stop_lat, start_long, stop_long)</code></h4>
+<ul>
+<li><strong>Input:</strong>
+<ul>
+<li><code>start_lat</code>:A vector of initial latitude values of size
+n.</li>
+<li><code>stop_lat</code>: A vector of final latitude values of size
+n</li>
+<li><code>start_long</code>: A vector of initial longitude values of
+size n</li>
+<li><code>stop_long</code>: A vector of final longitude values of size
+n</li>
+</ul></li>
+<li><strong>Output:</strong>
+<ul>
+<li>A list of coordinates<br />
+</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>Aggregates coordinates of ecological observations that requires
+several trip to survey the desired region. This specific iteration of
+the function utilises the naming convention of the research format. This
+should be depreciated in future in place of a single function for
+research and app data.</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-get_start_and_end_coords_appstart_lat-stop_lat-start_long-stop_long" class="section level4">
+<h4>Function:
+<code>get_start_and_end_coords_app(start_lat, stop_lat, start_long, stop_long)</code></h4>
+<ul>
+<li><strong>Input:</strong>
+<ul>
+<li><code>start_lat</code>:A vector of initial latitude values of size
+n.</li>
+<li><code>stop_lat</code>: A vector of final latitude values of size
+n</li>
+<li><code>start_long</code>: A vector of initial longitude values of
+size n</li>
+<li><code>stop_long</code>: A vector of final longitude values of size
+n</li>
+</ul></li>
+<li><strong>Output:</strong>
+<ul>
+<li>A list of coordinates<br />
+</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>Aggregates coordinates of ecological observations that requires
+several trip to survey the desired region. This specific iteration of
+the function utilises the naming convention of the app format. This
+should be depreciated in future in place of a single function for
+research and app data.</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-get_start_and_end_coords_basestart_lat-stop_lat-start_long-stop_long" class="section level4">
+<h4>Function:
+<code>get_start_and_end_coords_base(start_lat, stop_lat, start_long, stop_long)</code></h4>
+<ul>
+<li><strong>Input:</strong>
+<ul>
+<li><code>start_lat</code>:A vector of initial latitude values of size
+n.</li>
+<li><code>stop_lat</code>: A vector of final latitude values of size
+n</li>
+<li><code>start_long</code>: A vector of initial longitude values of
+size n</li>
+<li><code>stop_long</code>: A vector of final longitude values of size
+n</li>
+</ul></li>
+<li><strong>Output:</strong>
+<ul>
+<li>A list of coordinates<br />
+</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>Aggregates coordinates of ecological observations that requires
+several trip to survey the desired region. This specific iteration of
+the function is the base for both data formats.</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-get_feeding_scar_from_descriptionnames" class="section level4">
+<h4>Function: <code>get_feeding_scar_from_description(names)</code></h4>
+<ul>
+<li><strong>Input:</strong>
+<ul>
+<li><code>names</code>: A vector of strings.</li>
+</ul></li>
+<li><strong>Output:</strong>
+<ul>
+<li>A vector of scar values<br />
+</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>Get COTS feeding scar from string decription.</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-get_worst_case_feeding_scarscars" class="section level4">
+<h4>Function: <code>get_worst_case_feeding_scar(scars)</code></h4>
+<ul>
+<li><strong>Input:</strong>
+<ul>
+<li><code>names</code>: A vector of strings.</li>
+</ul></li>
+<li><strong>Output:</strong>
+<ul>
+<li>The worst observed COTS scarring as a string</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>Get the worst observed COTS scarring as a string from a vector
+observed scarring.</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-get_coral_covercoral" class="section level4">
+<h4>Function: <code>get_coral_cover(coral)</code></h4>
+<ul>
+<li><strong>Input:</strong>
+<ul>
+<li><code>coral</code>: A vector of strings.</li>
+</ul></li>
+<li><strong>Output:</strong>
+<ul>
+<li>vector of coral categories</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>Extract coral cover categories from strings with regex</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-get_median_coral_covercoral" class="section level4">
+<h4>Function: <code>get_median_coral_cover(coral)</code></h4>
+<ul>
+<li><strong>Input:</strong>
+<ul>
+<li><code>coral</code>: A vector of strings.</li>
+</ul></li>
+<li><strong>Output:</strong>
+<ul>
+<li>The median coral cover category</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>Get median coral cover category for aggregating observations</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-missing_reef_informationdata-columns-test_value-na" class="section level4">
+<h4>Function:
+<code>missing_reef_information(data, columns, test_value = NA)</code></h4>
+<ul>
+<li><strong>Input:</strong>
+<ul>
+<li><code>data</code>: dataframe to check.</li>
+<li><code>columns</code>: Vector of columns to check for missing
+information.</li>
+<li><code>test_value</code>: A vector of undesirable values indicating
+missing information that are not null or NA.</li>
+</ul></li>
+<li><strong>Output:</strong>
+<ul>
+<li>vector of Boolean values indicating which rows have missing
+information</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>Which rows of a dataframe have information missing in the columns
+specified.</li>
+</ul></li>
+</ul>
+</div>
+<div id="function-assign_missing_site_and_reeftransformed_data_df-serialised_spatial_path-control_data_type" class="section level4">
+<h4>Function:
+<code>assign_missing_site_and_reef(transformed_data_df, serialised_spatial_path, control_data_type)</code></h4>
+<ul>
+<li><strong>Input:</strong>
+<ul>
+<li><code>data</code>: dataframe of control data.</li>
+<li><code>serialised_spatial_path</code>: Path to rds file containing
+regions assigned to sites.</li>
+<li><code>control_data_type</code>: Key word as a string indicating type
+of control data.</li>
+</ul></li>
+<li><strong>Output:</strong>
+<ul>
+<li>dataframe of control data with missing location data filled in.</li>
+</ul></li>
+<li><strong>Description:</strong>
+<ul>
+<li>Determines if the dataframe derived from app export is missing
+information about the site or reef. Creates a geometry collection with
+available coordinates and extracts the the missing information from the
+RDS file.</li>
 </ul></li>
 </ul>
 </div>

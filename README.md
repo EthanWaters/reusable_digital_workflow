@@ -152,7 +152,7 @@ Output locations are defined in the configuration files and will be created if t
 ### 3.2 Reusable Workflow - Ingest Control Program Data 
 This R code defines a data processing pipeline that ingests JSON exports from GBRMPA owned PWAs then formats, verifies and exports the data for utilization in the Cots Control Centre Decision Support Tool. The `main()` function is the entry point of the pipeline and requires a list of JSON files to ingest, a path to the config file, and a connection string to connect to the database. This workflow was produced so that previous
 
-## 4.0 Configuration file 
+## 4.0 Configuration files
 Configuration files should not be altered, instead new alternative configuration files should be produced. Config files exist for both workflows that specify expected column transformations, new columns required, their default values and data types. Other config files exist to map database column names to research output column names to reuse aspects of the codebase.  
 
 ## 5.0 Code Documentation
