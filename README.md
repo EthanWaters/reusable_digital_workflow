@@ -315,8 +315,67 @@ Configuration files should not be altered, instead new alternative configuration
     - A list of coordinates   
 - **Description:**
     - Aggregates coordinates of ecological observations that requires several trip to survey the desired region. This specific iteration of the function is the base for both data formats.
-             
-    
+        
+        
+#### Function: `get_feeding_scar_from_description(names)`
+- **Input:**
+    - `names`: A vector of strings.
+- **Output:**
+    - A vector of scar values  
+- **Description:**
+    - Get COTS feeding scar from string decription. 
+
+        
+#### Function: `get_worst_case_feeding_scar(scars)`
+- **Input:**
+    - `names`: A vector of strings.
+- **Output:**
+    - The worst observed COTS scarring as a string
+- **Description:**
+    - Get the worst observed COTS scarring as a string from a vector observed scarring.
+     
+        
+#### Function: `get_coral_cover(coral)`
+- **Input:**
+    - `coral`: A vector of strings.
+- **Output:**
+    - vector of coral categories
+- **Description:**
+    - Extract coral cover categories from strings with regex
+ 
+ 
+#### Function: `get_median_coral_cover(coral)`
+- **Input:**
+    - `coral`: A vector of strings.
+- **Output:**
+    - The median coral cover category
+- **Description:**
+    - Get median coral cover category for aggregating observations
+     
+          
+#### Function: `missing_reef_information(data, columns, test_value = NA)`
+- **Input:**
+    - `data`: dataframe to check.
+    - `columns`: Vector of columns to check for missing information.
+    - `test_value`: A vector of undesirable values indicating missing information that are not null or NA.
+- **Output:**
+    - vector of Boolean values indicating which rows have missing information
+- **Description:**
+    - Which rows of a dataframe have information missing in the columns specified.
+          
+
+#### Function: `assign_missing_site_and_reef(transformed_data_df, serialised_spatial_path, control_data_type)`
+- **Input:**
+    - `data`: dataframe of control data.
+    - `serialised_spatial_path`: Path to rds file containing regions assigned to sites.
+    - `control_data_type`: Key word as a string indicating type of control data.
+- **Output:**
+    - dataframe of control data with missing location data filled in. 
+- **Description:**
+    - Determines if the dataframe derived from app export is missing information about the site or reef. Creates a geometry collection with available coordinates and extracts the the missing information from the RDS file. 
+          
+          
+               
 #### Function: `separate_control_dataframe(new_data_df, legacy_data_df, control_data_type)`
 - **Input:**
     - `new_data_df`: New control data exported from GBRMPA

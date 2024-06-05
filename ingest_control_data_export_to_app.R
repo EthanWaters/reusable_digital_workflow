@@ -89,7 +89,7 @@ main <- function(script_dir, configuration_path, connection_string, new_files) {
       
     # assign site and reef information if they are missing
     tryCatch({
-      transformed_data_df <- assign_site_and_reef(transformed_data_df, serialised_spatial_path, control_data_type)
+      transformed_data_df <- assign_missing_site_and_reef(transformed_data_df, serialised_spatial_path, control_data_type)
       transformed_data_df$`Reef ID` <- get_reef_label(transformed_data_df$Reef)
     }, error = function(e) {
       print(paste("Error assigning sites:", conditionMessage(e)))

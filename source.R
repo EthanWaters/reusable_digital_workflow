@@ -172,25 +172,35 @@ separate_date_time <- function(date_time){
   return(time)
 }
 
-
+# Extract GBRMPA reef IDs from a vector of strings. 
 get_reef_label <- function(names){
   reef_label_pattern <- "\\b(1[0-9]|2[0-9]|10)-\\d{3}[a-z]?\\b"
   reef_labels <- sapply(str_extract(names, reef_label_pattern), toString)
   return(reef_labels)
 }
 
+#Aggregates coordinates of ecological observations that requires several trip to
+#survey the desired region. This specific iteration of the function utilises the 
+#naming convention of the research format. This should be depreciated in future
+#in place of a single function for research and app data.
 get_start_and_end_coords_research <- function(start_lat, stop_lat, start_long, stop_long){
   output <- get_start_and_end_coords_base(start_lat, stop_lat, start_long, stop_long)
   names(output) <- c("Start Lat", "End Lat", "Start Lng", "End Lng")
   return(output)
 }
 
+#Aggregates coordinates of ecological observations that requires several trip to
+#survey the desired region. This specific iteration of the function utilises the
+#naming convention of the app format. This should be depreciated in future in 
+#place of a single function for research and app data.
 get_start_and_end_coords_app <- function(start_lat, stop_lat, start_long, stop_long){
   output <- get_start_and_end_coords_base(start_lat, stop_lat, start_long, stop_long)
   names(output) <- c("start_latitude", "stop_latitude", "start_longitude", "stop_longitude")
   return(output)
 }
 
+#Aggregates coordinates of ecological observations that requires several trip to 
+#survey the desired region. This specific iteration of the function is the base for both data formats.
 get_start_and_end_coords_base <- function(start_lat, stop_lat, start_long, stop_long){
   
   start_coords <- cbind(start_long, start_lat)
@@ -218,10 +228,12 @@ get_start_and_end_coords_base <- function(start_lat, stop_lat, start_long, stop_
   return(output)
 }
 
+# Get COTS feeding scar from string decription 
 get_feeding_scar_from_description <- function(scar_desctiptions){
   return(tolower(substr(scar_desctiptions, 1, 1)))
 }
 
+# Get the worst observed COTS scarring as a string from a vector observed scarring.
 get_worst_case_feeding_scar <- function(scars){
   
   pattern <- "a|p|c"
@@ -229,19 +241,19 @@ get_worst_case_feeding_scar <- function(scars){
   ordered_scars <- c("a", "p", "c")
   matches <- na.omit(matches)
   numerical_values <- match(matches, ordered_scars)
-  print(numerical_values)
   max_vlaue <- max(numerical_values)
   return(ordered_scars[max_vlaue])
   
 }
 
+# Extract coral cover categories from strings with regex
 get_coral_cover <- function(coral){
   pattern <- "(?:[1-9]\\-)|0|(?:(?:[1-9]\\+))"
   matches <- str_extract(coral, pattern)
 }
 
+# get median coral cover category for aggregating observations
 get_median_coral_cover <- function(coral){
-  
   matches <- get_coral_cover(coral)
   ordered_coral_cover <- c("0", "1-", "1+", "2-", "2+", "3-", "3+", "4-", "4+", "5-", "5+")
   matches <- na.omit(matches)
@@ -251,20 +263,22 @@ get_median_coral_cover <- function(coral){
   
 }
 
-
-missing_reef_information <- function(data, columns, test_value = NA) {
+# Which rows of a dataframe have information missing in the columns specified.
+missing_reef_information <- function(data, columns, test_value = c(NA)) {
   results <- vector(mode = "logical", length = nrow(data))
   for (col_name in columns) {
     col_values <- data[[col_name]]
-    results <- results | is.na(col_values) | is.null(col_values) | col_values == test_value
+    results <- results | is.na(col_values) | is.null(col_values) | col_values %in% test_value
   }  
   return(results)
 }
 
 
-assign_site_and_reef <- function(transformed_data_df, serialised_spatial_path, control_data_type){
+assign_missing_site_and_reef <- function(transformed_data_df, serialised_spatial_path, control_data_type){
   # Determines if the dataframe derived from app export is missing information 
-  # about the site or reef 
+  # about the site or reef. Creates a geometry collection with available coordinates
+  # and extracts the the missing information from the RDS file. 
+  
   crs_ <- st_crs("+proj=longlat +datum=WGS84 +no_defs") 
   if(control_data_type == "manta_tow"){
     data_sf <- get_centroids(transformed_data_df, crs_)
@@ -280,7 +294,7 @@ assign_site_and_reef <- function(transformed_data_df, serialised_spatial_path, c
     Reef <- "Reef Name"
   }
   
-  is_missing_reef_information <- missing_reef_information(transformed_data_df, cols_to_check, "Finding nearest...")
+  is_missing_reef_information <- missing_reef_information(transformed_data_df, cols_to_check, c("Finding nearest..."))
   if (!any(is_missing_reef_information)) {
     return(transformed_data_df)
   }
