@@ -363,24 +363,31 @@ pre code {
 <p><img src="data:image/svg+xml;charset=utf-8;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTM4IiBoZWlnaHQ9IjIwIiByb2xlPSJpbWciIGFyaWEtbGFiZWw9ImxpZmVjeWNsZTogZXhwZXJpbWVudGFsIj48dGl0bGU+bGlmZWN5Y2xlOiBleHBlcmltZW50YWw8L3RpdGxlPjxsaW5lYXJHcmFkaWVudCBpZD0icyIgeDI9IjAiIHkyPSIxMDAlIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNiYmIiIHN0b3Atb3BhY2l0eT0iLjEiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3Atb3BhY2l0eT0iLjEiLz48L2xpbmVhckdyYWRpZW50PjxjbGlwUGF0aCBpZD0iciI+PHJlY3Qgd2lkdGg9IjEzOCIgaGVpZ2h0PSIyMCIgcng9IjMiIGZpbGw9IiNmZmYiLz48L2NsaXBQYXRoPjxnIGNsaXAtcGF0aD0idXJsKCNyKSI+PHJlY3Qgd2lkdGg9IjU1IiBoZWlnaHQ9IjIwIiBmaWxsPSIjNTU1Ii8+PHJlY3QgeD0iNTUiIHdpZHRoPSI4MyIgaGVpZ2h0PSIyMCIgZmlsbD0iI2ZlN2QzNyIvPjxyZWN0IHdpZHRoPSIxMzgiIGhlaWdodD0iMjAiIGZpbGw9InVybCgjcykiLz48L2c+PGcgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IlZlcmRhbmEsR2VuZXZhLERlamFWdSBTYW5zLHNhbnMtc2VyaWYiIHRleHQtcmVuZGVyaW5nPSJnZW9tZXRyaWNQcmVjaXNpb24iIGZvbnQtc2l6ZT0iMTEwIj48dGV4dCBhcmlhLWhpZGRlbj0idHJ1ZSIgeD0iMjg1IiB5PSIxNTAiIGZpbGw9IiMwMTAxMDEiIGZpbGwtb3BhY2l0eT0iLjMiIHRyYW5zZm9ybT0ic2NhbGUoLjEpIiB0ZXh0TGVuZ3RoPSI0NTAiPmxpZmVjeWNsZTwvdGV4dD48dGV4dCB4PSIyODUiIHk9IjE0MCIgdHJhbnNmb3JtPSJzY2FsZSguMSkiIGZpbGw9IiNmZmYiIHRleHRMZW5ndGg9IjQ1MCI+bGlmZWN5Y2xlPC90ZXh0Pjx0ZXh0IGFyaWEtaGlkZGVuPSJ0cnVlIiB4PSI5NTUiIHk9IjE1MCIgZmlsbD0iIzAxMDEwMSIgZmlsbC1vcGFjaXR5PSIuMyIgdHJhbnNmb3JtPSJzY2FsZSguMSkiIHRleHRMZW5ndGg9IjczMCI+ZXhwZXJpbWVudGFsPC90ZXh0Pjx0ZXh0IHg9Ijk1NSIgeT0iMTQwIiB0cmFuc2Zvcm09InNjYWxlKC4xKSIgZmlsbD0iI2ZmZiIgdGV4dExlbmd0aD0iNzMwIj5leHBlcmltZW50YWw8L3RleHQ+PC9nPjwvc3ZnPg==" alt="Lifecycle: experimental" data-canonical-src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" style="max-width: 100%;"></p>
 <div id="overview" class="section level2">
 <h2>1.0 Overview</h2>
-<p>The overall purpose of this workflow is to clean and wrangle control
-program data from GBRMPA so that it takes a standardised form to be
-utilised in research. This R code defines a data processing pipeline
-that imports, formats, and verifies data. It also creates a metadata
-report to document the pipeline. The <code>main()</code> function is the
-entry point of the pipeline. It takes as inputs the paths to the legacy
-data, new data ,KML data, and JSON configuration file. The data can then
-be assigned to the nearest sites.</p>
-<p>The four major steps in this process are as follows:</p>
+<p>The overall purpose of this codebase is to clean, wrangle and perform
+geospatial analysis on control program data from GBRMPA into a
+standardised form utilisation in research or decision support tools.
+<code>source.R</code> defines a large set of functions for this and
+generally serves one of the following purposes:</p>
 <ol style="list-style-type: decimal">
-<li><code>Data Transformation</code> to legacy format .</li>
-<li>Perform <code>Error Checking &amp; Processing</code>.</li>
-<li>Perform <code>Site Assignment</code> to control data if
-applicable.</li>
-<li><code>Export</code></li>
+<li><code>Data Transformation</code></li>
+<li>Perform <code>Error Checking &amp; Processing</code></li>
+<li><code>Site Assignment</code> to control data if applicable</li>
+<li><code>Aggregation and Export</code></li>
 </ol>
-<p>For further information see Reusable Digital Workflows Systems
-Diagrams and Reusable Digital Workflows Psudo Code Systems Diagrams</p>
+<p>Functions defined in <code>source.R</code> are then utilisesd to
+produce several application specific reusable workflows</p>
+<ol style="list-style-type: decimal">
+<li><code>process_control_data_research_output.R</code> See Section
+3.1</li>
+<li><code>ingest_control_data_export_to_app.R</code> See Section
+3.2</li>
+</ol>
+<p>This R code defines a data processing pipeline that imports, formats,
+and verifies data. It also creates a metadata report to document the
+pipeline. The <code>main()</code> function is the entry point of the
+pipeline. It takes as inputs the paths to the legacy data, new data ,KML
+data, and JSON configuration file. The data can then be assigned to the
+nearest sites.</p>
 </div>
 <div id="term-definitions" class="section level2">
 <h2>1.1 Term Definitions</h2>
@@ -397,13 +404,17 @@ that varies between <code>legacy</code> and <code>new</code> data.</p>
 </div>
 <div id="installation-requirements" class="section level2">
 <h2>2.0 Installation &amp; Requirements</h2>
-<p>This workflow is designed to be run on a server with in conjunction
-with an automate script. It may be easier to run source code in place of
-the container for one time uses. Docker is utilised to ensure that the
-client environment remains consistent with the dev environment, see
-section 2.1 for instructions. See section 2.2 &amp; 2.3 for details of
-all packages installed in dev environment.</p>
+<p>This codebase is designed to be automated with Azure and not run
+locally.</p>
+<p>Docker containers have been produced during the development of this
+code base to ensure that the client environment remains consistent with
+the dev environment, see section 2.1 for instructions. See section 2.2
+&amp; 2.3 for details of all packages installed in dev environment.
+There is no guarantee that the docker images are up-to-date.</p>
 <p>This requires Docker version 24.0.6:<a href="https://www.docker.com/products/docker-desktop/" class="uri">https://www.docker.com/products/docker-desktop/</a></p>
+<p>Although not recommended, the scripts can be executed locally after
+running the setup scripts. On windows execute the setup and dependencies
+batch files. On Linux run the setup and dependencies shell files</p>
 <div id="how-to-update-source-code" class="section level3">
 <h3>2.1.1 How to update source code</h3>
 <pre class="bash"><code># Assuming you are in your project directory
@@ -412,26 +423,14 @@ all packages installed in dev environment.</p>
 
 # 1. Update source code tag e.g.
 #SPECIFY DESIRED VERSION BY REPLACEING &quot;latest&quot;
-git tag -a vlatest -m &quot;Version latest&quot;
-git push origin vlatest
+git tag -a v[latest] -m &quot;Version latest&quot;
+git push origin v[latest]
 
 # 3. Build, tag and push the Docker image
-docker build -t ghcr.io/ethanwaters/reusable_digital_workflow:latest .
-docker push ghcr.io/ethanwaters/reusable_digital_workflow:latest</code></pre>
-</div>
-<div id="how-to-run-code" class="section level3">
-<h3>2.1.2 How to run code</h3>
-<p>Do NOT use anything other than the latest version. Assume previous
-versions contain errors unless specifically labelled stable. Double
-click the setup.bat file to ensure correct file structure is created.
-Follow commands below.</p>
-<pre class="bash"><code>#SPECIFY DESIRED VERSION BY REPLACEING &quot;latest&quot;
-docker pull ghcr.io/ethanwaters/reusable_digital_workflow:latest
-docker run ghcr.io/ethanwaters/reusable_digital_workflow:latest
-</code></pre>
+docker build -t ghcr.io/[USERNAME]/reusable_digital_workflow:latest .
+docker push ghcr.io/[USERNAME]/reusable_digital_workflow:latest</code></pre>
 <div id="r-environment-information" class="section level4">
 <h4>2.2 R Environment Information</h4>
-<p>This is all taken care of by docker.</p>
 <ul>
 <li>R version: 4.2.1 (2022-06-23 ucrt)</li>
 <li>Platform: x86_64-w64-mingw32</li>
@@ -567,42 +566,21 @@ LC_COLLATE=English_Australia.utf8;LC_CTYPE=English_Australia.utf8;LC_MONETARY=En
 <td>doParallel</td>
 <td>1.0.17</td>
 </tr>
+<tr class="even">
+<td>DBI</td>
+<td>1.1.3</td>
+</tr>
 </tbody>
 </table>
-<pre class="r"><code>install.packages(&quot;tools&quot;, version = &quot;4.2.1&quot;, dependencies = TRUE)  
-install.packages(&quot;installr&quot;, version = &quot;0.23.4&quot;, dependencies = TRUE)  
-install.packages(&quot;readxl&quot;, version = &quot;1.4.1&quot;, dependencies = TRUE)  
-install.packages(&quot;sets&quot;, version = &quot;1.0-21&quot;, dependencies = TRUE)  
-install.packages(&quot;XML&quot;, version = &quot;3.99-0.13&quot;, dependencies = TRUE)  
-install.packages(&quot;methods&quot;, version = &quot;4.2.1&quot;, dependencies = TRUE)  
-install.packages(&quot;xml2&quot;, version = &quot;1.3.3&quot;, dependencies = TRUE)  
-install.packages(&quot;rio&quot;, version = &quot;0.5.29&quot;, dependencies = TRUE)  
-install.packages(&quot;dplyr&quot;, version = &quot;1.0.10&quot;, dependencies = TRUE)  
-install.packages(&quot;stringr&quot;, version = &quot;1.4.1&quot;, dependencies = TRUE)  
-install.packages(&quot;fastmatch&quot;, version = &quot;1.1-3&quot;, dependencies = TRUE)  
-install.packages(&quot;lubridate&quot;, version = &quot;1.8.0&quot;, dependencies = TRUE)  
-install.packages(&quot;rlang&quot;, version = &quot;1.1.0&quot;, dependencies = TRUE)  
-install.packages(&quot;inline&quot;, version = &quot;0.3.19&quot;, dependencies = TRUE)  
-install.packages(&quot;purrr&quot;, version = &quot;0.3.4&quot;, dependencies = TRUE)  
-install.packages(&quot;jsonlite&quot;, version = &quot;1.8.7&quot;, dependencies = TRUE)  
-install.packages(&quot;sf&quot;, version = &quot;1.0-14&quot;, dependencies = TRUE)
-install.packages(&quot;raster&quot;, version = &quot;3.6-23&quot;, dependencies = TRUE)  
-install.packages(&quot;terra&quot;, version = &quot;1.7-39&quot;, dependencies = TRUE)  
-install.packages(&quot;dplyr&quot;, version = &quot;1.0.10&quot;, dependencies = TRUE)  
-install.packages(&quot;units&quot;, version = &quot;0.8-0&quot;, dependencies = TRUE)  
-install.packages(&quot;tidyverse&quot;, version = &quot;1.3.2&quot;, dependencies = TRUE) 
-install.packages(&quot;tidyr&quot;, version = &quot;1.2.0&quot;, dependencies = TRUE)  
-install.packages(&quot;lwgeom&quot;, version = &quot;0.2-13&quot;, dependencies = TRUE)  
-install.packages(&quot;stars&quot;, version = &quot;0.6-4&quot;, dependencies = TRUE)  
-install.packages(&quot;stringr&quot;, version = &quot;1.4.1&quot;, dependencies = TRUE)  
-install.packages(&quot;furrr&quot;, version = &quot;0.3.1&quot;, dependencies = TRUE)  
-install.packages(&quot;foreach&quot;, version = &quot;1.5.2&quot;, dependencies = TRUE)  
-install.packages(&quot;doParallel&quot;, version = &quot;1.0.17&quot;, dependencies = TRUE)</code></pre>
 </div>
 </div>
 </div>
-<div id="data-transformation" class="section level2">
-<h2>3.1 Data Transformation</h2>
+<div id="reusable-workflow-details" class="section level2">
+<h2>3.0 Reusable Workflow Details</h2>
+<div id="reusable-workflow---process-control-data-for-research" class="section level3">
+<h3>3.1 Reusable Workflow - Process Control Data For Research</h3>
+<div id="data-transformation" class="section level4">
+<h4>3.1.1 Data Transformation</h4>
 <p>While an ideal scenario would involve a fully dynamic system capable
 of automatically determining mapping transformations from one version of
 a data set to the next, this proved unattainable due to the overlapping
@@ -617,8 +595,8 @@ flexibility in handling future datasets. The configuration files mean
 that any dataset can specify a configuration file and then utilise the
 work flow to ensure consistent data output.</p>
 </div>
-<div id="error-checking-discrepancy-detection" class="section level2">
-<h2>3.2 Error Checking &amp; Discrepancy Detection</h2>
+<div id="error-checking-discrepancy-detection" class="section level4">
+<h4>3.1.2 Error Checking &amp; Discrepancy Detection</h4>
 <p>Error checking is independent of discrepancy detection. These
 functions interpret the data and are flagged as errors is they are
 likely to be inappropriate for use in analysis based on advice from Dr
@@ -628,8 +606,8 @@ a specific row of data. It is not possible to know if a change is a
 mistake or QA so any changes that alter an error free data point to one
 containing an error, the original row will be utilised. In all other
 situations the new row will be utilised.</p>
-<div id="what-denotes-an-error" class="section level4">
-<h4>3.2.1 What Denotes An Error ?</h4>
+<div id="what-denotes-an-error" class="section level5">
+<h5>What Denotes An Error ?</h5>
 <ul>
 <li><code>Latitude or Longitude</code> exceeds allowable range</li>
 <li><code>COT Scars</code> are not one of the agreed upon categorical
@@ -659,8 +637,8 @@ plausible for two genuine distinct identical rows to exist so these are
 not flagged</li>
 </ul>
 </div>
-<div id="discrepancy-detection---decisions-their-philisophy" class="section level4">
-<h4>3.2.2 Discrepancy Detection - Decisions &amp; Their Philisophy</h4>
+<div id="discrepancy-detection---decisions-their-philisophy" class="section level5">
+<h5>Discrepancy Detection - Decisions &amp; Their Philisophy</h5>
 <ul>
 <li><code>The workflow will not utilise the ID column to determine discrepancies. Instead distance between rows will be established based on comparison and differing number of columns</code>:
 Throughout development and historically it has been seen that the IDs in
@@ -695,8 +673,8 @@ authoritative.</li>
 </ul>
 </div>
 </div>
-<div id="site-assignment" class="section level2">
-<h2>3.3 Site Assignment</h2>
+<div id="site-assignment" class="section level4">
+<h4>3.1.3 Site Assignment</h4>
 <p>The method traditionally employed for the assignment of control data
 observations to specific geographical regions was proposed by
 Dr. Cameron Fletcher at CSIRO. Dr. Fletcher’s approach has proven
@@ -716,8 +694,8 @@ process observations and alleviate potential bottlenecks associated with
 external dependencies, ensuring a more streamlined data analysis
 workflow. The R implementation of Dr Cameron Fletcher’s site assignment
 was the accurate method for site assignment out of those tested.</p>
-<div id="pre-processing" class="section level4">
-<h4>3.3.1 Pre-processing</h4>
+<div id="pre-processing" class="section level5">
+<h5>Pre-processing</h5>
 <p>Steps were then taken to reduce the computational complexity of the
 calculations through the simplification of the intricate polygonal
 shapes. The process implemented Ramer-Douglas-Peucker algorithm to
@@ -725,8 +703,8 @@ obtain an adaptive approximation of a complex polygons while maintaining
 their essential characteristics based on a predetermined threshold of
 <span class="math inline">\(10^{-5}\)</span>.</p>
 </div>
-<div id="spatial-analysis" class="section level4">
-<h4>3.3.2 Spatial Analysis</h4>
+<div id="spatial-analysis" class="section level5">
+<h5>Spatial Analysis</h5>
 <p>The bounding boxes of each reef layer are extended by 0.003 degrees,
 roughly equivalent to 300 meters. The initial objective is to ensure
 that the bounding boxes encompass the entirety of the reef polygons,
@@ -761,14 +739,16 @@ point is extracted and the results merged with the manta tow data
 input.</p>
 </div>
 </div>
-<div id="export-data" class="section level2">
-<h2>3.4 Export Data</h2>
+<div id="export-data" class="section level4">
+<h4>3.1.4 Export Data</h4>
 <p>Output locations are defined in the configuration files and will be
 created if they do not already exist. The any output will be saved with
 the naming convention:
 <code>Keyword</code><em><code>%Y%m%d</code></em><code>%H%M%S</code>.`File
 extension. Do NOT remove data outputs, simply take a copy. Previous
 outputs are utilised to reduce processing and reduce errors.</p>
+</div>
+</div>
 </div>
 <div id="code-documentation" class="section level2">
 <h2>4.0 Code Documentation</h2>
@@ -1071,10 +1051,9 @@ type of match.</li>
 separate the close matching rows between two data sets. This function
 separates the rows in a vectorized process, which involves using logical
 checks on vectors or matrices so Boolean operations can be used to
-separate the rows. This reduces computational time by two or three
-orders of magnitude, which is a worthy trade-off for the reduced
-readability. The function handles close matching rows in the following
-order:</p>
+separate the rows. This reduces processing time by two or three orders
+of magnitude, which is a worthy trade-off for the reduced readability.
+The function handles close matching rows in the following order:</p>
 <ul>
 <li>Rows with one-one close matches</li>
 <li>Rows with many-many perfect matches</li>

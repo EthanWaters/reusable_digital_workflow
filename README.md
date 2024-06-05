@@ -4,7 +4,7 @@
 
 ## 1.0 Overview
 
-The overall purpose of this codebase is to clean, wrangle and perform geospatial analysis on control program data from GBRMPA into a standardised form utilisation in research or decision support tools. `source.R` defines a large set of functions for this and generally serves one of the following purposes:
+The overall purpose of this codebase is to clean, wrangle and perform geospatial analysis on control program data from GBRMPA to produce a standardised output for utilisation in research or decision support tools. `source.R` defines a large set of functions for this and generally serves one of the following purposes:
 
   1. `Data Transformation`
   2. Perform `Error Checking & Processing`
@@ -13,12 +13,9 @@ The overall purpose of this codebase is to clean, wrangle and perform geospatial
 
 Functions defined in `source.R` are then utilisesd to produce several application specific reusable workflows
 
-  1. `process_control_data_research_output.R`
-  2. `ingest_control_data_export_to_app.R`
+  1. `process_control_data_research_output.R` See Section 3.1
+  2. `ingest_control_data_export_to_app.R` See Section 3.2
 
-
-
-This R code defines a data processing pipeline that imports, formats, and verifies data. It also creates a metadata report to document the pipeline. The `main()` function is the entry point of the pipeline. It takes as inputs the paths to the legacy data, new data ,KML data, and JSON configuration file. The data can then be assigned to the nearest sites.
 
 ## 1.1 Term Definitions
 This section defines several terms utilized throughout the documentation to ensure clarity. 
@@ -52,17 +49,6 @@ git push origin v[latest]
 # 3. Build, tag and push the Docker image
 docker build -t ghcr.io/[USERNAME]/reusable_digital_workflow:latest .
 docker push ghcr.io/[USERNAME]/reusable_digital_workflow:latest
-```
-
-### 2.1.2 How to run code
-
-Do NOT use anything other than the latest version. Assume previous versions contain errors unless specifically labelled stable. Double click the setup.bat file to ensure correct file structure is created. Follow commands below. 
-
-```bash
-#SPECIFY DESIRED VERSION BY REPLACEING "latest"
-docker pull ghcr.io/[USERNAME]/reusable_digital_workflow:latest
-docker run ghcr.io/[USERNAME]/reusable_digital_workflow:latest
-
 ```
 
 #### 2.2 R Environment Information
@@ -109,48 +95,19 @@ docker run ghcr.io/[USERNAME]/reusable_digital_workflow:latest
 | doParallel    | 1.0.17    |
 | DBI           | 1.1.3     |
 
-```R 
-install.packages("tools", version = "4.2.1", dependencies = TRUE)  
-install.packages("installr", version = "0.23.4", dependencies = TRUE)  
-install.packages("readxl", version = "1.4.1", dependencies = TRUE)  
-install.packages("sets", version = "1.0-21", dependencies = TRUE)  
-install.packages("XML", version = "3.99-0.13", dependencies = TRUE)  
-install.packages("methods", version = "4.2.1", dependencies = TRUE)  
-install.packages("xml2", version = "1.3.3", dependencies = TRUE)  
-install.packages("rio", version = "0.5.29", dependencies = TRUE)  
-install.packages("dplyr", version = "1.0.10", dependencies = TRUE)  
-install.packages("stringr", version = "1.4.1", dependencies = TRUE)  
-install.packages("fastmatch", version = "1.1-3", dependencies = TRUE)  
-install.packages("lubridate", version = "1.8.0", dependencies = TRUE)  
-install.packages("rlang", version = "1.1.0", dependencies = TRUE)  
-install.packages("inline", version = "0.3.19", dependencies = TRUE)  
-install.packages("purrr", version = "0.3.4", dependencies = TRUE)  
-install.packages("jsonlite", version = "1.8.7", dependencies = TRUE)  
-install.packages("sf", version = "1.0-14", dependencies = TRUE)
-install.packages("raster", version = "3.6-23", dependencies = TRUE)  
-install.packages("terra", version = "1.7-39", dependencies = TRUE)  
-install.packages("dplyr", version = "1.0.10", dependencies = TRUE)  
-install.packages("units", version = "0.8-0", dependencies = TRUE)  
-install.packages("tidyverse", version = "1.3.2", dependencies = TRUE) 
-install.packages("tidyr", version = "1.2.0", dependencies = TRUE)  
-install.packages("lwgeom", version = "0.2-13", dependencies = TRUE)  
-install.packages("stars", version = "0.6-4", dependencies = TRUE)  
-install.packages("stringr", version = "1.4.1", dependencies = TRUE)  
-install.packages("furrr", version = "0.3.1", dependencies = TRUE)  
-install.packages("foreach", version = "1.5.2", dependencies = TRUE)  
-install.packages("doParallel", version = "1.0.17", dependencies = TRUE)
-install.packages("DBI", version = "1.1.3", dependencies = TRUE)
-```
+## 3.0 Reusable Workflow Details
+### 3.1 Reusable Workflow - Process Control Data For Research
+This R code defines a data processing pipeline that imports, formats, and verifies control data for research purposes. This process creates a metadata report to document pipeline outcomes. The `main()` function is the entry point of the pipeline. It takes as inputs the paths to the legacy data, new data ,KML data, and JSON configuration file. The control program data can then be assigned to the nearest cull sites. 
 
-## 3.1 Data Transformation
+#### 3.1.1 Data Transformation
 While an ideal scenario would involve a fully dynamic system capable of automatically determining mapping transformations from one version of a data set to the next, this proved unattainable due to the overlapping use of names in the new GBRMPA database with the old data set in a different context. To address this challenge, a compromise between modularity and robustness was sought. Instead of hard-coding numerous transformations, a solution was implemented using JSON configuration files to specify transformations which are then checked against the input with NLP techniques and dynamically changed to ensure semantic differences can still be effectively mapped. This approach allows for flexibility in handling future datasets. The configuration files mean that any dataset can specify a configuration file and then utilise the work flow to ensure consistent data output. 
 
-## 3.2 Error Checking & Discrepancy Detection
+#### 3.1.2 Error Checking & Discrepancy Detection
 Error checking is independent of discrepancy detection. These functions interpret the data and are flagged as errors is they are likely to be inappropriate for use in analysis based on advice from Dr Cameron Fletcher. No data is ever removed. 
 
 Discrepancy Detection provides the opportunity to identify changes in a specific row of data. It is not possible to know if a change is a mistake or QA so any changes that alter an error free data point to one containing an error, the original row will be utilised. In all other situations the new row will be utilised. 
   
-#### 3.2.1 What Denotes An Error ? 
+##### What Denotes An Error ? 
   - `Latitude or Longitude` exceeds allowable range
   - `COT Scars` are not one of the agreed upon categorical options
   - `Tow Date` is missing and cannot be estimated from other entries of the same voyage 
@@ -165,7 +122,7 @@ Discrepancy Detection provides the opportunity to identify changes in a specific
   - `Voyage Dates` is missing and cannot be estimated from other entries of the same voyage
   - `Duplicates` of any row more than two instances. It is plausible for two genuine distinct identical rows to exist so these are not flagged 
  
-#### 3.2.2 Discrepancy Detection - Decisions & Their Philisophy
+##### Discrepancy Detection - Decisions & Their Philisophy
   - `The workflow will not utilise the ID column to determine discrepancies. Instead distance between rows will be established based on comparison and differing number of columns`: Throughout development and historically it has been seen that the IDs in the database exports frequently change. It would be a large point of error if the IDs were treated as authoritative when it can not be guaranteed that they are. The functionality to do this has been programmed for a time when the IDs can be considered authoritative.
   - `The "Distance" is the maximum number of columns in a given row that can change between the legacy and new data, and still be considered a discrepancy. This was set to three. Anything greater than this and it is assumed that the rows are not related`: There is no correct choice for distance. Three was able to captured all rows from the 6000 row legacy data set in the 115,000 row new data set. It was determined that being conservative is more beneficial as there is not a significant consequence for interpreting a discrepancy as a new row. It will still be utilised provided no errors are flagged in accordance with above.
   - `A set of columns are excluded row comparions. This includes the ID column and any columns that are created in the workflow`: ID is excluded as the frequent changes may make a row appear closer or further away from another. New columns created by the workflow indicate have two cases:
@@ -173,13 +130,13 @@ Discrepancy Detection provides the opportunity to identify changes in a specific
     - The column is determined by another process and should utilise the new information available to make decisions e.g. assignment of manta tows is subject to change based on updates the the KML file specifying the cull site polygons. Therefore, changes in this should not influence whether or not two rows are the considered same sample. 
   - `Assigning sites to raster pixels is only performed to new reefs or altered reefs where possible. The workflow does not attempt to maintain cull sites and their assignment for reefs that are removed by GBRMPA`: The overarching philosophy of this workflow asserts that the deliberate decisions made by GBRMPA set the standard and should be regarded as authoritative.
  
-## 3.3 Site Assignment
-The method traditionally employed for the assignment of control data observations to specific geographical regions was proposed by Dr. Cameron Fletcher at CSIRO. Dr. Fletcher's approach has proven valuable for understanding ecological patterns across various reef environments. However, the method's initial implementation relied on a Mathematica script, which introduced challenges of accessibility due to the proprietary nature of Mathematica software. This limitation not only hindered the wider adoption of the technique but also raised concerns about long-term sustainability and data processing bottlenecks. To overcome these hurdles and enhance the method's usability, we undertook the task of reconstructing Dr. Fletcher's approach using the open-source R programming language. This transformation aims to render the method more accessible, enabling researchers to employ it without the constraints posed by proprietary software. Our reimagined implementation closely follows the original approach, allowing us to efficiently process observations and alleviate potential bottlenecks associated with external dependencies, ensuring a more streamlined data analysis workflow. The R implementation of Dr Cameron Fletcher's site assignment was the accurate method for site assignment out of those tested. 
+#### 3.1.3 Site Assignment
+The method traditionally employed for the assignment of control data observations to specific geographical regions was valuable for understanding ecological patterns across various reef environments. However, the method's initial implementation relied on a Mathematica script, which introduced challenges of accessibility due to the proprietary nature of Mathematica software. This limitation not only hindered the wider adoption of the technique but also raised concerns about long-term sustainability and data processing bottlenecks. To overcome these hurdles and enhance the method's usability, we undertook the task of reconstructing the approach with open-source programming language R. This transformation aims to render the method more accessible, enabling researchers to employ it without the constraints posed by proprietary software. Our reimagined implementation closely follows the original approach, allowing us to efficiently process observations and alleviate potential bottlenecks associated with external dependencies, ensuring a more streamlined data analysis workflow. The R implementation of Dr Cameron Fletcher's site assignment was the accurate method for site assignment out of those tested. 
 
-#### 3.3.1 Pre-processing
+##### Pre-processing
 Steps were then taken to reduce the computational complexity of the calculations through the simplification of the intricate polygonal shapes. The process implemented Ramer-Douglas-Peucker algorithm to obtain an adaptive approximation of a complex polygons while maintaining their essential characteristics based on a predetermined threshold of $10^{-5}$. 
 
-#### 3.3.2 Spatial Analysis
+##### Spatial Analysis
 The bounding boxes of each reef layer are extended by 0.003 degrees, roughly equivalent to 300 meters. The initial objective is to ensure that the bounding boxes encompass the entirety of the reef polygons, incorporating a buffer zone of suitable dimensions. This buffer serves the purpose of accommodating the meandering trajectory of manta tows, which tend to fluctuate in proximity to the reef margins. Achieving a delicate equilibrium, the buffer must be substantial enough to avoid overlap between reefs and to capture most manta tows, while avoiding computational overload. The approach also seeks to align with the practices of GBRMPA (Great Barrier Reef Marine Park Authority), wherein manta tows are assigned to sites based on proximity conditions. To maintain fidelity with the GBRMPA framework, the buffer is set at 0.003 degrees, a value that ensures consistency in proximity while retaining computational efficiency. 
 
 The expansion of the bounding boxes is coupled with an iterative process of rasterization, resulting in a raster for every reef layer.  These rasters can be used for subsequent spatial analyses if desired. 
@@ -189,9 +146,9 @@ To calculate the distance between a point and a polygon, the function `st_distan
 Manta tow centroids are transformed into point representations. Iterating through the set of rasters, the tow points are filtered based on the reef name of the raster. The value of the raster at each centroid point is extracted and the results merged with the manta tow data input.  
 
 
-## 3.4 Export Data
+#### 3.1.4 Export Data
 
-Output locations are defined in the configuration files and will be created if they do not already exist. The any output will be saved with the naming convention: `Keyword`_`%Y%m%d`_`%H%M%S`.`File extension. Do NOT remove data outputs, simply take a copy. Previous outputs are utilised to reduce processing and reduce errors. 
+Output locations are defined in the configuration files and will be created if they do not already exist. Any output will be saved with the naming convention: `Keyword`_`%Y%m%d`_`%H%M%S`.`File extension. Do NOT remove data outputs, simply take a copy. Previous outputs are utilised to reduce processing and reduce errors. 
 
 ## 4.0 Code Documentation
 
@@ -306,7 +263,7 @@ Output locations are defined in the configuration files and will be created if t
 - **Outputs:**
   - The function returns a list containing 4 data frames that represent the separated close matches. Each of the data frames contains the row indices of the original data frames that correspond to the particular type of match. 
 - **Description:**
-  - The vectorised_separate_close_matches() function is used to separate the close matching rows between two data sets. This function separates the rows in a vectorized process, which involves using logical checks on vectors or matrices so Boolean operations can be used to separate the rows. This reduces computational time by two or three orders of magnitude, which is a worthy trade-off for the reduced readability. The function handles close matching rows in the following order:
+  - The vectorised_separate_close_matches() function is used to separate the close matching rows between two data sets. This function separates the rows in a vectorized process, which involves using logical checks on vectors or matrices so Boolean operations can be used to separate the rows. This reduces processing time by two or three orders of magnitude, which is a worthy trade-off for the reduced readability. The function handles close matching rows in the following order:
 
       - Rows with one-one close matches
       - Rows with many-many perfect matches
