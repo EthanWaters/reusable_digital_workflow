@@ -374,7 +374,25 @@ Configuration files should not be altered, instead new alternative configuration
 - **Description:**
     - Determines if the dataframe derived from app export is missing information about the site or reef. Creates a geometry collection with available coordinates and extracts the the missing information from the RDS file. 
           
-          
+  
+#### Function: `site_numbers_to_names(numbers, reef_names)`
+- **Input:**
+    - `numbers`: A vector of numeric or string types indicating the site.
+    - `reef_names`: A vector of reef names as strings that correspond with the numbers provided. 
+- **Output:**
+    - vector of site names as strings
+- **Description:**
+    - convert site numbers to names
+     
+
+#### Function: `aggregate_culls_site_resolution_research(data_df)`
+- **Input:**
+    - `data_df`: dataframe of control data.
+- **Output:**
+    - Dataframe of aggregated control data.
+- **Description:**
+    - aggregates cull data to the site level for a vessel voyage
+                     
                
 #### Function: `separate_control_dataframe(new_data_df, legacy_data_df, control_data_type)`
 - **Input:**
