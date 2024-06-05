@@ -38,7 +38,7 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
       configuration <- fromJSON(configuration_path)
     }
     
-    most_recent_kml_path <- find_recent_file(configuration$metadata$input_directory$spatial_data, "sites", "kml")
+    most_recent_kml_path <- find_recent_file(configuration$metadata$input_directory$spatial_data, "Sites", "kml")
     most_recent_report_path <- find_recent_file(configuration$metadata$output_directory$reports, configuration$metadata$control_data_type, "json")
     most_recent_leg_path <- find_recent_file(configuration$metadata$output_directory$control_data_unaggregated, configuration$metadata$control_data_type, "csv")
     serialised_spatial_path <- find_recent_file(configuration$metadata$output_directory$spatial_data, "site_regions", "rds")
@@ -194,6 +194,13 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
       write.csv(verified_aggregated_df, paste(configuration$metadata$control_data_type,"_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv", sep = ""), row.names = FALSE)
       
     })
+    
+    # Reset
+    new_path <- NULL
+    configuration_path <- NULL
+    kml_path <- NULL
+    leg_path <- NULL
+    
   }, error = function(e) {
     print(paste("Critical Error in workflow could not be resolved:", conditionMessage(e)))
   })

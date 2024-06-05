@@ -337,7 +337,7 @@ site_numbers_to_names <- function(numbers, reef_names){
   site_names <- paste(toupper(short_hand), labels, numbers, sep="_")
 }
 
-
+# aggregates cull data to the site level for a vessel voyage
 aggregate_culls_site_resolution_research <- function(data_df) {
   col_names <- colnames(data_df)
   
@@ -1949,7 +1949,7 @@ find_recent_file <- function(directory_path, keyword, file_extension) {
       return(NULL)
     }
     file_infos <- lapply(files, file.info)
-    creation_times <- sapply(file_infos, function(info) info$ctime)
+    creation_times <- sapply(file_infos, function(info) info$mtime)
     most_recent_index <- which.max(creation_times)
     return(files[most_recent_index])
   }, error = function(e) {
