@@ -150,13 +150,11 @@ Manta tow centroids are transformed into point representations. Iterating throug
 Output locations are defined in the configuration files and will be created if they do not already exist. Any output will be saved with the naming convention: `Keyword`_`%Y%m%d`_`%H%M%S`.`File extension. Do NOT remove data outputs, simply take a copy. Previous outputs are utilised to reduce processing and reduce errors. 
 
 ### 3.2 Reusable Workflow - Ingest Control Program Data 
-This R code defines a data processing pipeline that ingests JSON exports from GBRMPA owned PWAs then formats, verifies and exports the data for utilization in the Cots Control Centre Decision Support Tool. The `main()` function is the entry point of the pipeline.   
-
+This R code defines a data processing pipeline that ingests JSON exports from GBRMPA owned PWAs then formats, verifies and exports the data for utilization in the Cots Control Centre Decision Support Tool. The `main()` function is the entry point of the pipeline and requires a list of JSON files to ingest, a path to the config file, and a connection string to connect to the database. This workflow was produced so that previous 
 
 ## 4.0 Code Documentation
 
 #### Function: `main(new_path, configuration_path, kml_path, leg_path)`
-
 - **Input:**
     - `leg_path`: path to the legacy data file
     - `new_path`: path to the new control data file
@@ -167,15 +165,19 @@ This R code defines a data processing pipeline that ingests JSON exports from GB
 - **Description:**
     - This function is the main function that runs the data processing pipeline, creates a metadata report to document noteworthy information, assigns sites to the data if relevent and then exports it for scientific use.
 
-#### Function: `import_data(data, control_data_type, is_powerBI_export, sheet)`
-
+#### Function: `import_data(data, index=1)`
 - **Input:**
   - `data`: file path to the file containing data desired to be in dataframe format
-  - `configuration`: dataframe containing metadata and column mappings for control data 
+  - `index`: Index of the Excel sheet to import  
 - **Output:**
     - dataframe containing imported data
 - **Description:**
     - This function reads data from a file and returns a dataframe. It determines the file type and reads the file using the appropriate method. 
+    
+#### Function: `get_datetime_parse_order()`
+- **Output:**
+    - A vector of datetime formats to parse strings into date or datetime objects 
+ 
 
 #### Function: `contribute_to_metadata_report(data, key="Warning")`
 - **Input:**
@@ -185,6 +187,80 @@ This R code defines a data processing pipeline that ingests JSON exports from GB
     - None
 - **Description:**
     - This function adds information to the XML metadata report from the information obtained in the previously executed function to the desired control data node.
+    
+    
+#### Function: `get_vessel_short_name(string)`
+- **Input:**
+    - `string`: A string or vector of strings that are vessel names.  
+- **Output:**
+    - A string or vector of string are short hand for vessel names.
+- **Description:**
+    - Gets short hand of vessel names. This is the first letter of each word or the entire word if its a single word.
+    
+    
+#### Function: `get_file_keyword(string)`
+- **Input:**
+    - `string`: A string.  
+- **Output:**
+    - Key word to indicate control data type.
+- **Description:**
+    - Extracts key word to indicate control data type from a string.
+    
+
+#### Function: `append_to_table_unique(con, table_name, data_df)`
+- **Input:**
+    - `con`: A database connection object from DBI package.
+    - `table_name`: Name of table to append data as string. Case sensitive. 
+    - `data_df`: Dataframe to append. 
+- **Output:**
+    - None
+- **Description:**
+    - Appends rows to table from dataframe that do not already exist in the database
+
+    
+#### Function: `get_id_by_cell(con, table_name, search_column, search_term)`
+- **Input:**
+    - `con`: A database connection object from DBI package.
+    - `table_name`: Name of table to append data as string. Case sensitive. 
+    - `search_column`: Name of column in database to check for value as string. 
+    - `search_term`: Value to search for in database.  
+- **Output:**
+    - vector of IDs
+- **Description:**
+    - Appends rows to table from dataframe that do not already exist in the database
+
+
+#### Function: `get_id_by_row(con, table_name, data_df)`
+- **Input:**
+    - `con`: A database connection object from DBI package.
+    - `table_name`: Name of table to extract IDs. Case sensitive. 
+    - `data_df`: Dataframe to perform left join with. 
+- **Output:**
+    - vector of IDs
+- **Description:**
+    - Retrieve IDs from a database table based on matching rows in an input dataframe, using a left join operation 
+    
+  
+#### Function: `get_voyage_dates_strings(strings)`
+- **Input:**
+    - `strings`: A vector of strings
+- **Output:**
+    - A list containing two vectors of dates
+- **Description:**
+    - Get voyage dates with regex from a vector of strings. This was initially created to ingest dates from strings in JSON files that do not have consistent formatting. 
+    
+
+#### Function: `get_app_data_database(con, control_data_type)`
+- **Input:**
+    - `con`: A database connection object from DBI package.
+    - `control_data_type`: A string key word to indicate type of control data. 
+- **Output:**
+    - A dataframe 
+- **Description:**
+    - Extract required data from Cots Control 
+    
+           
+    
     
 #### Function: `separate_control_dataframe(new_data_df, legacy_data_df, control_data_type)`
 - **Input:**

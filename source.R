@@ -64,17 +64,17 @@ get_vessel_short_name <- function(string) {
   }
 }
 
-get_file_keyword <- function(input_string) {
+get_file_keyword <- function(string) {
   
   # Convert the input string to lowercase for case-insensitive matching
-  input_string <- tolower(input_string)
-  if (grepl("cull|dive", input_string)) {
+  string <- tolower(string)
+  if (grepl("cull|dive", string)) {
     return("cull")
   }
-  if (grepl("manta|surveillance", input_string)) {
+  if (grepl("manta|surveillance", string)) {
     return("manta_tow")
   }
-  if (grepl("rhis|survey|health", input_string)) {
+  if (grepl("rhis|survey|health", string)) {
     return("rhis")
   }
   return(NA)
@@ -111,6 +111,9 @@ get_id_by_row <- function(con, table_name, data_df) {
   return(merged_df$id)
 }
 
+
+# get voyage dates with regex from a vector of strings. This was initially created
+# to ingest dates from strings in JSON files that do not have consistent formatting.
 get_voyage_dates_strings <- function(strings) {
   
   date_df <- data.frame(start_date = character(), stop_date = character(), stringsAsFactors = FALSE)
@@ -150,7 +153,8 @@ get_app_data_database <- function(con, control_data_type){
       INNER JOIN reef ON site.reef_id = reef.id
       "
   } else {
-    
+    ### WRITE QUERY FOR RHIS ###
+    query <- ""
   }
   
   result <- dbGetQuery(con, query)
