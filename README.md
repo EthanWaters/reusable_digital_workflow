@@ -145,10 +145,13 @@ To calculate the distance between a point and a polygon, the function `st_distan
 
 Manta tow centroids are transformed into point representations. Iterating through the set of rasters, the tow points are filtered based on the reef name of the raster. The value of the raster at each centroid point is extracted and the results merged with the manta tow data input.  
 
-
 #### 3.1.4 Export Data
 
 Output locations are defined in the configuration files and will be created if they do not already exist. Any output will be saved with the naming convention: `Keyword`_`%Y%m%d`_`%H%M%S`.`File extension. Do NOT remove data outputs, simply take a copy. Previous outputs are utilised to reduce processing and reduce errors. 
+
+### 3.2 Reusable Workflow - Ingest Control Program Data 
+This R code defines a data processing pipeline that ingests JSON exports from GBRMPA owned PWAs then formats, verifies and exports the data for utilization in the Cots Control Centre Decision Support Tool. The `main()` function is the entry point of the pipeline.   
+
 
 ## 4.0 Code Documentation
 

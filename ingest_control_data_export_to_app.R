@@ -32,7 +32,6 @@ main <- function(script_dir, configuration_path, connection_string, new_files) {
     # connection_string <- "MySQL://root:csiro@127.0.0.1:3306/cotscontrolcentre"
     # new_files <- c("Input/control_data/TAB#3 COTS_Surveillance_2024_1_22_9_9_7.json", "Input/control_data/TAB#5 COTS_Surveillance_2024_1_20_17_49_58.json", "Input/control_data/TAB#6 COTS_Surveillance_2024_1_20_17_49_21.json")
     
-    
     components <- unlist(strsplit(connection_string, "://|:|@|/", perl = TRUE))
     
     print(class(new_files))
