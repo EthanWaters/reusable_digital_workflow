@@ -260,13 +260,13 @@ This R code defines a data processing pipeline that ingests JSON exports from GB
     - Extract required data from Cots Control Centre databases to use as legacy dataset in reusable workflow. 
     
            
-#### Function: `seperate_date_time_manta_tow(data_df)`
+#### Function: `seperate_date_time_manta_tow(date_time)`
 - **Input:**
-    - `data_df`: A dataframe containing control data.
+    - `date_time`: A vector of datetimes.
 - **Output:**
     - A vector of strings formatted to appropriately represent time  
 - **Description:**
-    - Extract time from . 
+    - Parse datetimes and then extract the time component for a vector of datetimes. 
     
          
              

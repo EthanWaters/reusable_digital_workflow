@@ -113,7 +113,7 @@
       {
         "field": "Tow Time",
         "position": 3,
-        "default": "seperate_date_time_manta_tow({DATAFRAME})",
+        "default": "seperate_date_time({DATAFRAME}$`Tow date`)",
         "function_call": true
       },
       {
