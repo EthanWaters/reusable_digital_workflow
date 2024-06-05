@@ -165,7 +165,7 @@ get_app_data_database <- function(con, control_data_type){
 
 
 # Parse datetimes and then extract the time component for a vector of datetimes. 
-seperate_date_time <- function(date_time){
+separate_date_time <- function(date_time){
   is_date_time_na <- is.na(date_time)
   date_time <- parse_date_time(date_time[!is_date_time_na], orders = get_datetime_parse_order())
   time <- format(date_time, "%H:%M:%S")

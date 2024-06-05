@@ -150,9 +150,12 @@ Manta tow centroids are transformed into point representations. Iterating throug
 Output locations are defined in the configuration files and will be created if they do not already exist. Any output will be saved with the naming convention: `Keyword`_`%Y%m%d`_`%H%M%S`.`File extension. Do NOT remove data outputs, simply take a copy. Previous outputs are utilised to reduce processing and reduce errors. 
 
 ### 3.2 Reusable Workflow - Ingest Control Program Data 
-This R code defines a data processing pipeline that ingests JSON exports from GBRMPA owned PWAs then formats, verifies and exports the data for utilization in the Cots Control Centre Decision Support Tool. The `main()` function is the entry point of the pipeline and requires a list of JSON files to ingest, a path to the config file, and a connection string to connect to the database. This workflow was produced so that previous 
+This R code defines a data processing pipeline that ingests JSON exports from GBRMPA owned PWAs then formats, verifies and exports the data for utilization in the Cots Control Centre Decision Support Tool. The `main()` function is the entry point of the pipeline and requires a list of JSON files to ingest, a path to the config file, and a connection string to connect to the database. This workflow was produced so that previous
 
-## 4.0 Code Documentation
+## 4.0 Configuration file 
+Configuration files should not be altered, instead new alternative configuration files should be produced. Config files exist for both workflows that specify expected column transformations, new columns required, their default values and data types. Other config files exist to map database column names to research output column names to reuse aspects of the codebase.  
+
+## 5.0 Code Documentation
 
 #### Function: `main(new_path, configuration_path, kml_path, leg_path)`
 - **Input:**
@@ -260,15 +263,58 @@ This R code defines a data processing pipeline that ingests JSON exports from GB
     - Extract required data from Cots Control Centre databases to use as legacy dataset in reusable workflow. 
     
            
-#### Function: `seperate_date_time_manta_tow(date_time)`
+#### Function: `separate_date_time(date_time)`
 - **Input:**
     - `date_time`: A vector of datetimes.
 - **Output:**
     - A vector of strings formatted to appropriately represent time  
 - **Description:**
     - Parse datetimes and then extract the time component for a vector of datetimes. 
+  
     
-         
+#### Function: `get_reef_label(names)`
+- **Input:**
+    - `names`: A vector of strings.
+- **Output:**
+    - A vector of GBRMPA reef IDs as strings. These are often referred to as reef labels.  
+- **Description:**
+    - Extract GBRMPA reef IDs from a vector of strings. 
+              
+
+#### Function: `get_start_and_end_coords_research(start_lat, stop_lat, start_long, stop_long)`
+- **Input:**
+    - `start_lat`:A vector of initial latitude values of size n.
+    - `stop_lat`: A vector of final latitude values of size n
+    - `start_long`: A vector of initial longitude values of size n
+    - `stop_long`: A vector of final longitude values of size n
+- **Output:**
+    - A list of coordinates   
+- **Description:**
+    - Aggregates coordinates of ecological observations that requires several trip to survey the desired region. This specific iteration of the function utilises the naming convention of the research format. This should be depreciated in future in place of a single function for research and app data.
+              
+
+#### Function: `get_start_and_end_coords_app(start_lat, stop_lat, start_long, stop_long)`
+- **Input:**
+    - `start_lat`:A vector of initial latitude values of size n.
+    - `stop_lat`: A vector of final latitude values of size n
+    - `start_long`: A vector of initial longitude values of size n
+    - `stop_long`: A vector of final longitude values of size n
+- **Output:**
+    - A list of coordinates   
+- **Description:**
+    - Aggregates coordinates of ecological observations that requires several trip to survey the desired region. This specific iteration of the function utilises the naming convention of the app format. This should be depreciated in future in place of a single function for research and app data.
+    
+    
+#### Function: `get_start_and_end_coords_base(start_lat, stop_lat, start_long, stop_long)`
+- **Input:**
+    - `start_lat`:A vector of initial latitude values of size n.
+    - `stop_lat`: A vector of final latitude values of size n
+    - `start_long`: A vector of initial longitude values of size n
+    - `stop_long`: A vector of final longitude values of size n
+- **Output:**
+    - A list of coordinates   
+- **Description:**
+    - Aggregates coordinates of ecological observations that requires several trip to survey the desired region. This specific iteration of the function is the base for both data formats.
              
     
 #### Function: `separate_control_dataframe(new_data_df, legacy_data_df, control_data_type)`
