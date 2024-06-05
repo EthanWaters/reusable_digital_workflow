@@ -1,19 +1,24 @@
 # Control Data Reusable Workflow
 
-<img src="https://camo.githubusercontent.com/0058ce9713cb93a553c2f23207afbb49b1b852a70a4a24de20e2e816c58b299e/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f6c6966656379636c652d6578706572696d656e74616c2d6f72616e67652e737667" alt="Lifecycle: experimental" data-canonical-src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" style="max-width: 100%;">
+<img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental" data-canonical-src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" style="max-width: 100%;">
 
 ## 1.0 Overview
 
-The overall purpose of this workflow is to clean and wrangle control program data from GBRMPA so that it takes a standardised form to be utilised in research. This R code defines a data processing pipeline that imports, formats, and verifies data. It also creates a metadata report to document the pipeline. The `main()` function is the entry point of the pipeline. It takes as inputs the paths to the legacy data, new data ,KML data, and JSON configuration file. The data can then be assigned to the nearest sites.
+The overall purpose of this codebase is to clean, wrangle and perform geospatial analysis on control program data from GBRMPA into a standardised form utilisation in research or decision support tools. `source.R` defines a large set of functions for this and generally serves one of the following purposes:
 
-The four major steps in this process are as follows:
+  1. `Data Transformation`
+  2. Perform `Error Checking & Processing`
+  3. `Site Assignment` to control data if applicable
+  4. `Aggregation and Export` 
 
-  1. `Data Transformation` to legacy format .
-  2. Perform `Error Checking & Processing`.
-  3. Perform `Site Assignment` to control data if applicable.
-  4. `Export` 
+Functions defined in `source.R` are then utilisesd to produce several application specific reusable workflows
 
-For further information see Reusable Digital Workflows Systems Diagrams and Reusable Digital Workflows Psudo Code Systems Diagrams
+  1. `process_control_data_research_output.R`
+  2. `ingest_control_data_export_to_app.R`
+
+
+
+This R code defines a data processing pipeline that imports, formats, and verifies data. It also creates a metadata report to document the pipeline. The `main()` function is the entry point of the pipeline. It takes as inputs the paths to the legacy data, new data ,KML data, and JSON configuration file. The data can then be assigned to the nearest sites.
 
 ## 1.1 Term Definitions
 This section defines several terms utilized throughout the documentation to ensure clarity. 
@@ -24,9 +29,14 @@ This section defines several terms utilized throughout the documentation to ensu
   
   
 ## 2.0 Installation & Requirements
-This workflow is designed to be run on a server with in conjunction with an automate script. It may be easier to run source code in place of the container for one time uses. Docker is utilised to ensure that the client environment remains consistent with the dev environment, see section 2.1 for instructions. See section 2.2 & 2.3 for details of all packages installed in dev environment.  
+This codebase is designed to be automated with Azure and not run locally. 
+
+Docker containers have been produced during the development of this code base to ensure that the client environment remains consistent with the dev environment, see section 2.1 for instructions. See section 2.2 & 2.3 for details of all packages installed in dev environment. There is no guarantee that the docker images are up-to-date.
 
 This requires Docker version 24.0.6:https://www.docker.com/products/docker-desktop/
+
+Although not recommended, the scripts can be executed locally after running the setup scripts. On windows execute the setup and dependencies batch files. On Linux run the setup and dependencies shell files
+
 
 ### 2.1.1 How to update source code
 ```bash
@@ -36,12 +46,12 @@ This requires Docker version 24.0.6:https://www.docker.com/products/docker-deskt
 
 # 1. Update source code tag e.g.
 #SPECIFY DESIRED VERSION BY REPLACEING "latest"
-git tag -a vlatest -m "Version latest"
-git push origin vlatest
+git tag -a v[latest] -m "Version latest"
+git push origin v[latest]
 
 # 3. Build, tag and push the Docker image
-docker build -t ghcr.io/ethanwaters/reusable_digital_workflow:latest .
-docker push ghcr.io/ethanwaters/reusable_digital_workflow:latest
+docker build -t ghcr.io/[USERNAME]/reusable_digital_workflow:latest .
+docker push ghcr.io/[USERNAME]/reusable_digital_workflow:latest
 ```
 
 ### 2.1.2 How to run code
@@ -50,13 +60,12 @@ Do NOT use anything other than the latest version. Assume previous versions cont
 
 ```bash
 #SPECIFY DESIRED VERSION BY REPLACEING "latest"
-docker pull ghcr.io/ethanwaters/reusable_digital_workflow:latest
-docker run ghcr.io/ethanwaters/reusable_digital_workflow:latest
+docker pull ghcr.io/[USERNAME]/reusable_digital_workflow:latest
+docker run ghcr.io/[USERNAME]/reusable_digital_workflow:latest
 
 ```
 
 #### 2.2 R Environment Information
-This is all taken care of by docker.
 
 - R version: 4.2.1 (2022-06-23 ucrt)
 - Platform: x86_64-w64-mingw32
@@ -98,6 +107,7 @@ This is all taken care of by docker.
 | furrr         | 0.3.1     |
 | foreach       | 1.5.2     |
 | doParallel    | 1.0.17    |
+| DBI           | 1.1.3     |
 
 ```R 
 install.packages("tools", version = "4.2.1", dependencies = TRUE)  
@@ -129,6 +139,7 @@ install.packages("stringr", version = "1.4.1", dependencies = TRUE)
 install.packages("furrr", version = "0.3.1", dependencies = TRUE)  
 install.packages("foreach", version = "1.5.2", dependencies = TRUE)  
 install.packages("doParallel", version = "1.0.17", dependencies = TRUE)
+install.packages("DBI", version = "1.1.3", dependencies = TRUE)
 ```
 
 ## 3.1 Data Transformation
