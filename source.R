@@ -1869,7 +1869,9 @@ map_new_fields <- function(data_df, transformed_df, new_fields){
   return(transformed_df)
 }  
 
-
+# Get the default value of new columns required in the dataframe from the
+# configuration file.The default value can be a function in the form of string 
+# that will be executed if the default value is dependent on other columns. 
 get_new_field_default_values <- function(data_df, new_fields){
   new_fields <- new_fields[new_fields$function_call == TRUE,]
   for (i in seq_len(nrow(new_fields))) {
