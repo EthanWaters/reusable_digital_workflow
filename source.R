@@ -2486,43 +2486,24 @@ simplify_kml_polyogns_rdp <- function(kml_data){
   simplified_kml_data <- kml_data
   for (j in 1:length(kml_data)){
     reef_geometries <- kml_data[[j]][["geometry"]]
-
-    
-    # for(i in 1:length(reef_geometries)){
-    #   # A vast majority of reef_geometries at this level are polygons but 
-    #   # occasionally they are geometrycollections and require iteration. 
-    #   
-    #   site_polygon <- reef_geometries[[i]]
-    #   geometry_type <- st_geometry_type(site_polygon)
-    #   if (geometry_type %in% c("GEOMETRYCOLLECTION", "MULTIPOLYGON")){
-    #     for (k in 1:length(site_polygon)){
-    #       spatial_object <- site_polygon[[k]]
-    #       geometry_type <- st_geometry_type(spatial_object)
-    #       if (!(geometry_type %in% c("POINT"))){
-    #         polygon_points <- spatial_object[[1]]
-    #         approx_polygon_points <- polygon_rdp(polygon_points)
-    #         site_polygon[[k]][[1]] <- approx_polygon_points
-    #       }
-    #     }
-    #   } else if (geometry_type %in% c("POLYGON")){
-    #     polygon_points <- site_polygon[[1]]
-    #     approx_polygon_points <- polygon_rdp(polygon_points)
-    #     site_polygon[[1]] <- approx_polygon_points
-    #   }
-    #   reef_geometries_updated[[i]] <- site_polygon
-    # }
-    simplified_kml_data[[j]][["geometry"]] <- get_polygon_rec(reef_geometries)
+    simplified_kml_data[[j]][["geometry"]] <- simplify_geometry_rec(reef_geometries)
     
   }
   return(simplified_kml_data)
 }
 
-
-get_polygon_rec <- function(geometry){
-  
+# This is a recursive function that takes a geometry and recursively finds and 
+# simplifies polygons with the Ramer-Douglas-Peucker algorithm.
+simplify_geometry_rec <- function(geometry){
   for (i in 1:length(geometry)){
     polygon <- geometry[[i]]
-    geometry_type <- st_geometry_type(polygon)
+    geometry_type <- NULL
+    tryCatch({
+      geometry_type <- st_geometry_type(polygon)
+    }, error = function(e) {
+      geometry_type <- "LIST"
+    })
+    
     if(geometry_type %in% c("GEOMETRYCOLLECTION", "MULTIPOLYGON")){
       polygon <- get_polygon_rec(polygon)
     } else if (!(geometry_type %in% c("POINT"))){
