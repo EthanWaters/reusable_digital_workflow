@@ -2505,7 +2505,7 @@ simplify_geometry_rec <- function(geometry){
     })
     
     if(geometry_type %in% c("GEOMETRYCOLLECTION", "MULTIPOLYGON")){
-      polygon <- get_polygon_rec(polygon)
+      polygon <- simplify_geometry_rec(polygon)
     } else if (!(geometry_type %in% c("POINT"))){
       polygon_points <- polygon[[1]]
       approx_polygon_points <- polygon_rdp(polygon_points)
