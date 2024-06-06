@@ -665,14 +665,25 @@ Configuration files should not be altered, instead new alternative configuration
 - **Description:**
   - This function checks for valid feeding scars in the "Feeding Scars" column of the data frame. It compares the values to a predefined set of valid scars ('a', 'p', 'c'). If invalid scars are found, error flags are added, and a warning message is generated.
 
+
 #### Function: `verify_tow_date(data_df)`
 - **Inputs:**
-- `data_df`: Data frame containing control data.
-
+  - `data_df`: Data frame containing control data.
 - **Outputs:**
   - `data_df`: Updated data frame with error flags added.
 - **Description:**
   - This function approximates tow dates based on vessel and voyage if they do not exist. It identifies incomplete tow dates, estimates missing dates based on the same vessel and voyage, and sets error flags for rows with missing tow dates. Warning messages are generated for tow date estimations and rows with no tow dates.
+
+
+#### Function: `get_new_field_default_values(data_df, new_fields)`
+- **Inputs:**
+  - `data_df`: Data frame containing control data.
+  - `new_fields`: JSON object containing information about the new field and its default value
+- **Outputs:**
+  - `data_df`: Updated dataframe with default values in specified columns.
+- **Description:**
+  - Get the default value of new columns required in the dataframe from the configuration file.The default value can be a function in the form of string that will be executed if the default value is dependent on other columns. 
+
 
 #### Function: `transform_data_structure(data_df, mappings, new_fields)`
 - **Inputs:**
@@ -689,10 +700,12 @@ Configuration files should not be altered, instead new alternative configuration
   - `data_df`: Data frame containing observations.
   - `kml_path`: Path to the KML file containing reef polygons.
   - `keyword`: Keyword used in file naming convention.
-  - `calculate_site_rasters`: Flag indicating whether to calculate site regions or load precomputed data.
-  - `kml_path_previous`: Path to the previous version of the KML file for comparison (optional).
+  - `kml_path_previous`: Path to the KML file containing reef polygons used in last iteration of workflow (optional).
+  - `serialised_raster_path`: Path to a serialised raster with pixels assigned to sites from previous iteration of workflow (optional). 
+  - `spatial_output_path`: Path to output serialised raster produced (optional).
   - `spatial_path`: Path to the serialized spatial data file (optional).
-  - `raster_size`: Size of the raster cells. Can specify resolution with a value less than 1 or specify the pixel length of the raster extent.
+  - `raster_size`: Size of the raster cells. Can specify resolution with a value less than 1 or specify the pixel length of the raster
+  extent.
   - `x_closest`: Assign nth closest site to point. Typically, in production, only the closest site is required; however, during development, multiple closest sites can be beneficial for analysis.
   - `is_standardised`: Flag indicating whether to standardize extents to the largest one in the provided data.
   - `save_spatial_as_raster`: Flag indicating whether to save the generated spatial data as individual raster files for analysis with traditional geospatial program such as Archgis and QGIS (optional).
@@ -702,6 +715,7 @@ Configuration files should not be altered, instead new alternative configuration
   - Reads the KML file containing reef polygons and extracts layer information.
   - Compares the current KML file with a previous version, if provided, and identifies the geometries that have require updating.
   - Loads or calculates site regions based on the KML data.
+    - Site regions are calculated by determining which site boundary is closest to every pixel. The raster pixel is then assigned the site number.   
   - Saves the site regions as R binary files for future use.
   - Optionally, saves the spatial data as raster files for visualization.
   - Retrieves the centroids of manta tow entries and assigns the nearest site information based on the calculated site regions.
@@ -744,7 +758,7 @@ Configuration files should not be altered, instead new alternative configuration
 - **Output:**
   - List of spatial differences between the current and previous versions.
 - **Description:**
-  - Compares spatial data between the current and previous versions and identifies differences. The function returns a list of spatial differences based on Reef IDs.
+  - Compares spatial data between the current and previous versions and identifies differences. The function returns a list Reef IDs indicating that is variation between the two spatial files.
 
 #### Function: `compute_checksum(data)`
 - **Input:**
@@ -846,7 +860,27 @@ Configuration files should not be altered, instead new alternative configuration
 - **Outputs:**
   - `result`: perpendicular distance
 - **Description:**
-Calculate perpendicular distance of a point p from a line segment AB for RDP method.
+  - Calculate perpendicular distance of a point p from a line segment AB for RDP method.
+
+
+#### Function: `simplify_kml_polyogns_rdp(kml_data)`
+- **Inputs:**
+  - `kml_data`: KML data as a list.
+- **Outputs:**
+  - Simplified polygon.
+- **Description:**
+  - Simplify all polygons in a list that was retrieved from the kml file with the Ramer-Douglas-Peucker algorithm
+
+
+#### Function: `simplify_shp_polyogns_rdp(shapefile)`
+- **Inputs:**
+  - `shapefile`: shapefile data.
+- **Outputs:**
+  - Simplified polygon.
+- **Description:**
+  - Simplify all polygons in a shapefile file with the Ramer-Douglas-Peucker algorithm
+
+
 
 #### Function: `find_largest_extent(kml_data)`
 - **Inputs:**
