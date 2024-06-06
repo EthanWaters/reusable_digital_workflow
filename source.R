@@ -2120,7 +2120,7 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
       
       tryCatch({
         base::message("Simplifying kml polygons...")
-        kml_data_simplified <- simplify_kml_polyogns_rdp(kml_data)
+        kml_data_simplified <- simplify_geometry_list_rdp(kml_data)
         base::message("Simplified kml polygons successfully")
         
       }, error = function(e) {
@@ -2134,7 +2134,7 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
       
       tryCatch({
         base::message("Simplifying kml polygons...")
-        kml_data_simplified <- simplify_kml_polyogns_rdp(kml_data_to_update)
+        kml_data_simplified <- simplify_geometry_list_rdp(kml_data_to_update)
         base::message("Simplified kml polygons successfully")
       }, error = function(e) {
         print(paste("Error Simplifying kml polygons", conditionMessage(e)))
@@ -2157,7 +2157,7 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
         
         tryCatch({
           base::message("Simplifying kml polygons...")
-          kml_data_simplified <- simplify_kml_polyogns_rdp(kml_data)
+          kml_data_simplified <- simplify_geometry_list_rdp(kml_data)
           base::message("Simplified kml polygons successfully")
         }, error = function(e) {
           print(paste("Error Simplifying kml polygons", conditionMessage(e)))
@@ -2446,40 +2446,7 @@ simplify_shp_polyogns_rdp <- function(shapefile){
 }
 
 
-simplify_kml_polyogns_rdp <- function(kml_data){
-  # simplify all polygons in a list that was retrieved from the kml file 
-  # the Ramer-Douglas-Peucker algorithm
-  
-  simplified_kml_data <- kml_data
-  for (j in 1:length(kml_data)){
-    reef_geometries <- kml_data[[j]][[3]]
-    reef_geometries_updated <- reef_geometries
-    for(i in 1:length(reef_geometries)){
-      # A vast majority of reef_geometries at this level are polygons but 
-      # occasionally they are geometrycollections and require iteration. 
-      
-      site_polygon <- reef_geometries[[i]]
-      if (class(site_polygon[[2]])[2] == "GEOMETRYCOLLECTION"){
-        for(k in 1:length(site_polygon[[2]])){
-          polygon_points <- site_polygon[[2]][[k]][[1]]
-          approx_polygon_points <- polygon_rdp(polygon_points)
-          site_polygon[[2]][[k]][[1]] <- approx_polygon_points
-        }
-      } else {
-        polygon_points <- site_polygon[[2]][[1]]
-        approx_polygon_points <- polygon_rdp(polygon_points)
-        site_polygon[[2]][[1]] <- approx_polygon_points
-      }
-      reef_geometries_updated[[i]] <- site_polygon
-    }
-    simplified_kml_data[[j]][[3]] <- reef_geometries_updated
-    
-  }
-  return(simplified_kml_data)
-}
-
-
-simplify_kml_polyogns_rdp <- function(kml_data){
+simplify_geometry_list_rdp <- function(kml_data){
   # simplify all polygons in a list that was retrieved from the kml file 
   # the Ramer-Douglas-Peucker algorithm
   
@@ -2501,7 +2468,7 @@ simplify_geometry_rec <- function(geometry){
     tryCatch({
       geometry_type <- st_geometry_type(polygon)
     }, error = function(e) {
-      geometry_type <- "LIST"
+      geometry_type <<- "LIST"
     })
     
     if(geometry_type %in% c("GEOMETRYCOLLECTION", "MULTIPOLYGON")){
