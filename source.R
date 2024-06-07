@@ -555,6 +555,7 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df){
     # because it will always be null if the data is exported from powerBI. 
     distance <- 3
     
+    base::message("Finding close matches...")
     temp_new_df <- new_data_df[ , -which(names(new_data_df) %in% required_columns)]
     temp_legacy_df <- legacy_data_df[ , -which(names(legacy_data_df) %in% required_columns)]
     close_match_rows <- matrix_close_matches_vectorised(temp_legacy_df, temp_new_df, distance)
@@ -562,7 +563,9 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df){
     # There can be many to many perfect matches. This means that there will be 
     # multiple indices referring to the same row for perfect duplicates. 
     # unique() should be utilised when subsetting the input dataframes.
+    
     if(nrow(close_match_rows) > 0){
+      base::message("Close matches found.")
       separated_close_matches <- vectorised_separate_close_matches(close_match_rows)
       perfect_duplicates <- new_data_df[unique(separated_close_matches$perfect[,2]),]
       new_entries_i <- unique(c(separated_close_matches$discrepancies[,2],separated_close_matches$perfect[,2]))
@@ -595,6 +598,7 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df){
       verified_discrepancies <- compare_discrepancies(new_data_df, legacy_data_df, separated_close_matches$discrepancies)
 
     } else {
+      base::message("No close matches found treating entire dataset as new")
       new_entries <- new_data_df
     }
     
@@ -2031,6 +2035,7 @@ get_spatial_differences <- function(kml_data, previous_kml_data){
   return(spatial_differences)
 }
 
+
 compute_checksum <- function(data) {
   digest(data, algo = "md5", serialize = TRUE)
 }
@@ -2142,6 +2147,7 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_pr
       })
       
       tryCatch({
+        base::message("Number of Rasters to Update: ", length(kml_data_simplified))
         updated_layer_names_vec <- names(kml_data_simplified)
         updated_site_regions <- assign_raster_pixel_to_sites_original(kml_data_simplified, updated_layer_names_vec, crs, raster_size, x_closest, is_standardised)
         
