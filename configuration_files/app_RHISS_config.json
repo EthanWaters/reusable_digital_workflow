@@ -462,7 +462,8 @@
       {
         "field": "error_flag",
         "position": 105,
-        "default": 0
+        "default": 0,
+        "function_call": true
       }
     ],
     "data_type_mappings": [
