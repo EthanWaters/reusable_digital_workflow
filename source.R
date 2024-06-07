@@ -1882,12 +1882,12 @@ get_new_field_default_values <- function(new_data_df, transformed_data_df, new_f
   for (i in seq_len(nrow(new_fields))) {
         default_value <- new_fields$default[i]
         expression <- gsub("\\{TRANSFORMED_DATAFRAME\\}", "transformed_data_df", default_value)
-        expression <- gsub("\\{DATAFRAME\\}", "data_df", expression)
+        expression <- gsub("\\{RAW_DATAFRAME\\}", "new_data_df", expression)
         default_value <- eval(parse(text = expression))
         position <- new_fields$position[i]
-        data_df[, position] <- default_value
+        transformed_data_df[, position] <- default_value
   }
-  return(data_df)
+  return(transformed_data_df)
 }
 
 
