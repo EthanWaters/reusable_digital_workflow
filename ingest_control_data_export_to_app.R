@@ -1,29 +1,35 @@
 
-main <- function(script_dir, configuration_path, connection_string, new_files) {
+main <- function(script_dir, configuration_path, serialised_spatial_path, connection_string, new_files) {
    
   tryCatch({
     
-     # Initialize -------------------------------------------------------------
+   # Initialize -------------------------------------------------------------
     setwd(dirname(script_dir))
     source("source.R")
     library("tools")
     library("installr")
+    library("sets")
+    library("methods")
     library("rio")
     library("dplyr")
-    library("sf")
-    library("stars")
-    library("lwgeom")
-    library("terra")
-    library("raster")
     library("stringr")
+    library("fastmatch")
     library("lubridate")
     library("rlang")
+    library("purrr")
     library("jsonlite")
+    library("sf")
+    library("raster")
+    library("terra")
+    library("units")
     library("tidyverse")
     library("tidyr")
+    library("lwgeom")
+    library("stars")
     library("stringr")
-    library("DBI")
-    library("RMySQL")
+    library("future")
+    library("foreach")
+    library("doParallel")
     
     # configuration_path <- "D:\\COTS\\on_water_PWA\\cots_on_water_pwa_draft\\back_end\\reusable_digital_workflow\\configuration_files\\app_manta_tow_config.json"
     # connection_string <- "MySQL://root:csiro@127.0.0.1:3306/cotscontrolcentre"
@@ -60,8 +66,6 @@ main <- function(script_dir, configuration_path, connection_string, new_files) {
     con <- DBI::dbConnect(RMySQL::MySQL(), user = username,password = password,host = hostname,port = as.integer(port),dbname = database_name, load_data_local_infile = TRUE)
     legacy_df <- get_app_data_database(con, configuration$metadata$control_data_type)
     
-    serialised_spatial_path <- find_recent_file(configuration$metadata$input_directory$serialised_spatial_path, "site", "rds")
-  
     transformed_data_df <- map_data_structure(new_data_df, configuration$mappings$transformations, configuration$mappings$new_fields)
   
     # Convert column names of both legacy (app data) and new data (json export) to
