@@ -5,7 +5,7 @@ main <- function(script_dir, configuration_path, connection_string, new_files) {
   data <- data.frame(configuration_path = configuration_path, file_paths = new_files, stringsAsFactors = FALSE)
   
   # Write the dataframe to a CSV file
-  write.csv(data, file = "file_paths.csv", row.names = FALSE)
+  write.csv(data, file = "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\file_paths.csv", row.names = FALSE)
   
 }
   
