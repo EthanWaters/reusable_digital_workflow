@@ -8,32 +8,32 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     source("source.R")
     library("tools")
     library("installr")
-    library("sets")
-    library("methods")
     library("rio")
     library("dplyr")
+    library("sf")
+    library("stars")
+    library("lwgeom")
+    library("terra")
+    library("raster")
     library("stringr")
-    library("fastmatch")
     library("lubridate")
     library("rlang")
-    library("purrr")
     library("jsonlite")
-    library("sf")
-    library("raster")
-    library("terra")
-    library("units")
     library("tidyverse")
     library("tidyr")
-    library("lwgeom")
-    library("stars")
     library("stringr")
-    library("future")
-    library("foreach")
-    library("doParallel")
+    library("DBI")
+    library("RMySQL")
     
     # configuration_path <- "D:\\COTS\\on_water_PWA\\cots_on_water_pwa_draft\\back_end\\reusable_digital_workflow\\configuration_files\\app_manta_tow_config.json"
     # connection_string <- "MySQL://root:csiro@127.0.0.1:3306/cotscontrolcentre"
     # new_files <- c("Input/control_data/TAB#3 COTS_Surveillance_2024_1_22_9_9_7.json", "Input/control_data/TAB#5 COTS_Surveillance_2024_1_20_17_49_58.json", "Input/control_data/TAB#6 COTS_Surveillance_2024_1_20_17_49_21.json")
+    
+    base::message(script_dir)
+    base::message(configuration_path)
+    base::message(serialised_spatial_path)
+    base::message(connection_string)
+    base::message(new_files)
     
     components <- unlist(strsplit(connection_string, "://|:|@|/", perl = TRUE))
 
@@ -51,7 +51,8 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     
     new_data_df <- fromJSON(new_files[1])
     for(i in 2:length(new_files)){
-      new_data_df <- rbind(new_data_df, fromJSON(new_files[i]))
+      file_path <- normalizePath(new_files[i], "/", mustWork = FALSE)
+      new_data_df <- rbind(new_data_df, fromJSON(file_path))
     }
     
     voyage_dates <- get_voyage_dates_strings(new_data_df$CrownOfThornsStarfishVoyageTitle)
@@ -65,6 +66,8 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
   
     con <- DBI::dbConnect(RMySQL::MySQL(), user = username,password = password,host = hostname,port = as.integer(port),dbname = database_name, load_data_local_infile = TRUE)
     legacy_df <- get_app_data_database(con, configuration$metadata$control_data_type)
+    
+    serialised_spatial_path <- find_recent_file(configuration$metadata$input_directory$serialised_spatial_path, "site", "rds")
     
     transformed_data_df <- map_data_structure(new_data_df, configuration$mappings$transformations, configuration$mappings$new_fields)
   
@@ -109,7 +112,7 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     } else if (control_data_type == "cull") { 
       verified_df <- aggregate_culls_site_resolution_app(verified_new_df)
     }
-  
+    
     tryCatch({
       if(control_data_type != "RHIS"){
         
@@ -169,9 +172,9 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     }, error = function(e) {
       print(paste("Error uploading entry",i , ":", conditionMessage(e)))
     })
-    
     dbDisconnect(con)
   }, error = function(e) {
+
     print(paste("Error:", conditionMessage(e)))
   })  
 }
@@ -180,10 +183,12 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
 args <- commandArgs(trailingOnly = TRUE)
 script_dir <- args[1]
 configuration_path <- args[2]
-connection_string <- args[3]
-new_files <- args[-c(1:3)]
+serialised_spatial_path <- args[3]
+connection_string <- args[4]
+new_files <- args[-c(1:4)]
 
-main(script_dir, configuration_path, connection_string, new_files)
+
+main(script_dir, configuration_path, serialised_spatial_path, connection_string, new_files)
 
 
 
