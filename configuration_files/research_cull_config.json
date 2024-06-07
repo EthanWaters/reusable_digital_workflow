@@ -10,7 +10,8 @@
     "is_ID_preferred": [true],
     "assign_sites": [true],
     "output_directory": {
-      "control_data": ["Output/control_data"],
+      "control_data_aggregated": ["Output/control_data/site_aggregation"],
+      "control_data_unaggregated": ["Output/control_data/unaggregated"],
       "spatial_data": ["Output/spatial_data"],
       "reports": ["Output/reports"]
     },
@@ -112,7 +113,8 @@
       {
         "field": "error_flag",
         "position": 18,
-        "default": 0
+        "default": 0,
+        "function_call": false
       }
     ],
     "data_type_mappings": [
@@ -146,7 +148,7 @@
       },
       {
         "field": "Survey Date",
-        "data_type": "date"
+        "data_type": "datetime"
       },
       {
         "field": "Depth (meters)",

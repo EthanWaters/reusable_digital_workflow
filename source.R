@@ -36,6 +36,13 @@ import_data <- function(data, index=1){
   return(out)
 }
 
+
+get_datetime_parse_order <- function(){
+  order <- c('%Y/%m/%d %I:%M:%S %p','%Y/%m/%d %H:%M:%S', '%d/%m/%Y %I:%M:%S %p', '%d/%m/%Y %H:%M:%S', '%Y/%m/%d %I:%M %p','%Y/%m/%d %H:%M', '%d/%m/%Y %I:%M %p','%d/%m/%Y %H:%M', 'ymd', 'dmy')
+  return(order)
+}
+
+
 get_vessel_short_name <- function(string) {
   # Function to extract short name from a single string
   extract_short_name <- function(s) {
@@ -57,17 +64,17 @@ get_vessel_short_name <- function(string) {
   }
 }
 
-get_file_keyword <- function(input_string) {
+get_file_keyword <- function(string) {
   
   # Convert the input string to lowercase for case-insensitive matching
-  input_string <- tolower(input_string)
-  if (grepl("cull|dive", input_string)) {
+  string <- tolower(string)
+  if (grepl("cull|dive", string)) {
     return("cull")
   }
-  if (grepl("manta|surveillance", input_string)) {
+  if (grepl("manta|surveillance", string)) {
     return("manta_tow")
   }
-  if (grepl("rhis|survey|health", input_string)) {
+  if (grepl("rhis|survey|health", string)) {
     return("rhis")
   }
   return(NA)
@@ -104,6 +111,9 @@ get_id_by_row <- function(con, table_name, data_df) {
   return(merged_df$id)
 }
 
+
+# get voyage dates with regex from a vector of strings. This was initially created
+# to ingest dates from strings in JSON files that do not have consistent formatting.
 get_voyage_dates_strings <- function(strings) {
   
   date_df <- data.frame(start_date = character(), stop_date = character(), stringsAsFactors = FALSE)
@@ -123,6 +133,7 @@ get_voyage_dates_strings <- function(strings) {
 }
 
 
+# Extract required data from Cots Control Centre databases to use as legacy dataset in reusable workflow. 
 get_app_data_database <- function(con, control_data_type){
   if(control_data_type == "manta_tow"){
     query <- "
@@ -134,9 +145,17 @@ get_app_data_database <- function(con, control_data_type){
       INNER JOIN reef ON site.reef_id = reef.id
       "
   } else if (control_data_type == "cull") {
-    
+    query <- "
+      SELECT cull.date, vessel.name AS vessel_name, voyage.vessel_voyage_number, voyage.start_date, voyage.stop_date, reef.reef_label, reef.name AS reef_name, site.latitude, site.longitude, cull.average_depth, cull.less_than_fifteen_centimeters, cull.fifteen_to_twenty_five_centimeters, cull.twenty_five_to_forty_centimeters, cull.greater_than_forty_centimeters, site.name AS site_name, cull.error_flag, cull.bottom_time
+      FROM cull
+      INNER JOIN voyage ON cull.voyage_id = voyage.id
+      INNER JOIN vessel ON voyage.vessel_id = vessel.id
+      INNER JOIN site ON cull.site_id = site.id
+      INNER JOIN reef ON site.reef_id = reef.id
+      "
   } else {
-    
+    ### WRITE QUERY FOR RHIS ###
+    query <- ""
   }
   
   result <- dbGetQuery(con, query)
@@ -145,35 +164,43 @@ get_app_data_database <- function(con, control_data_type){
 }
 
 
-seperate_date_time_manta_tow <- function(data_df){
-  
-  date_time <- data_df$`Tow date`
+# Parse datetimes and then extract the time component for a vector of datetimes. 
+separate_date_time <- function(date_time){
   is_date_time_na <- is.na(date_time)
-  data_df$`Tow Time`[!is_date_time_na] <- format(date_time[!is_date_time_na], format = "%H:%M:%S")
-  
-  data_df$`Tow date`[!is_date_time_na] <- date(date_time[!is_date_time_na])
-  return(data_df)
+  date_time <- parse_date_time(date_time[!is_date_time_na], orders = get_datetime_parse_order())
+  time <- format(date_time, "%H:%M:%S")
+  return(time)
 }
 
-
+# Extract GBRMPA reef IDs from a vector of strings. 
 get_reef_label <- function(names){
   reef_label_pattern <- "\\b(1[0-9]|2[0-9]|10)-\\d{3}[a-z]?\\b"
   reef_labels <- sapply(str_extract(names, reef_label_pattern), toString)
   return(reef_labels)
 }
 
+#Aggregates coordinates of ecological observations that requires several trip to
+#survey the desired region. This specific iteration of the function utilises the 
+#naming convention of the research format. This should be depreciated in future
+#in place of a single function for research and app data.
 get_start_and_end_coords_research <- function(start_lat, stop_lat, start_long, stop_long){
   output <- get_start_and_end_coords_base(start_lat, stop_lat, start_long, stop_long)
   names(output) <- c("Start Lat", "End Lat", "Start Lng", "End Lng")
   return(output)
 }
 
+#Aggregates coordinates of ecological observations that requires several trip to
+#survey the desired region. This specific iteration of the function utilises the
+#naming convention of the app format. This should be depreciated in future in 
+#place of a single function for research and app data.
 get_start_and_end_coords_app <- function(start_lat, stop_lat, start_long, stop_long){
   output <- get_start_and_end_coords_base(start_lat, stop_lat, start_long, stop_long)
   names(output) <- c("start_latitude", "stop_latitude", "start_longitude", "stop_longitude")
   return(output)
 }
 
+#Aggregates coordinates of ecological observations that requires several trip to 
+#survey the desired region. This specific iteration of the function is the base for both data formats.
 get_start_and_end_coords_base <- function(start_lat, stop_lat, start_long, stop_long){
   
   start_coords <- cbind(start_long, start_lat)
@@ -184,21 +211,29 @@ get_start_and_end_coords_base <- function(start_lat, stop_lat, start_long, stop_
   stop_points <- lapply(1:length(stop_lat), function(i) st_point(c(stop_long[i], stop_lat[i])))
   stop_points <- st_sfc(stop_points)
   
-  distance <- st_distance(start_points,stop_points)
-  max_index <- which(distance == max(distance), arr.ind=TRUE)[1,]
-  
-  start_lat <-  st_coordinates(start_points[max_index[1]])[2]
-  start_long <-  st_coordinates(start_points[max_index[1]])[1]
-  stop_lat <-  st_coordinates(stop_points[max_index[2]])[2]
-  stop_long <-  st_coordinates(stop_points[max_index[2]])[1]
+  distances <- st_distance(start_points,stop_points)
+  if(!any(is.na(distances))){
+    max_index <- which(distances == max(distances), arr.ind=TRUE)[1,]
+    start_lat <-  st_coordinates(start_points[max_index[1]])[2]
+    start_long <-  st_coordinates(start_points[max_index[1]])[1]
+    stop_lat <-  st_coordinates(stop_points[max_index[2]])[2]
+    stop_long <-  st_coordinates(stop_points[max_index[2]])[1]
+  } else {
+    start_lat <-  NA
+    start_long <-  NA
+    stop_lat <-  NA
+    stop_long <-  NA
+  }
   output <- list(start_lat, start_long, stop_lat, stop_long)
   return(output)
 }
 
+# Get COTS feeding scar from string decription 
 get_feeding_scar_from_description <- function(scar_desctiptions){
   return(tolower(substr(scar_desctiptions, 1, 1)))
 }
 
+# Get the worst observed COTS scarring as a string from a vector observed scarring.
 get_worst_case_feeding_scar <- function(scars){
   
   pattern <- "a|p|c"
@@ -206,19 +241,19 @@ get_worst_case_feeding_scar <- function(scars){
   ordered_scars <- c("a", "p", "c")
   matches <- na.omit(matches)
   numerical_values <- match(matches, ordered_scars)
-  print(numerical_values)
   max_vlaue <- max(numerical_values)
   return(ordered_scars[max_vlaue])
   
 }
 
+# Extract coral cover categories from strings with regex
 get_coral_cover <- function(coral){
   pattern <- "(?:[1-9]\\-)|0|(?:(?:[1-9]\\+))"
   matches <- str_extract(coral, pattern)
 }
 
+# get median coral cover category for aggregating observations
 get_median_coral_cover <- function(coral){
-  
   matches <- get_coral_cover(coral)
   ordered_coral_cover <- c("0", "1-", "1+", "2-", "2+", "3-", "3+", "4-", "4+", "5-", "5+")
   matches <- na.omit(matches)
@@ -228,20 +263,22 @@ get_median_coral_cover <- function(coral){
   
 }
 
-
-missing_reef_information <- function(data, columns, test_value = NA) {
+# Which rows of a dataframe have information missing in the columns specified.
+missing_reef_information <- function(data, columns, test_value = c(NA)) {
   results <- vector(mode = "logical", length = nrow(data))
   for (col_name in columns) {
     col_values <- data[[col_name]]
-    results <- results | is.na(col_values) | is.null(col_values) | col_values == test_value
+    results <- results | is.na(col_values) | is.null(col_values) | col_values %in% test_value
   }  
   return(results)
 }
 
 
-assign_site_and_reef <- function(transformed_data_df, serialised_spatial_path, control_data_type){
+assign_missing_site_and_reef <- function(transformed_data_df, serialised_spatial_path, control_data_type){
   # Determines if the dataframe derived from app export is missing information 
-  # about the site or reef 
+  # about the site or reef. Creates a geometry collection with available coordinates
+  # and extracts the the missing information from the RDS file. 
+  
   crs_ <- st_crs("+proj=longlat +datum=WGS84 +no_defs") 
   if(control_data_type == "manta_tow"){
     data_sf <- get_centroids(transformed_data_df, crs_)
@@ -257,7 +294,7 @@ assign_site_and_reef <- function(transformed_data_df, serialised_spatial_path, c
     Reef <- "Reef Name"
   }
   
-  is_missing_reef_information <- missing_reef_information(transformed_data_df, cols_to_check, "Finding nearest...")
+  is_missing_reef_information <- missing_reef_information(transformed_data_df, cols_to_check, c("Finding nearest..."))
   if (!any(is_missing_reef_information)) {
     return(transformed_data_df)
   }
@@ -300,9 +337,72 @@ site_numbers_to_names <- function(numbers, reef_names){
   site_names <- paste(toupper(short_hand), labels, numbers, sep="_")
 }
 
+# aggregates cull data to the site level for a vessel voyage
+aggregate_culls_site_resolution_research <- function(data_df) {
+  col_names <- colnames(data_df)
+  
+  aggregated_data <- data_df  %>%
+    group_by(Vessel, Voyage, `Reef ID`, `Site Name`) %>%
+    dplyr::summarize(
+      `Capture ID` = first(`Capture ID`),
+      `Survey Date` = min(`Survey Date`),
+      `Reef Name` = first(`Reef Name`), 
+      `Vessel` = Vessel, 
+      Voyage = Voyage,
+      `Site Name` = `Site Name`,
+      `Reef ID` = `Reef ID`,
+      `Voyage Start` = min(`Voyage Start`),
+      `Voyage End` = max(`Voyage End`),
+      Latitude = first(Latitude),
+      Longitude = first(Longitude),
+      Bottomtime = sum(Bottomtime),
+      `Depth (meters)` = mean(`Depth (meters)`),
+      `Cohort 1 (<15cm)` = sum(`Cohort 1 (<15cm)`),
+      `Cohort2 (15-25cm)` = sum(`Cohort2 (15-25cm)`),
+      `Cohort3 (25-40cm)` = sum(`Cohort3 (25-40cm)`),
+      `Cohort4 (>40cm)` = sum(`Cohort4 (>40cm)`),
+      `Nearest Site` = `Nearest Site`,
+      error_flag = as.numeric(any(as.logical(error_flag)))
+    ) %>%
+    unnest_wider(coords) %>%
+    dplyr::select(all_of(col_names)) %>%
+    dplyr::distinct()
+  
+  
+  return(aggregated_data)
+}
+
 
 aggregate_culls_site_resolution_app <- function(data_df) {
+  col_names <- colnames(data_df)
   
+  aggregated_data <- data_df  %>%
+    group_by(vessel_name, vessel_voyage_number, reef_label, site_name) %>%
+    dplyr::summarize(
+      date = min(date),
+      reef_name = first(reef_name), 
+      vessel_name = vessel_name, 
+      vessel_voyage_number = vessel_voyage_number,
+      reef_label = reef_label,
+      start_date = min(start_date),
+      stop_date = max(stop_date),
+      latitude = first(latitude),
+      longitude = first(longitude),
+      bottom_time = sum(bottom_time),
+      average_depth = mean(average_depth),
+      less_than_fifteen_centimeters = sum(less_than_fifteen_centimeters),
+      fifteen_to_twenty_five_centimeters = sum(fifteen_to_twenty_five_centimeters),
+      twenty_five_to_forty_centimeters = sum(twenty_five_to_forty_centimeters),
+      greater_than_forty_centimeters = sum(greater_than_forty_centimeters),
+      site_name = site_name,
+      error_flag = as.numeric(any(as.logical(error_flag)))
+    ) %>%
+    unnest_wider(coords) %>%
+    dplyr::select(all_of(col_names)) %>%
+    dplyr::distinct()
+  
+  
+  return(aggregated_data)
 }
 
   
@@ -346,7 +446,9 @@ aggregate_manta_tows_site_resolution_research <- function(data_df) {
   aggregated_data <- data_df %>%
     group_by(Vessel, Voyage, `Reef ID`, `Nearest Site`) %>%
     dplyr::summarize(
+      ID = min(ID),
       `Tow date` = min(`Tow date`),
+      `Tow Time` = min(`Tow Time`),
       Reef = first(Reef), 
       Vessel = Vessel, 
       Voyage = Voyage,
@@ -365,22 +467,10 @@ aggregate_manta_tows_site_resolution_research <- function(data_df) {
     unnest_wider(coords) %>%
     dplyr::select(all_of(col_names)) %>%
     dplyr::distinct()
-  
+
   
   return(aggregated_data)
 } 
-
-aggregated_manta_tows <- function(data_df){
-  # Summarize the data
-  aggregated_data <- df %>%
-    group_by(vessel, voyage, reef, site) %>%
-    summarize(
-      mean_var1 = custom_mean(var1),
-      min_var2 = custom_min(var2)
-      # Add more custom aggregation functions for other variables as needed
-    ) %>%
-    ungroup()  # Ungroup the data after summarizing
-}
 
 
 contribute_to_metadata_report <- function(key, data, parent_key=NULL, report_path=NULL){
@@ -401,9 +491,9 @@ contribute_to_metadata_report <- function(key, data, parent_key=NULL, report_pat
   toJSON(report, pretty = TRUE, auto_unbox = TRUE) %>% writeLines(report_path)
 }
 
-separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data_type){
-  if("ID" %in% colnames(new_data_df)){
-    ID_col <- colnames(new_data_df)[1]
+separate_control_dataframe <- function(new_data_df, legacy_data_df){
+  if(any(grepl("ID", colnames(new_data_df)))){
+    ID_col <- colnames(new_data_df)[which(grepl("ID", colnames(new_data_df)))]
   } else {
     ID_col <- ""
   } 
@@ -465,6 +555,7 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
     # because it will always be null if the data is exported from powerBI. 
     distance <- 3
     
+    base::message("Finding close matches...")
     temp_new_df <- new_data_df[ , -which(names(new_data_df) %in% required_columns)]
     temp_legacy_df <- legacy_data_df[ , -which(names(legacy_data_df) %in% required_columns)]
     close_match_rows <- matrix_close_matches_vectorised(temp_legacy_df, temp_new_df, distance)
@@ -472,15 +563,42 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
     # There can be many to many perfect matches. This means that there will be 
     # multiple indices referring to the same row for perfect duplicates. 
     # unique() should be utilised when subsetting the input dataframes.
+    
     if(nrow(close_match_rows) > 0){
+      base::message("Close matches found.")
       separated_close_matches <- vectorised_separate_close_matches(close_match_rows)
       perfect_duplicates <- new_data_df[unique(separated_close_matches$perfect[,2]),]
       new_entries_i <- unique(c(separated_close_matches$discrepancies[,2],separated_close_matches$perfect[,2]))
       
       # This will contain any new entries and any rows that could not be separated
       new_entries <- new_data_df[-new_entries_i,]
+
+      if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
+        # Append the warning to an existing matrix 
+        new_info_df <- data.frame(
+          ID = ifelse(ID_col != "", new_data_df[[ID_col]][new_entries_i],NA),
+          index = new_entries_i,
+          message = "New Entry to the dataset. Not present in previous dataset."
+        )
+        duplicate_info_df <- data.frame(
+          ID = ifelse(ID_col != "", new_data_df[[ID_col]][separated_close_matches$perfect[,2]],NA),
+          index = separated_close_matches$perfect[,2],
+          message = "Perfect duplicate. This entry was present in previous dataset."
+        )
+        discpreancies_info_df <- data.frame(
+          ID = ifelse(ID_col != "", new_data_df[[ID_col]][separated_close_matches$discrepancies[,2]],NA),
+          index = separated_close_matches$discrepancies[,2],
+          message = "Discrepancy. This row has changed since the last dataset"
+        )
+        contribute_to_metadata_report("New Entry", new_info_df, parent_key = "Data")
+        contribute_to_metadata_report("Perfect Duplicate", duplicate_info_df, parent_key = "Data")
+        contribute_to_metadata_report("Discrepancies", discpreancies_info_df, parent_key = "Data")
+      }
+
       verified_discrepancies <- compare_discrepancies(new_data_df, legacy_data_df, separated_close_matches$discrepancies)
+
     } else {
+      base::message("No close matches found treating entire dataset as new")
       new_entries <- new_data_df
     }
     
@@ -503,7 +621,7 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, control_data
 }
 
 
-separate_new_control_app_data <- function(new_data_df, legacy_data_df, configuration){
+separate_new_control_app_data <- function(new_data_df, legacy_data_df){
   new_data_df <- data.frame(new_data_df, check.names = FALSE)
   legacy_data_df <- data.frame(legacy_data_df, check.names = FALSE)
   
@@ -511,9 +629,9 @@ separate_new_control_app_data <- function(new_data_df, legacy_data_df, configura
   verified_data_df <- data.frame(matrix(ncol = length(column_names), nrow = 0))
   colnames(verified_data_df) <- column_names 
   
-  if("ID" %in% colnames(new_data_df)){
-    temp_new_df <- new_data_df[ , -which(names(new_data_df) %in% c("ID"))]
-    temp_legacy_df <- legacy_data_df[ , -which(names(legacy_data_df) %in% c("ID"))]
+  if(any(grepl("ID", colnames(new_data_df)))){
+    temp_new_df <- new_data_df[ , -which(grepl("ID", colnames(new_data_df)))]
+    temp_legacy_df <- legacy_data_df[ , -which(grepl("ID", colnames(legacy_data_df)))]
   } else {
     temp_new_df <- new_data_df
     temp_legacy_df <- legacy_data_df
@@ -579,7 +697,7 @@ flag_duplicates <- function(new_data_df){
       # Append the warning to an existing matrix 
       warnings <- data.frame(
         ID = new_data_df[is_duplicate, 1],
-        index = (1:nrow(new_data_df))[is_duplicate],
+        index = which(is_duplicate),
         message = "flagged as duplicates"
       )
       contribute_to_metadata_report("Duplicates", warnings, parent_key = "Warning")
@@ -970,26 +1088,21 @@ verify_entries <- function(data_df, configuration){
   #verify long and lat separately
   data_df <- verify_lat_lng(data_df, max_val=160, min_val=138, columns=c("Longitude", "Start Lng", "End Lng"), ID_col)
   data_df <- verify_lat_lng(data_df, max_val=-5, min_val=-32, columns=c("Latitude", "Start Lat", "End Lat"), ID_col)
-  
+
   if (control_data_type == "manta_tow") {
-    
     data_df <- verify_tow_date(data_df)
     data_df <- verify_coral_cover(data_df)
     data_df <- verify_scar(data_df)
-    
   } else if (control_data_type == "cull") {
-    
     data_df <- verify_voyage_dates(data_df)
-    
   } else if (control_data_type == "RHISS") {
-    
     data_df <- verify_RHISS(data_df)
-    
   } 
   data_df <- verify_na_null(data_df, configuration)
   data_df$error_flag <- as.integer(data_df$error_flag)
   return(data_df)
 }
+
 
 verify_lat_lng <- function(data_df, max_val, min_val, columns, ID_col){
   for (col in columns) {
@@ -1013,14 +1126,12 @@ verify_lat_lng <- function(data_df, max_val, min_val, columns, ID_col){
           # Append the warning to an existing matrix 
           warnings <- data.frame(
             ID = data_df[out_of_range, 1],
-            index = (1:nrow(data_df))[out_of_range],
+            index = which(out_of_range),
             message = "Inappropriate Lat Long values"
           )
           contribute_to_metadata_report("Coordinates", warnings, parent_key = "Warning")
         }
-        
       }
-      
     }
   }
   return(data_df)
@@ -1034,22 +1145,22 @@ verify_scar <- function(data_df) {
   
   check_valid_scar <- data_df$`Feeding Scars` %in% valid_scar
   out_of_range <- ifelse(is.na(check_valid_scar), TRUE, check_valid_scar)
-  data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | !check_valid_scar)
+  data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | !out_of_range)
   
   
-  if (any(!check_valid_scar )) {
+  if (any(!out_of_range )) {
     grandparent <- as.character(sys.call(sys.parent()))[1]
     parent <- as.character(match.call())[1]
     warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid COTS scar:",
-                     toString(data_df[!check_valid_scar , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[!check_valid_scar ]))
+                     toString(data_df[!out_of_range , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[!out_of_range ]))
     base::message(warning)
     
     
     if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
       # Append the warning to an existing matrix 
       warnings <- data.frame(
-        ID = data_df[!check_valid_scar, 1],
-        index = (1:nrow(data_df))[!check_valid_scar],
+        ID = data_df[!out_of_range, 1],
+        index = which(!out_of_range),
         message = "Invalid COT Scar"
       )
       contribute_to_metadata_report("Scar", warnings, parent_key = "Warning")
@@ -1108,13 +1219,13 @@ verify_tow_date <- function(data_df){
       # Append the warning to an existing matrix 
       warnings <- data.frame(
         ID = data_df[dated_estimated, 1],
-        index = (1:nrow(data_df))[dated_estimated],
+        index = which(dated_estimated),
         message = "Invalid Tow Date. Date was successfully estimated."
       )
       contribute_to_metadata_report("Estimated Tow Date", warnings, parent_key = "Warning")
       warnings <- data.frame(
         ID = data_df[na_present, 1],
-        index = (1:nrow(data_df))[na_present],
+        index = which(na_present),
         message = "Invalid Tow Date. "
       )
       contribute_to_metadata_report("Invalid Tow Date", warnings, parent_key = "Warning")
@@ -1173,28 +1284,28 @@ verify_RHISS <- function(data_df) {
       # Append the warning to an existing matrix 
       warnings <- data.frame(
         ID = data_df[!check_tide, 1],
-        index = (1:nrow(data_df))[!check_tide],
+        index = which(!check_tide),
         message = "Invalid tide value"
       )
       contribute_to_metadata_report("Tide", warnings, parent_key = "Warning")
       
       warnings <- data.frame(
         ID = data_df[check_macroalgae, 1],
-        index = (1:nrow(data_df))[check_macroalgae],
+        index = which(check_macroalgae),
         message = "Invalid macroalgae"
       )
       contribute_to_metadata_report("Macroalgae", warnings, parent_key = "Warning")
       
       warnings <- data.frame(
         ID = data_df[!check_bleach_severity, 1],
-        index = (1:nrow(data_df))[!check_bleach_severity],
+        index = which(!check_bleach_severity),
         message = "Invalid Bleach Severity"
       )
       contribute_to_metadata_report("Bleach Severity", warnings, parent_key = "Warning")
       
       warnings <- data.frame(
         ID = data_df[check_descriptive_bleach_severity, 1],
-        index = (1:nrow(data_df))[check_descriptive_bleach_severity],
+        index = which(check_descriptive_bleach_severity),
         message = "Invalid Bleach Severity Description"
       )
       contribute_to_metadata_report("Bleach Severity Description", warnings, parent_key = "Warning")
@@ -1228,7 +1339,7 @@ verify_percentages <- function(data_df) {
         # Append the warning to an existing matrix 
         warnings <- data.frame(
           ID = data_df[check, 1],
-          index = (1:nrow(data_df))[check],
+          index = which(check),
           message = "Invalid Percentages"
         )
         contribute_to_metadata_report("Percentages", warnings, parent_key = "Warning")
@@ -1265,7 +1376,7 @@ verify_na_null <- function(data_df, configuration) {
       # Append the warning to an existing matrix 
       warnings <- data.frame(
         ID = data_df[check, 1],
-        index = (1:nrow(data_df))[check],
+        index = which(check),
         message = "NA or Null values present"
       )
       contribute_to_metadata_report("NA|NULL", warnings, parent_key = "Warning")
@@ -1301,7 +1412,7 @@ verify_integers_positive <- function(data_df) {
         # Append the warning to an existing matrix 
         warnings <- data.frame(
           ID = data_df[check, 1],
-          index = (1:nrow(data_df))[check],
+          index = which(check),
           message = "Non-positive integers present"
         )
         contribute_to_metadata_report("Integers", warnings, parent_key = "Warning")
@@ -1372,7 +1483,7 @@ verify_coral_cover <- function(data_df) {
       # Append the warning to an existing matrix 
       warnings <- data.frame(
         ID = data_df[error, 1],
-        index = (1:nrow(data_df))[error],
+        index = which(error),
         message = "Invalid coral cover values"
       )
       contribute_to_metadata_report("Coral Cover", warnings, parent_key = "Warning")
@@ -1401,7 +1512,7 @@ verify_reef <- function(data_df){
       # Append the warning to an existing matrix 
       warnings <- data.frame(
         ID = data_df[!correct_reef_id_format, 1],
-        index = (1:nrow(data_df))[!correct_reef_id_format],
+        index = which(!correct_reef_id_format),
         message = "Invalid reef ID"
       )
       contribute_to_metadata_report("Reef ID", warnings, parent_key = "Warning")
@@ -1467,13 +1578,13 @@ verify_voyage_dates <- function(data_df){
       # Append the warning to an existing matrix 
       warnings <- data.frame(
         ID = data_df[dated_estimated, 1],
-        index = (1:nrow(data_df))[dated_estimated],
+        index = which(dated_estimated),
         message = "Invalid Voyage Date. Date was successfully estimated."
       )
       contribute_to_metadata_report("Estimated Voyage Date", warnings, parent_key = "Warning")
       warnings <- data.frame(
         ID = data_df[na_present, 1],
-        index = (1:nrow(data_df))[na_present],
+        index = which(na_present),
         message = "Invalid Voyage Date. "
       )
       contribute_to_metadata_report("Invalid Voyage Date", warnings, parent_key = "Warning")
@@ -1489,7 +1600,7 @@ verify_voyage_dates <- function(data_df){
       # Append the warning to an existing matrix 
       warnings <- data.frame(
         ID = data_df[survey_date_error, 1],
-        index = (1:nrow(data_df))[survey_date_error],
+        index = which(survey_date_error),
         message = "Survey date outside voyage date range"
       )
       contribute_to_metadata_report("Survey Date", warnings, parent_key = "Warning")
@@ -1623,17 +1734,22 @@ set_data_type <- function(data_df, mapping){
     
     # Convert the column to the specified data type
     if(tolower(data_type) == "date"){
-      output_df[[column_name]] <- parse_date_time(data_df[[column_name]], orders = c('dmy', 'ymd'))
+      # NA will cause all dates to note parse. Remove NA from parsing but 
+      # then include them in the dataframe afterwards. 
+      datetimes <- data_df[[column_name]]
+      datetimes_available <- datetimes[!is.na(datetimes)]
+      dates_available <- parse_date_time(datetimes_available, orders = get_datetime_parse_order())
+      dates_available <- as.character(date(dates_available))
+      datetimes[!is.na(datetimes)] <- dates_available
+      output_df[[column_name]] <- datetimes
     } else if (tolower(data_type) == "time") {
       time <- as.POSIXct(data_df[[column_name]], format = "%H:%M:%S")
       output_df[[column_name]] <- format(time, '%H:%M:%S')
     } else if (tolower(data_type) == "datetime") {
-      output_df[[column_name]] <- format(parse_date_time(data_df[[column_name]], orders = c('dmy_HM','dmy_HMS', 'ymd_HM','ymd_HMS')), "%Y-%m-%d %H:%M:%S")
-    
+      output_df[[column_name]] <- as.character(parse_date_time(data_df[[column_name]], orders = get_datetime_parse_order()))
     } else {
       output_df[[column_name]] <- as(data_df[[column_name]], tolower(data_type))
     }
-    
   }
   
   # Identify which rows have been coerced to NA and listed in metadata report. 
@@ -1654,7 +1770,7 @@ set_data_type <- function(data_df, mapping){
       # Append the warning to an existing matrix 
       warnings <- data.frame(
         ID = data_df[coerced_na, 1],
-        index = (1:nrow(data_df))[coerced_na],
+        index = which(coerced_na),
         message = "Incorrect data type present. Values coerced to NA"
       )
       contribute_to_metadata_report("Data Type", warnings, parent_key = "Warning")
@@ -1731,7 +1847,7 @@ update_config_file <- function(data_df, configuration_path, new_mappings_to_add=
       configuration <- fromJSON(file.path(directory, paste(configuration$metadata$control_data_type, "_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = "")))
     }, error = function(e){
       tryCatch({
-        configuration <-fromJSON(file.path(paste(configuration$metadata$control_data_type, "_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = "")))
+        configuration <<- fromJSON(file.path(paste(configuration$metadata$control_data_type, "_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = "")))
       })
     })
   }
@@ -1746,19 +1862,32 @@ map_new_fields <- function(data_df, transformed_df, new_fields){
     default_value <- new_fields$default[i]
     
     # Call function written as string in configuration file
-    if("function_call" %in% names(default_value[[1]])){
-      
-      function_call <- default_value[[1]]$function_call
-      expression <- gsub("\\{DATAFRAME\\}", "data_df", function_call)
-      default_value <- eval(parse(text = expression))
-      
+    if(new_fields$function_call[i]){
+      default_value <- NA
     }
+    
     position <- new_fields$position[i]
     transformed_df[, position] <- default_value
     colnames(transformed_df)[position] <- new_field
   }
   return(transformed_df)
 }  
+
+# Get the default value of new columns required in the dataframe from the
+# configuration file.The default value can be a function in the form of string 
+# that will be executed if the default value is dependent on other columns. 
+get_new_field_default_values <- function(data_df, new_fields){
+  new_fields <- new_fields[new_fields$function_call == TRUE,]
+  for (i in seq_len(nrow(new_fields))) {
+        default_value <- new_fields$default[i]
+        expression <- gsub("\\{DATAFRAME\\}", "data_df", default_value)
+        default_value <- eval(parse(text = expression))
+        position <- new_fields$position[i]
+        data_df[, position] <- default_value
+  }
+  return(data_df)
+}
+
 
 map_all_fields <- function(data_df, transformed_df, mappings){
   closest_matches <- get_closest_matches(colnames(data_df), mappings$source_field)
@@ -1773,21 +1902,13 @@ map_all_fields <- function(data_df, transformed_df, mappings){
   
 }
 
+
 map_data_structure <- function(data_df, mappings, new_fields){
   
   transformed_df <- data.frame(matrix(ncol = nrow(mappings) + nrow(new_fields), nrow = nrow(data_df)))
-  data_colnames <- colnames(data_df)
-  is_already_mapped <- all(!is.na(match(mappings$target_field, data_colnames)))
-  if(is_already_mapped){
-    col_indices <- match(data_colnames, mappings$target_fields)
-    positions <- mappings$position[col_indices]
-    transformed_df <- data_df[,positions]
-    return(transformed_df)
-  }
-  
   transformed_df <- map_new_fields(data_df, transformed_df, new_fields)
   transformed_df <- map_all_fields(data_df, transformed_df, mappings)
-  
+  transformed_df <- get_new_field_default_values(transformed_df, new_fields)
   return(transformed_df)
 }
 
@@ -1827,14 +1948,19 @@ extract_dates <- function(input){
 
 find_recent_file <- function(directory_path, keyword, file_extension) {
   # Get a list of files in the directory
-  files <- list.files(file.path(getwd(),directory_path), pattern = paste0(keyword, ".*\\.", file_extension), full.names = TRUE)
-  if (length(files) == 0) {
-    cat("No matching files found.\n")
-    return(NULL)
-  }
-  date_objects <- extract_dates(files)
-  most_recent_index <- which.max(date_objects)
-  return(files[most_recent_index])
+  tryCatch({
+    files <- list.files(file.path(getwd(),directory_path), pattern = paste0(keyword, ".*\\.", file_extension), full.names = TRUE)
+    if (length(files) == 0) {
+      cat("No matching files found.\n")
+      return(NULL)
+    }
+    file_infos <- lapply(files, file.info)
+    creation_times <- sapply(file_infos, function(info) info$mtime)
+    most_recent_index <- which.max(creation_times)
+    return(files[most_recent_index])
+  }, error = function(e) {
+    print(paste("Failed to find recent file: ",  conditionMessage(e)))
+  })
 }
 
 save_spatial_as_raster <- function(output_path, serialized_spatial_path){
@@ -1856,13 +1982,21 @@ save_spatial_as_raster <- function(output_path, serialized_spatial_path){
 
 get_spatial_differences <- function(kml_data, previous_kml_data){
   spatial_differences <- list()
-  reef_id_pattern <- "\\b(1[0-9]|2[0-9]|10)-\\d{3}[a-z]?\\b"
-  
-  # Extract Reef IDs from each list
-  
+
+    # Extract Reef IDs from each list
   reef_ids <- get_reef_label(names(kml_data))
   reef_ids_previous <- get_reef_label(names(previous_kml_data))
   
+  # Add any reefs that did not exist in the previous kml but exist in the 
+  # current kml
+  indices_not_in_previous <- which(!reef_ids %in% reef_ids_previous)
+  if(length(indices_not_in_previous) > 0){
+    for (i in 1:length(indices_not_in_previous)) {
+      name <- names(kml_data)[[i]]
+      spatial_differences[[name]] <- kml_data[[i]]
+    }
+  }
+
   # Iterate through all IDS that exist in the new KML file. Any that have 
   # changed or do not exist in the previous data set will be added to the new 
   # one. It is intentional that cull sites that have been removed are not 
@@ -1884,43 +2018,45 @@ get_spatial_differences <- function(kml_data, previous_kml_data){
         if (all(dim(reef) == dim(reef_previous))) {
           is_unchanged <- (all(reef_previous == reef)) && (reef_name_previous == reef_name)
         }
-        if(!is_unchanged){
-          name <- names(kml_data)[[index_reefs]]
-          spatial_differences[[name]] <- kml_data[[index_reefs]]
-        }
+
       }, error = function(e) {
+        print(paste("Error: ",  conditionMessage(e)))
+      },
+      warning = function(w) {
+        print(paste("Warning: ",  conditionMessage(w)))
+      })
+      
+      if(!is_unchanged){
         name <- names(kml_data)[[index_reefs]]
         spatial_differences[[name]] <- kml_data[[index_reefs]]
-      })
+      }
     }
   }
   return(spatial_differences)
 }
+
 
 compute_checksum <- function(data) {
   digest(data, algo = "md5", serialize = TRUE)
 }
 
 
-assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_site_rasters=1, kml_path_previous=NULL, spatial_path=NULL, raster_size=0.0005, x_closest=1, is_standardised=0, save_spatial_as_raster=0){
+assign_nearest_site_method_c <- function(data_df, kml_path, keyword, kml_path_previous=NULL, serialised_raster_path=NULL, spatial_output_path=NULL, raster_size=0.0005, x_closest=1, is_standardised=0, save_spatial_as_raster=0){
   # Assign nearest sites to manta tows with method developed by Cameron Fletcher
   
   # Acquire the directory to store raster outputs and the most recent spatial 
   # file that was saved as an R binary
-  if(!is.null(spatial_path)){
-    if(file.info(spatial_path)$isdir){
-      print("Invalid path to serialized spatial data. Must be a file not a directory")
-      spatial_file <- NULL
-      spatial_directory <- spatial_path
-    } else {
-      spatial_file <- spatial_path
-      spatial_directory <- dirname(spatial_path)
-    }
-  }
-  
   # if loading data fails calculate site regions
   load_site_rasters_failed <- TRUE
-  if(!calculate_site_rasters && !is.null(spatial_file)){
+  if(!is.null(serialised_raster_path)){
+    if(file.info(serialised_raster_path)$isdir){
+      print("Invalid path to serialized spatial data. Must be a file not a directory")
+      spatial_file <- NULL
+      spatial_directory <- serialised_raster_path
+    } else {
+      spatial_file <- serialised_raster_path
+    }
+
     tryCatch({
       base::message("Loading previously saved raster data ...")
       site_regions <- readRDS(spatial_file)
@@ -1932,89 +2068,140 @@ assign_nearest_site_method_c <- function(data_df, kml_path, keyword, calculate_s
     })
   }
   
-  if(load_site_rasters_failed || calculate_site_rasters){
-    kml_layers <- st_layers(kml_path)
-    layer_names_vec <- unlist(kml_layers["name"])
-    kml_data <- Null
-    tryCatch({
-      plan(multisession)
-      future_layers <- future_map(layer_names_vec, ~ st_read(kml_path, layer = .x))
-      kml_data <- setNames(future_layers, layer_names_vec)
-    }, error = function(e) {
-      kml_data <- setNames(lapply(layer_names_vec, function(i)  st_read(kml_path, layer = i)), layer_names_vec)
-    })
-    crs <- projection(kml_data[[1]])
-    sf_use_s2(FALSE)
-    checksum <- compute_checksum(kml_data)
-  }
+  base::message("Loading kml file...")
+  kml_layers <- st_layers(kml_path)
+  layer_names_vec <- unlist(kml_layers["name"])
+  kml_data <- NULL
+  tryCatch({
+    plan(multisession)
+    future_layers <- future_map(layer_names_vec, ~ st_read(kml_path, layer = .x))
+    kml_data <- setNames(future_layers, layer_names_vec)
+  }, error = function(e) {
+    print(paste("Error KML not loaded with parrallel processing", conditionMessage(e)))
+    kml_data <<- setNames(lapply(layer_names_vec, function(i)  st_read(kml_path, layer = i)), layer_names_vec)
+    return(kml_data)
+  })
+  kml_data <<- kml_data
+  base::message("Loaded KML file successfully")
+  base::message("Compute checksum for kml")
+  crs <- projection(kml_data[[1]])
+  sf_use_s2(FALSE)
+  checksum <- compute_checksum(kml_data)
+  
   
   # compare two kml files and return the geometry collections that have been 
   # updated 
+  calculate_site_rasters <- TRUE
   update_kml <- FALSE
-  if(!is.null(kml_path_previous) && !is.null(spatial_file) && calculate_site_rasters){
+  if(!is.null(kml_path_previous) && !load_site_rasters_failed){
     previous_kml_layers <- st_layers(kml_path_previous)
     previous_layer_names_vec <- unlist(previous_kml_layers["name"])
     previous_kml_data <- setNames(lapply(previous_layer_names_vec, function(i)  st_read(kml_path_previous, layer = i)), previous_layer_names_vec)
+    previous_kml_data <<- previous_kml_data
     previous_crs <- projection(previous_kml_data[[1]])
     previous_checksum <- compute_checksum(previous_kml_data)
     if(checksum != previous_checksum){
       if(previous_crs == crs){
         kml_data_to_update <- get_spatial_differences(kml_data, previous_kml_data)
-        if(!is.na(kml_data_to_update) | !is.null(kml_data_to_update)){
-          update_kml <- TRUE
-        }
+        tryCatch({
+          if(length(kml_data_to_update) == 0){
+            calculate_site_rasters <- FALSE
+          } else {
+            update_kml <- TRUE
+          }
+        }, error = function(e) {
+          update_kml <<- FALSE
+        })
       } 
     } else {
       base::message("Checksum determined current and previous KML data are identical")
-      calculate_site_rasters <- 0
+      calculate_site_rasters <- FALSE
     }
   }
   
   if(calculate_site_rasters){
     if(!update_kml | load_site_rasters_failed){
-      base::message("Assigning sites to raster pixels for all reefs...")
-      kml_data_simplified <- simplify_kml_polyogns_rdp(kml_data)
-      site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
+      
+      
+      tryCatch({
+        base::message("Simplifying kml polygons...")
+        kml_data_simplified <- simplify_geometry_list_rdp(kml_data)
+        base::message("Simplified kml polygons successfully")
+        
+      }, error = function(e) {
+        print(paste("Error Simplifying kml polygons", conditionMessage(e)))
+        kml_data_simplified <<- kml_data
+      })
+      site_regions <- assign_raster_pixel_to_sites_original(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
+    
     } else {
       base::message("Updating raster pixels for reefs that have changed since last process date...")
-      kml_data_simplified <- simplify_kml_polyogns_rdp(kml_data_to_update)
-      updated_layer_names_vec <- names(kml_data_simplified)
-      updated_site_regions <- assign_raster_pixel_to_sites(kml_data_simplified, updated_layer_names_vec, crs, raster_size, x_closest, is_standardised)
       
-      site_regions_reef_ids <- get_reef_label(names(kml_data))
-      updated_site_regions_reef_ids <- get_reef_label(names(kml_data_to_update))
+      tryCatch({
+        base::message("Simplifying kml polygons...")
+        kml_data_simplified <- simplify_geometry_list_rdp(kml_data_to_update)
+        base::message("Simplified kml polygons successfully")
+      }, error = function(e) {
+        print(paste("Error Simplifying kml polygons", conditionMessage(e)))
+        kml_data_simplified <<- kml_data_to_update
+      })
       
-      index_reefs <- match(updated_site_regions_reef_ids, site_regions_reef_ids)
-      site_regions <- site_regions[-index_reefs]
-      site_regions <- c(site_regions, updated_site_regions)
-      site_regions <- site_regions[order(names(site_regions))]
+      tryCatch({
+        base::message("Number of Rasters to Update: ", length(kml_data_simplified))
+        updated_layer_names_vec <- names(kml_data_simplified)
+        updated_site_regions <- assign_raster_pixel_to_sites_original(kml_data_simplified, updated_layer_names_vec, crs, raster_size, x_closest, is_standardised)
+        
+        site_regions_reef_ids <- get_reef_label(names(kml_data))
+        updated_site_regions_reef_ids <- get_reef_label(names(kml_data_to_update))
+        
+        index_reefs <- match(updated_site_regions_reef_ids, site_regions_reef_ids)
+        site_regions <- site_regions[-index_reefs]
+        site_regions <- c(site_regions, updated_site_regions)
+        site_regions <- site_regions[order(names(site_regions))]
+      }, error = function(e) {
+        print(paste("Error updating updating raster pixels for reefs. Will create new raster", conditionMessage(e)))
+        
+        tryCatch({
+          base::message("Simplifying kml polygons...")
+          kml_data_simplified <- simplify_geometry_list_rdp(kml_data)
+          base::message("Simplified kml polygons successfully")
+        }, error = function(e) {
+          print(paste("Error Simplifying kml polygons", conditionMessage(e)))
+          kml_data_simplified <<- kml_data
+        })
+        site_regions <<- assign_raster_pixel_to_sites_original(kml_data_simplified, layer_names_vec, crs, raster_size, x_closest, is_standardised)
+      })
+
     }
-    # The is for testing purposes 
-    assign("site_regions", site_regions, envir = .GlobalEnv)
-    
-    
-    base::message("Saving raster data as serialised binary file...")
-    tryCatch({
-      if (!dir.exists(spatial_directory)) {
-        dir.create(spatial_directory, recursive = TRUE)
-      }
-      saveRDS(site_regions, file.path(spatial_directory, paste("site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = "")), row.names = FALSE)
-    }, error = function(e) {
-      print(paste("Error site regions raster data - Data saved in source directory", conditionMessage(e)))
-      saveRDS(site_regions, paste(keyword,"_site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = ""))
-      contribute_to_metadata_report("output", file.path(getwd(), paste(keyword,"_site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = "")))
-    })
-    
-  } 
-  
-  if(save_spatial_as_raster == 1 && !is.null(spatial_path)){
-    base::message("Saving raster data as gtiff files...")
-    raster_output <- file.path(spatial_directory, "rasters")
-    if (!dir.exists(raster_output)) {
-      dir.create(raster_output, recursive = TRUE)
-    }
-    save_spatial_as_raster(raster_output, spatial_file)
   }
+  
+  base::message("Saving raster data as serialised binary file...")
+  tryCatch({
+    if (!dir.exists(spatial_output_path)) {
+      dir.create(spatial_output_path, recursive = TRUE)
+    }
+    saveRDS(site_regions, file.path(spatial_output_path, paste("site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = "")))
+    contribute_to_metadata_report("output", file.path(getwd(), paste(keyword,"_site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = "")))
+  }, error = function(e) {
+    print(paste("Error saving site regions as rds - Data saved in source directory", conditionMessage(e)))
+    saveRDS(site_regions, paste(keyword,"_site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = ""))
+    contribute_to_metadata_report("output", file.path(getwd(), paste(keyword,"_site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = "")))
+  })
+  
+  tryCatch({
+    if(save_spatial_as_raster == 1 & !is.null(spatial_output_path)){
+      base::message("Saving raster data as gtiff files...")
+      spatial_file <- file.path(spatial_output_path, paste("site_regions_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds", sep = ""))
+      raster_output <- file.path(spatial_output_path, "rasters")
+      if (!dir.exists(raster_output)) {
+        dir.create(raster_output, recursive = TRUE)
+      }
+      save_spatial_as_raster(raster_output, spatial_file)
+    }
+  }, error = function(e) {
+    print(paste("Error saving as rasters", conditionMessage(e)))
+  })
+  
   
   base::message("Assigning sites to data...")
   data_df <- get_centroids(data_df, crs)
@@ -2064,7 +2251,7 @@ get_centroids <- function(data_df, crs, precision=0){
 }
 
 
-assign_raster_pixel_to_sites_parallel <- function(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0){
+assign_raster_pixel_to_sites_multithread <- function(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0){
   # Produces same result as assign_raster_pixel_to_sites in a parallel manner
   
   if(is_standardised){
@@ -2097,13 +2284,13 @@ assign_raster_pixel_to_sites_parallel <- function(kml_data, layer_names_vec, crs
   # consider the curviture of the earth. 
   
   site_regions <- foreach(i = 1:length(kml_data), .combine = "c",  .export = c("assign_raster_pixel_to_sites_single", "rasterToPoints", "st_polygon", "raster", "values", "as.matrix", "st_multipoint", "st_sfc", "st_cast", "st_crs<-", "st_distance", "drop_units", "site_names_to_numbers", "xth_smallest")) %dopar% {
-    assign_raster_pixel_to_sites_single(rasters[[i]], kml_data[[i]], crs, x_closest)
+    assign_raster_pixel_to_sites_single_reef(rasters[[i]], kml_data[[i]], crs, x_closest)
   }
   site_regions <- setNames(site_regions, layer_names_vec)
   return(site_regions)
 }
 
-assign_raster_pixel_to_sites_single <- function(raster, site_poly, crs, x_closest){
+assign_raster_pixel_to_sites_single_reef <- function(raster, site_poly, crs, x_closest){
   
   raster::values(raster) <- 1
   pixel_coords <- rasterToPoints(raster)
@@ -2144,16 +2331,17 @@ assign_raster_pixel_to_sites <- function(kml_data, layer_names_vec, crs, raster_
     cl <- makeCluster(detectCores())
     registerDoParallel(cl)
     
-    site_regions <- assign_raster_pixel_to_sites_parallel(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0)
+    site_regions <- assign_raster_pixel_to_sites_multithread(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0)
     
   }, error = function(e) {
-    site_regions <- assign_raster_pixel_to_sites_non_parallel(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0)
+    base::message("Failed to perform assigning of sites with multithreading. Performing without...")
+    site_regions <<- assign_raster_pixel_to_sites_original(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0)
   })
   return(site_regions)
 }
 
 
-assign_raster_pixel_to_sites_non_parallel <- function(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0){
+assign_raster_pixel_to_sites_original <- function(kml_data, layer_names_vec, crs, raster_size, x_closest=1, is_standardised=0){
   # This is a method of assigning sites to manta tows that was initially 
   # implemented in Mathmatica by Dr Cameron Fletcher. A set of rasters are 
   # created slightly larger than the bounding box of each layer in the KML file.
@@ -2264,37 +2452,43 @@ simplify_shp_polyogns_rdp <- function(shapefile){
 }
 
 
-simplify_kml_polyogns_rdp <- function(kml_data){
+simplify_geometry_list_rdp <- function(kml_data){
   # simplify all polygons in a list that was retrieved from the kml file 
   # the Ramer-Douglas-Peucker algorithm
   
   simplified_kml_data <- kml_data
   for (j in 1:length(kml_data)){
-    reef_geometries <- kml_data[[j]][[3]]
-    reef_geometries_updated <- reef_geometries
-    for(i in 1:length(reef_geometries)){
-      # A vast majority of reef_geometries at this level are polygons but 
-      # occasionally they are geometrycollections and require iteration. 
-      
-      site_polygon <- reef_geometries[[i]]
-      if (class(site_polygon[[2]])[2] == "GEOMETRYCOLLECTION"){
-        for(k in 1:length(site_polygon[[2]])){
-          polygon_points <- site_polygon[[2]][[k]][[1]]
-          approx_polygon_points <- polygon_rdp(polygon_points)
-          site_polygon[[2]][[k]][[1]] <- approx_polygon_points
-        }
-      } else {
-        polygon_points <- site_polygon[[2]][[1]]
-        approx_polygon_points <- polygon_rdp(polygon_points)
-        site_polygon[[2]][[1]] <- approx_polygon_points
-      }
-      reef_geometries_updated[[i]] <- site_polygon
-    }
-    simplified_kml_data[[j]][[3]] <- reef_geometries_updated
+    reef_geometries <- kml_data[[j]][["geometry"]]
+    simplified_kml_data[[j]][["geometry"]] <- simplify_geometry_rec(reef_geometries)
     
   }
   return(simplified_kml_data)
 }
+
+# This is a recursive function that takes a geometry and recursively finds and 
+# simplifies polygons with the Ramer-Douglas-Peucker algorithm.
+simplify_geometry_rec <- function(geometry){
+  for (i in 1:length(geometry)){
+    polygon <- geometry[[i]]
+    geometry_type <- NULL
+    tryCatch({
+      geometry_type <- st_geometry_type(polygon)
+    }, error = function(e) {
+      geometry_type <<- "LIST"
+    })
+    
+    if(geometry_type %in% c("GEOMETRYCOLLECTION", "MULTIPOLYGON")){
+      polygon <- simplify_geometry_rec(polygon)
+    } else if (!(geometry_type %in% c("POINT"))){
+      polygon_points <- polygon[[1]]
+      approx_polygon_points <- polygon_rdp(polygon_points)
+      polygon[[1]] <- approx_polygon_points
+    }
+    geometry[[i]] <- polygon
+  }
+  return(geometry)
+}
+
 
 polygon_rdp <- function(polygon_points, epsilon=0.00001) {
   # adaptation of the Ramer-Douglas-Peucker algorithm. The original algorithm 

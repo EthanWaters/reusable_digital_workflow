@@ -90,28 +90,33 @@
       "new_fields": [
         {
           "field": "start_latitude",
-          "default": {"function_call": "st_coordinates(st_startpoint({DATAFRAME}$Geometry))[,\"Y\"]"},
-          "position": 6
+          "default": "st_coordinates(st_startpoint({DATAFRAME}$Geometry))[,\"Y\"]",
+          "position": 6,
+          "function_call": true
         },
         {
           "field": "stop_latitude",
-          "default":  {"function_call": "st_coordinates(st_endpoint({DATAFRAME}$Geometry))[,\"Y\"]"},
-          "position": 8
+          "default": "st_coordinates(st_endpoint({DATAFRAME}$Geometry))[,\"Y\"]",
+          "position": 8,
+          "function_call": true
         },
         {
           "field": "start_longitude",
-          "default":  {"function_call": "st_coordinates(st_startpoint({DATAFRAME}$Geometry))[,\"X\"]"},
-          "position": 7
+          "default": "st_coordinates(st_startpoint({DATAFRAME}$Geometry))[,\"X\"]",
+          "position": 7,
+          "function_call": true
         },
         {
           "field": "stop_longitude",
-          "default":  {"function_call": "st_coordinates(st_endpoint({DATAFRAME}$Geometry))[,\"X\"]"},
-          "position": 9
+          "default": "st_coordinates(st_endpoint({DATAFRAME}$Geometry))[,\"X\"]",
+          "position": 9,
+          "function_call": true
         },
         {
           "field": "error_flag",
           "position": 18,
-          "default": 0
+          "default": 0,
+          "function_call": true
         }
       ]
     }

@@ -10,7 +10,8 @@
     "is_ID_preferred": [false],
     "assign_sites": [true],
     "output_directory": {
-      "control_data": ["Output/control_data"],
+      "control_data_aggregated": ["Output/control_data/site_aggregation"],
+      "control_data_unaggregated": ["Output/control_data/unaggregated"],
       "spatial_data": ["Output/spatial_data"],
       "reports": ["Output/reports"]
     },
@@ -112,16 +113,19 @@
       {
         "field": "Tow Time",
         "position": 3,
-        "default": "12:00:00"
+        "default": "separate_date_time({DATAFRAME}$`Tow date`)",
+        "function_call": true
       },
       {
         "field": "Nearest Site",
-        "position": 19
+        "position": 19,
+        "function_call": false
       },
       {
         "field": "error_flag",
         "position": 20,
-        "default": "0"
+        "default": "0",
+        "function_call": false
       }
     ],
     "data_type_mappings": [

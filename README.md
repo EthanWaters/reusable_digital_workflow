@@ -1,19 +1,21 @@
 # Control Data Reusable Workflow
 
-<img src="https://camo.githubusercontent.com/0058ce9713cb93a553c2f23207afbb49b1b852a70a4a24de20e2e816c58b299e/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f6c6966656379636c652d6578706572696d656e74616c2d6f72616e67652e737667" alt="Lifecycle: experimental" data-canonical-src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" style="max-width: 100%;">
+<img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental" data-canonical-src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" style="max-width: 100%;">
 
 ## 1.0 Overview
 
-The overall purpose of this workflow is to clean and wrangle control program data from GBRMPA so that it takes a standardised form to be utilised in research. This R code defines a data processing pipeline that imports, formats, and verifies data. It also creates a metadata report to document the pipeline. The `main()` function is the entry point of the pipeline. It takes as inputs the paths to the legacy data, new data ,KML data, and JSON configuration file. The data can then be assigned to the nearest sites.
+The overall purpose of this codebase is to clean, wrangle and perform geospatial analysis on control program data from GBRMPA to produce a standardised output for utilisation in research or decision support tools. `source.R` defines a large set of functions for this and generally serves one of the following purposes:
 
-The four major steps in this process are as follows:
+  1. `Data Transformation`
+  2. Perform `Error Checking & Processing`
+  3. `Site Assignment` to control data if applicable
+  4. `Aggregation and Export` 
 
-  1. `Data Transformation` to legacy format .
-  2. Perform `Error Checking & Processing`.
-  3. Perform `Site Assignment` to control data if applicable.
-  4. `Export` 
+Functions defined in `source.R` are then utilisesd to produce several application specific reusable workflows
 
-For further information see Reusable Digital Workflows Systems Diagrams and Reusable Digital Workflows Psudo Code Systems Diagrams
+  1. `process_control_data_research_output.R` See Section 3.1
+  2. `ingest_control_data_export_to_app.R` See Section 3.2
+
 
 ## 1.1 Term Definitions
 This section defines several terms utilized throughout the documentation to ensure clarity. 
@@ -24,9 +26,14 @@ This section defines several terms utilized throughout the documentation to ensu
   
   
 ## 2.0 Installation & Requirements
-This workflow is designed to be run on a server with in conjunction with an automate script. It may be easier to run source code in place of the container for one time uses. Docker is utilised to ensure that the client environment remains consistent with the dev environment, see section 2.1 for instructions. See section 2.2 & 2.3 for details of all packages installed in dev environment.  
+This codebase is designed to be automated with Azure and not run locally. 
+
+Docker containers have been produced during the development of this code base to ensure that the client environment remains consistent with the dev environment, see section 2.1 for instructions. See section 2.2 & 2.3 for details of all packages installed in dev environment. There is no guarantee that the docker images are up-to-date.
 
 This requires Docker version 24.0.6:https://www.docker.com/products/docker-desktop/
+
+Although not recommended, the scripts can be executed locally after running the setup scripts. On windows execute the setup and dependencies batch files. On Linux run the setup and dependencies shell files
+
 
 ### 2.1.1 How to update source code
 ```bash
@@ -36,27 +43,15 @@ This requires Docker version 24.0.6:https://www.docker.com/products/docker-deskt
 
 # 1. Update source code tag e.g.
 #SPECIFY DESIRED VERSION BY REPLACEING "latest"
-git tag -a vlatest -m "Version latest"
-git push origin vlatest
+git tag -a v[latest] -m "Version latest"
+git push origin v[latest]
 
 # 3. Build, tag and push the Docker image
-docker build -t ghcr.io/ethanwaters/reusable_digital_workflow:latest .
-docker push ghcr.io/ethanwaters/reusable_digital_workflow:latest
-```
-
-### 2.1.2 How to run code
-
-Do NOT use anything other than the latest version. Assume previous versions contain errors unless specifically labelled stable. Double click the setup.bat file to ensure correct file structure is created. Follow commands below. 
-
-```bash
-#SPECIFY DESIRED VERSION BY REPLACEING "latest"
-docker pull ghcr.io/ethanwaters/reusable_digital_workflow:latest
-docker run ghcr.io/ethanwaters/reusable_digital_workflow:latest
-
+docker build -t ghcr.io/[USERNAME]/reusable_digital_workflow:latest .
+docker push ghcr.io/[USERNAME]/reusable_digital_workflow:latest
 ```
 
 #### 2.2 R Environment Information
-This is all taken care of by docker.
 
 - R version: 4.2.1 (2022-06-23 ucrt)
 - Platform: x86_64-w64-mingw32
@@ -98,48 +93,21 @@ This is all taken care of by docker.
 | furrr         | 0.3.1     |
 | foreach       | 1.5.2     |
 | doParallel    | 1.0.17    |
+| DBI           | 1.1.3     |
 
-```R 
-install.packages("tools", version = "4.2.1", dependencies = TRUE)  
-install.packages("installr", version = "0.23.4", dependencies = TRUE)  
-install.packages("readxl", version = "1.4.1", dependencies = TRUE)  
-install.packages("sets", version = "1.0-21", dependencies = TRUE)  
-install.packages("XML", version = "3.99-0.13", dependencies = TRUE)  
-install.packages("methods", version = "4.2.1", dependencies = TRUE)  
-install.packages("xml2", version = "1.3.3", dependencies = TRUE)  
-install.packages("rio", version = "0.5.29", dependencies = TRUE)  
-install.packages("dplyr", version = "1.0.10", dependencies = TRUE)  
-install.packages("stringr", version = "1.4.1", dependencies = TRUE)  
-install.packages("fastmatch", version = "1.1-3", dependencies = TRUE)  
-install.packages("lubridate", version = "1.8.0", dependencies = TRUE)  
-install.packages("rlang", version = "1.1.0", dependencies = TRUE)  
-install.packages("inline", version = "0.3.19", dependencies = TRUE)  
-install.packages("purrr", version = "0.3.4", dependencies = TRUE)  
-install.packages("jsonlite", version = "1.8.7", dependencies = TRUE)  
-install.packages("sf", version = "1.0-14", dependencies = TRUE)
-install.packages("raster", version = "3.6-23", dependencies = TRUE)  
-install.packages("terra", version = "1.7-39", dependencies = TRUE)  
-install.packages("dplyr", version = "1.0.10", dependencies = TRUE)  
-install.packages("units", version = "0.8-0", dependencies = TRUE)  
-install.packages("tidyverse", version = "1.3.2", dependencies = TRUE) 
-install.packages("tidyr", version = "1.2.0", dependencies = TRUE)  
-install.packages("lwgeom", version = "0.2-13", dependencies = TRUE)  
-install.packages("stars", version = "0.6-4", dependencies = TRUE)  
-install.packages("stringr", version = "1.4.1", dependencies = TRUE)  
-install.packages("furrr", version = "0.3.1", dependencies = TRUE)  
-install.packages("foreach", version = "1.5.2", dependencies = TRUE)  
-install.packages("doParallel", version = "1.0.17", dependencies = TRUE)
-```
+## 3.0 Reusable Workflow Details
+### 3.1 Reusable Workflow - Process Control Data For Research
+This R code defines a data processing pipeline that imports, formats, and verifies control data for research purposes. This process creates a metadata report to document pipeline outcomes. The `main()` function is the entry point of the pipeline. It takes as inputs the paths to the legacy data, new data ,KML data, and JSON configuration file. The control program data can then be assigned to the nearest cull sites. 
 
-## 3.1 Data Transformation
+#### 3.1.1 Data Transformation
 While an ideal scenario would involve a fully dynamic system capable of automatically determining mapping transformations from one version of a data set to the next, this proved unattainable due to the overlapping use of names in the new GBRMPA database with the old data set in a different context. To address this challenge, a compromise between modularity and robustness was sought. Instead of hard-coding numerous transformations, a solution was implemented using JSON configuration files to specify transformations which are then checked against the input with NLP techniques and dynamically changed to ensure semantic differences can still be effectively mapped. This approach allows for flexibility in handling future datasets. The configuration files mean that any dataset can specify a configuration file and then utilise the work flow to ensure consistent data output. 
 
-## 3.2 Error Checking & Discrepancy Detection
+#### 3.1.2 Error Checking & Discrepancy Detection
 Error checking is independent of discrepancy detection. These functions interpret the data and are flagged as errors is they are likely to be inappropriate for use in analysis based on advice from Dr Cameron Fletcher. No data is ever removed. 
 
 Discrepancy Detection provides the opportunity to identify changes in a specific row of data. It is not possible to know if a change is a mistake or QA so any changes that alter an error free data point to one containing an error, the original row will be utilised. In all other situations the new row will be utilised. 
   
-#### 3.2.1 What Denotes An Error ? 
+##### What Denotes An Error ? 
   - `Latitude or Longitude` exceeds allowable range
   - `COT Scars` are not one of the agreed upon categorical options
   - `Tow Date` is missing and cannot be estimated from other entries of the same voyage 
@@ -154,7 +122,7 @@ Discrepancy Detection provides the opportunity to identify changes in a specific
   - `Voyage Dates` is missing and cannot be estimated from other entries of the same voyage
   - `Duplicates` of any row more than two instances. It is plausible for two genuine distinct identical rows to exist so these are not flagged 
  
-#### 3.2.2 Discrepancy Detection - Decisions & Their Philisophy
+##### Discrepancy Detection - Decisions & Their Philisophy
   - `The workflow will not utilise the ID column to determine discrepancies. Instead distance between rows will be established based on comparison and differing number of columns`: Throughout development and historically it has been seen that the IDs in the database exports frequently change. It would be a large point of error if the IDs were treated as authoritative when it can not be guaranteed that they are. The functionality to do this has been programmed for a time when the IDs can be considered authoritative.
   - `The "Distance" is the maximum number of columns in a given row that can change between the legacy and new data, and still be considered a discrepancy. This was set to three. Anything greater than this and it is assumed that the rows are not related`: There is no correct choice for distance. Three was able to captured all rows from the 6000 row legacy data set in the 115,000 row new data set. It was determined that being conservative is more beneficial as there is not a significant consequence for interpreting a discrepancy as a new row. It will still be utilised provided no errors are flagged in accordance with above.
   - `A set of columns are excluded row comparions. This includes the ID column and any columns that are created in the workflow`: ID is excluded as the frequent changes may make a row appear closer or further away from another. New columns created by the workflow indicate have two cases:
@@ -162,13 +130,13 @@ Discrepancy Detection provides the opportunity to identify changes in a specific
     - The column is determined by another process and should utilise the new information available to make decisions e.g. assignment of manta tows is subject to change based on updates the the KML file specifying the cull site polygons. Therefore, changes in this should not influence whether or not two rows are the considered same sample. 
   - `Assigning sites to raster pixels is only performed to new reefs or altered reefs where possible. The workflow does not attempt to maintain cull sites and their assignment for reefs that are removed by GBRMPA`: The overarching philosophy of this workflow asserts that the deliberate decisions made by GBRMPA set the standard and should be regarded as authoritative.
  
-## 3.3 Site Assignment
-The method traditionally employed for the assignment of control data observations to specific geographical regions was proposed by Dr. Cameron Fletcher at CSIRO. Dr. Fletcher's approach has proven valuable for understanding ecological patterns across various reef environments. However, the method's initial implementation relied on a Mathematica script, which introduced challenges of accessibility due to the proprietary nature of Mathematica software. This limitation not only hindered the wider adoption of the technique but also raised concerns about long-term sustainability and data processing bottlenecks. To overcome these hurdles and enhance the method's usability, we undertook the task of reconstructing Dr. Fletcher's approach using the open-source R programming language. This transformation aims to render the method more accessible, enabling researchers to employ it without the constraints posed by proprietary software. Our reimagined implementation closely follows the original approach, allowing us to efficiently process observations and alleviate potential bottlenecks associated with external dependencies, ensuring a more streamlined data analysis workflow. The R implementation of Dr Cameron Fletcher's site assignment was the accurate method for site assignment out of those tested. 
+#### 3.1.3 Site Assignment
+The method traditionally employed for the assignment of control data observations to specific geographical regions was valuable for understanding ecological patterns across various reef environments. However, the method's initial implementation relied on a Mathematica script, which introduced challenges of accessibility due to the proprietary nature of Mathematica software. This limitation not only hindered the wider adoption of the technique but also raised concerns about long-term sustainability and data processing bottlenecks. To overcome these hurdles and enhance the method's usability, we undertook the task of reconstructing the approach with open-source programming language R. This transformation aims to render the method more accessible, enabling researchers to employ it without the constraints posed by proprietary software. Our reimagined implementation closely follows the original approach, allowing us to efficiently process observations and alleviate potential bottlenecks associated with external dependencies, ensuring a more streamlined data analysis workflow. The R implementation of Dr Cameron Fletcher's site assignment was the accurate method for site assignment out of those tested. 
 
-#### 3.3.1 Pre-processing
+##### Pre-processing
 Steps were then taken to reduce the computational complexity of the calculations through the simplification of the intricate polygonal shapes. The process implemented Ramer-Douglas-Peucker algorithm to obtain an adaptive approximation of a complex polygons while maintaining their essential characteristics based on a predetermined threshold of $10^{-5}$. 
 
-#### 3.3.2 Spatial Analysis
+##### Spatial Analysis
 The bounding boxes of each reef layer are extended by 0.003 degrees, roughly equivalent to 300 meters. The initial objective is to ensure that the bounding boxes encompass the entirety of the reef polygons, incorporating a buffer zone of suitable dimensions. This buffer serves the purpose of accommodating the meandering trajectory of manta tows, which tend to fluctuate in proximity to the reef margins. Achieving a delicate equilibrium, the buffer must be substantial enough to avoid overlap between reefs and to capture most manta tows, while avoiding computational overload. The approach also seeks to align with the practices of GBRMPA (Great Barrier Reef Marine Park Authority), wherein manta tows are assigned to sites based on proximity conditions. To maintain fidelity with the GBRMPA framework, the buffer is set at 0.003 degrees, a value that ensures consistency in proximity while retaining computational efficiency. 
 
 The expansion of the bounding boxes is coupled with an iterative process of rasterization, resulting in a raster for every reef layer.  These rasters can be used for subsequent spatial analyses if desired. 
@@ -177,15 +145,19 @@ To calculate the distance between a point and a polygon, the function `st_distan
 
 Manta tow centroids are transformed into point representations. Iterating through the set of rasters, the tow points are filtered based on the reef name of the raster. The value of the raster at each centroid point is extracted and the results merged with the manta tow data input.  
 
+#### 3.1.4 Export Data
 
-## 3.4 Export Data
+Output locations are defined in the configuration files and will be created if they do not already exist. Any output will be saved with the naming convention: `Keyword`_`%Y%m%d`_`%H%M%S`.`File extension. Do NOT remove data outputs, simply take a copy. Previous outputs are utilised to reduce processing and reduce errors. 
 
-Output locations are defined in the configuration files and will be created if they do not already exist. The any output will be saved with the naming convention: `Keyword`_`%Y%m%d`_`%H%M%S`.`File extension. Do NOT remove data outputs, simply take a copy. Previous outputs are utilised to reduce processing and reduce errors. 
+### 3.2 Reusable Workflow - Ingest Control Program Data 
+This R code defines a data processing pipeline that ingests JSON exports from GBRMPA owned PWAs then formats, verifies and exports the data for utilization in the Cots Control Centre Decision Support Tool. The `main()` function is the entry point of the pipeline and requires a list of JSON files to ingest, a path to the config file, and a connection string to connect to the database. This workflow was produced so that previous
 
-## 4.0 Code Documentation
+## 4.0 Configuration files
+Configuration files should not be altered, instead new alternative configuration files should be produced. Config files exist for both workflows that specify expected column transformations, new columns required, their default values and data types. Other config files exist to map database column names to research output column names to reuse aspects of the codebase.  
+
+## 5.0 Code Documentation
 
 #### Function: `main(new_path, configuration_path, kml_path, leg_path)`
-
 - **Input:**
     - `leg_path`: path to the legacy data file
     - `new_path`: path to the new control data file
@@ -196,15 +168,19 @@ Output locations are defined in the configuration files and will be created if t
 - **Description:**
     - This function is the main function that runs the data processing pipeline, creates a metadata report to document noteworthy information, assigns sites to the data if relevent and then exports it for scientific use.
 
-#### Function: `import_data(data, control_data_type, is_powerBI_export, sheet)`
-
+#### Function: `import_data(data, index=1)`
 - **Input:**
   - `data`: file path to the file containing data desired to be in dataframe format
-  - `configuration`: dataframe containing metadata and column mappings for control data 
+  - `index`: Index of the Excel sheet to import  
 - **Output:**
     - dataframe containing imported data
 - **Description:**
     - This function reads data from a file and returns a dataframe. It determines the file type and reads the file using the appropriate method. 
+    
+#### Function: `get_datetime_parse_order()`
+- **Output:**
+    - A vector of datetime formats to parse strings into date or datetime objects 
+ 
 
 #### Function: `contribute_to_metadata_report(data, key="Warning")`
 - **Input:**
@@ -215,18 +191,260 @@ Output locations are defined in the configuration files and will be created if t
 - **Description:**
     - This function adds information to the XML metadata report from the information obtained in the previously executed function to the desired control data node.
     
-#### Function: `separate_control_dataframe(new_data_df, legacy_data_df, control_data_type)`
+    
+#### Function: `get_vessel_short_name(string)`
+- **Input:**
+    - `string`: A string or vector of strings that are vessel names.  
+- **Output:**
+    - A string or vector of string are short hand for vessel names.
+- **Description:**
+    - Gets short hand of vessel names. This is the first letter of each word or the entire word if its a single word.
+    
+    
+#### Function: `get_file_keyword(string)`
+- **Input:**
+    - `string`: A string.  
+- **Output:**
+    - Key word to indicate control data type.
+- **Description:**
+    - Extracts key word to indicate control data type from a string.
+    
+
+#### Function: `append_to_table_unique(con, table_name, data_df)`
+- **Input:**
+    - `con`: A database connection object from DBI package.
+    - `table_name`: Name of table to append data as string. Case sensitive. 
+    - `data_df`: Dataframe to append. 
+- **Output:**
+    - None
+- **Description:**
+    - Appends rows to table from dataframe that do not already exist in the database
+
+    
+#### Function: `get_id_by_cell(con, table_name, search_column, search_term)`
+- **Input:**
+    - `con`: A database connection object from DBI package.
+    - `table_name`: Name of table to append data as string. Case sensitive. 
+    - `search_column`: Name of column in database to check for value as string. 
+    - `search_term`: Value to search for in database.  
+- **Output:**
+    - vector of IDs
+- **Description:**
+    - Appends rows to table from dataframe that do not already exist in the database
+
+
+#### Function: `get_id_by_row(con, table_name, data_df)`
+- **Input:**
+    - `con`: A database connection object from DBI package.
+    - `table_name`: Name of table to extract IDs. Case sensitive. 
+    - `data_df`: Dataframe to perform left join with. 
+- **Output:**
+    - vector of IDs
+- **Description:**
+    - Retrieve IDs from a database table based on matching rows in an input dataframe, using a left join operation 
+    
+  
+#### Function: `get_voyage_dates_strings(strings)`
+- **Input:**
+    - `strings`: A vector of strings
+- **Output:**
+    - A list containing two vectors of dates
+- **Description:**
+    - Get voyage dates with regex from a vector of strings. This was initially created to ingest dates from strings in JSON files that do not have consistent formatting. 
+    
+
+#### Function: `get_app_data_database(con, control_data_type)`
+- **Input:**
+    - `con`: A database connection object from DBI package.
+    - `control_data_type`: A string key word to indicate type of control data. 
+- **Output:**
+    - A dataframe 
+- **Description:**
+    - Extract required data from Cots Control Centre databases to use as legacy dataset in reusable workflow. 
+    
+           
+#### Function: `separate_date_time(date_time)`
+- **Input:**
+    - `date_time`: A vector of datetimes.
+- **Output:**
+    - A vector of strings formatted to appropriately represent time  
+- **Description:**
+    - Parse datetimes and then extract the time component for a vector of datetimes. 
+  
+    
+#### Function: `get_reef_label(names)`
+- **Input:**
+    - `names`: A vector of strings.
+- **Output:**
+    - A vector of GBRMPA reef IDs as strings. These are often referred to as reef labels.  
+- **Description:**
+    - Extract GBRMPA reef IDs from a vector of strings. 
+              
+
+#### Function: `get_start_and_end_coords_research(start_lat, stop_lat, start_long, stop_long)`
+- **Input:**
+    - `start_lat`:A vector of initial latitude values of size n.
+    - `stop_lat`: A vector of final latitude values of size n
+    - `start_long`: A vector of initial longitude values of size n
+    - `stop_long`: A vector of final longitude values of size n
+- **Output:**
+    - A list of coordinates   
+- **Description:**
+    - Aggregates coordinates of ecological observations that requires several trip to survey the desired region. This specific iteration of the function utilises the naming convention of the research format. This should be depreciated in future in place of a single function for research and app data.
+              
+
+#### Function: `get_start_and_end_coords_app(start_lat, stop_lat, start_long, stop_long)`
+- **Input:**
+    - `start_lat`:A vector of initial latitude values of size n.
+    - `stop_lat`: A vector of final latitude values of size n
+    - `start_long`: A vector of initial longitude values of size n
+    - `stop_long`: A vector of final longitude values of size n
+- **Output:**
+    - A list of coordinates   
+- **Description:**
+    - Aggregates coordinates of ecological observations that requires several trip to survey the desired region. This specific iteration of the function utilises the naming convention of the app format. This should be depreciated in future in place of a single function for research and app data.
+    
+    
+#### Function: `get_start_and_end_coords_base(start_lat, stop_lat, start_long, stop_long)`
+- **Input:**
+    - `start_lat`:A vector of initial latitude values of size n.
+    - `stop_lat`: A vector of final latitude values of size n
+    - `start_long`: A vector of initial longitude values of size n
+    - `stop_long`: A vector of final longitude values of size n
+- **Output:**
+    - A list of coordinates   
+- **Description:**
+    - Aggregates coordinates of ecological observations that requires several trip to survey the desired region. This specific iteration of the function is the base for both data formats.
+        
+        
+#### Function: `get_feeding_scar_from_description(names)`
+- **Input:**
+    - `names`: A vector of strings.
+- **Output:**
+    - A vector of scar values  
+- **Description:**
+    - Get COTS feeding scar from string decription. 
+
+        
+#### Function: `get_worst_case_feeding_scar(scars)`
+- **Input:**
+    - `names`: A vector of strings.
+- **Output:**
+    - The worst observed COTS scarring as a string
+- **Description:**
+    - Get the worst observed COTS scarring as a string from a vector observed scarring.
+     
+        
+#### Function: `get_coral_cover(coral)`
+- **Input:**
+    - `coral`: A vector of strings.
+- **Output:**
+    - vector of coral categories
+- **Description:**
+    - Extract coral cover categories from strings with regex
+ 
+ 
+#### Function: `get_median_coral_cover(coral)`
+- **Input:**
+    - `coral`: A vector of strings.
+- **Output:**
+    - The median coral cover category
+- **Description:**
+    - Get median coral cover category for aggregating observations
+     
+          
+#### Function: `missing_reef_information(data, columns, test_value = NA)`
+- **Input:**
+    - `data`: dataframe to check.
+    - `columns`: Vector of columns to check for missing information.
+    - `test_value`: A vector of undesirable values indicating missing information that are not null or NA.
+- **Output:**
+    - vector of Boolean values indicating which rows have missing information
+- **Description:**
+    - Which rows of a dataframe have information missing in the columns specified.
+          
+
+#### Function: `assign_missing_site_and_reef(transformed_data_df, serialised_spatial_path, control_data_type)`
+- **Input:**
+    - `data`: dataframe of control data.
+    - `serialised_spatial_path`: Path to rds file containing regions assigned to sites.
+    - `control_data_type`: Key word as a string indicating type of control data.
+- **Output:**
+    - dataframe of control data with missing location data filled in. 
+- **Description:**
+    - Determines if the dataframe derived from app export is missing information about the site or reef. Creates a geometry collection with available coordinates and extracts the the missing information from the RDS file. 
+          
+  
+#### Function: `site_numbers_to_names(numbers, reef_names)`
+- **Input:**
+    - `numbers`: A vector of numeric or string types indicating the site.
+    - `reef_names`: A vector of reef names as strings that correspond with the numbers provided. 
+- **Output:**
+    - vector of site names as strings
+- **Description:**
+    - convert site numbers to names
+     
+
+#### Function: `aggregate_culls_site_resolution_research(data_df)`
+- **Input:**
+    - `data_df`: dataframe of control data.
+- **Output:**
+    - Dataframe of aggregated control data.
+- **Description:**
+    - aggregates cull data to the site level for a vessel voyage for the research workflow 
+
+
+#### Function: `aggregate_culls_site_resolution_app(data_df)`
+- **Input:**
+    - `data_df`: dataframe of control data.
+- **Output:**
+    - Dataframe of aggregated control data.
+- **Description:**
+    - aggregates cull data to the site level for a vessel voyage for the app workflow
+           
+           
+#### Function: `aggregate_manta_tows_site_resolution_app(data_df)`
+- **Input:**
+    - `data_df`: dataframe of control data.
+- **Output:**
+    - Dataframe of aggregated control data.
+- **Description:**
+    - aggregates manta tow data to the site level for a vessel voyage for the research workflow 
+           
+           
+           
+#### Function: `aggregate_manta_tows_site_resolution_research(data_df)`
+- **Input:**
+    - `data_df`: dataframe of control data.
+- **Output:**
+    - Dataframe of aggregated control data.
+- **Description:**
+    - aggregates manta tow data to the site level for a vessel voyage for the app workflow
+                                
+               
+#### Function: `separate_control_dataframe(new_data_df, legacy_data_df)`
 - **Input:**
     - `new_data_df`: New control data exported from GBRMPA
     - `legacy_data_df`: Control data that most recently passed through workflow. In legacy format.
-    - `control_data_type`: Key word that specifies type of control data. Options: "manta_tow", "cull" or "RHISS" 
 - **Output:**
-    - None
+    - Dataframe of control program data
 - **Description:**
     - Separates the incoming control data into three categories, new, perfect duplicate and discrepancy. Can be done with the authoritative ID or without depending on its reliability. 
         - Separation assuming the ID is authoritative utilises identifiers that are constructed from the data within the rows and table joins to conclusivley separate all data. 
         - Separation assuming non-authoritative ID utilises `matrix_close_matches_vectorised` & `vectorised_separate_close_matches` to determine the number of variations in a row from the original legacy output compared with the new input. Most likely matches are then determined based on number of variations. 
-        Given that it is not possible to definitively know if a change / discrepancy was intentional or not both new and change entries will pass through the same validation checks and if passed will be accepted as usable and assumed to be. If failed, assumed to be a QA change. If failed, the data will be flagged. Failed discrepancies will check the original legacy entry, which if failed will be left as is.
+        Given that it is not possible to definitively know if a change / discrepancy was intentional or not both new and change entries will pass through the same validation checks and if passed will be accepted as usable and assumed to be. If checks are failed, the data will be flagged. Discrepancies flagged with errors are returned to their original state from the legacy dataset if the original state is not flagged as an error.
+
+
+#### Function: `separate_new_control_app_data(new_data_df, legacy_data_df)`
+- **Input:**
+    - `new_data_df`: New control data exported from GBRMPA
+    - `legacy_data_df`: Control data that most recently passed through workflow. In legacy format.
+- **Output:**
+    - Dataframe of new control program data
+- **Description:**
+    - Determines what incoming control data is new. This process for the app has far fewer assumptions and constraints than the research workflow.
+    - Separation assuming non-authoritative ID utilises `matrix_close_matches_vectorised` & `vectorised_separate_close_matches` to determine the number of variations in a row from the original legacy output compared with the new input. Most likely matches are then determined based on number of variations. Only new entries are returned  
+       
 
 #### Function: `flag_duplicates(new_data_df)`
 
@@ -295,7 +513,7 @@ Output locations are defined in the configuration files and will be created if t
 - **Outputs:**
   - The function returns a list containing 4 data frames that represent the separated close matches. Each of the data frames contains the row indices of the original data frames that correspond to the particular type of match. 
 - **Description:**
-  - The vectorised_separate_close_matches() function is used to separate the close matching rows between two data sets. This function separates the rows in a vectorized process, which involves using logical checks on vectors or matrices so Boolean operations can be used to separate the rows. This reduces computational time by two or three orders of magnitude, which is a worthy trade-off for the reduced readability. The function handles close matching rows in the following order:
+  - The vectorised_separate_close_matches() function is used to separate the close matching rows between two data sets. This function separates the rows in a vectorized process, which involves using logical checks on vectors or matrices so Boolean operations can be used to separate the rows. This reduces processing time by two or three orders of magnitude, which is a worthy trade-off for the reduced readability. The function handles close matching rows in the following order:
 
       - Rows with one-one close matches
       - Rows with many-many perfect matches
@@ -447,14 +665,25 @@ Output locations are defined in the configuration files and will be created if t
 - **Description:**
   - This function checks for valid feeding scars in the "Feeding Scars" column of the data frame. It compares the values to a predefined set of valid scars ('a', 'p', 'c'). If invalid scars are found, error flags are added, and a warning message is generated.
 
+
 #### Function: `verify_tow_date(data_df)`
 - **Inputs:**
-- `data_df`: Data frame containing control data.
-
+  - `data_df`: Data frame containing control data.
 - **Outputs:**
   - `data_df`: Updated data frame with error flags added.
 - **Description:**
   - This function approximates tow dates based on vessel and voyage if they do not exist. It identifies incomplete tow dates, estimates missing dates based on the same vessel and voyage, and sets error flags for rows with missing tow dates. Warning messages are generated for tow date estimations and rows with no tow dates.
+
+
+#### Function: `get_new_field_default_values(data_df, new_fields)`
+- **Inputs:**
+  - `data_df`: Data frame containing control data.
+  - `new_fields`: JSON object containing information about the new field and its default value
+- **Outputs:**
+  - `data_df`: Updated dataframe with default values in specified columns.
+- **Description:**
+  - Get the default value of new columns required in the dataframe from the configuration file.The default value can be a function in the form of string that will be executed if the default value is dependent on other columns. 
+
 
 #### Function: `transform_data_structure(data_df, mappings, new_fields)`
 - **Inputs:**
@@ -471,10 +700,12 @@ Output locations are defined in the configuration files and will be created if t
   - `data_df`: Data frame containing observations.
   - `kml_path`: Path to the KML file containing reef polygons.
   - `keyword`: Keyword used in file naming convention.
-  - `calculate_site_rasters`: Flag indicating whether to calculate site regions or load precomputed data.
-  - `kml_path_previous`: Path to the previous version of the KML file for comparison (optional).
+  - `kml_path_previous`: Path to the KML file containing reef polygons used in last iteration of workflow (optional).
+  - `serialised_raster_path`: Path to a serialised raster with pixels assigned to sites from previous iteration of workflow (optional). 
+  - `spatial_output_path`: Path to output serialised raster produced (optional).
   - `spatial_path`: Path to the serialized spatial data file (optional).
-  - `raster_size`: Size of the raster cells. Can specify resolution with a value less than 1 or specify the pixel length of the raster extent.
+  - `raster_size`: Size of the raster cells. Can specify resolution with a value less than 1 or specify the pixel length of the raster
+  extent.
   - `x_closest`: Assign nth closest site to point. Typically, in production, only the closest site is required; however, during development, multiple closest sites can be beneficial for analysis.
   - `is_standardised`: Flag indicating whether to standardize extents to the largest one in the provided data.
   - `save_spatial_as_raster`: Flag indicating whether to save the generated spatial data as individual raster files for analysis with traditional geospatial program such as Archgis and QGIS (optional).
@@ -484,6 +715,7 @@ Output locations are defined in the configuration files and will be created if t
   - Reads the KML file containing reef polygons and extracts layer information.
   - Compares the current KML file with a previous version, if provided, and identifies the geometries that have require updating.
   - Loads or calculates site regions based on the KML data.
+    - Site regions are calculated by determining which site boundary is closest to every pixel. The raster pixel is then assigned the site number.   
   - Saves the site regions as R binary files for future use.
   - Optionally, saves the spatial data as raster files for visualization.
   - Retrieves the centroids of manta tow entries and assigns the nearest site information based on the calculated site regions.
@@ -526,7 +758,7 @@ Output locations are defined in the configuration files and will be created if t
 - **Output:**
   - List of spatial differences between the current and previous versions.
 - **Description:**
-  - Compares spatial data between the current and previous versions and identifies differences. The function returns a list of spatial differences based on Reef IDs.
+  - Compares spatial data between the current and previous versions and identifies differences. The function returns a list Reef IDs indicating that is variation between the two spatial files.
 
 #### Function: `compute_checksum(data)`
 - **Input:**
@@ -628,7 +860,27 @@ Output locations are defined in the configuration files and will be created if t
 - **Outputs:**
   - `result`: perpendicular distance
 - **Description:**
-Calculate perpendicular distance of a point p from a line segment AB for RDP method.
+  - Calculate perpendicular distance of a point p from a line segment AB for RDP method.
+
+
+#### Function: `simplify_kml_polyogns_rdp(kml_data)`
+- **Inputs:**
+  - `kml_data`: KML data as a list.
+- **Outputs:**
+  - Simplified polygon.
+- **Description:**
+  - Simplify all polygons in a list that was retrieved from the kml file with the Ramer-Douglas-Peucker algorithm
+
+
+#### Function: `simplify_shp_polyogns_rdp(shapefile)`
+- **Inputs:**
+  - `shapefile`: shapefile data.
+- **Outputs:**
+  - Simplified polygon.
+- **Description:**
+  - Simplify all polygons in a shapefile file with the Ramer-Douglas-Peucker algorithm
+
+
 
 #### Function: `find_largest_extent(kml_data)`
 - **Inputs:**

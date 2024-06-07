@@ -1,15 +1,13 @@
 
-main <- function(new_path, configuration_path = NULL, aggregate = TRUE, kml_path = NULL, leg_path = NULL) {
+main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path = NULL) {
   tryCatch({
     # Initialize -------------------------------------------------------------
+
     source("source.R")
     library("tools")
     library("installr")
-    library("readxl")
     library("sets")
-    library("XML")
     library("methods")
-    library("xml2")
     library("rio")
     library("dplyr")
     library("stringr")
@@ -28,32 +26,34 @@ main <- function(new_path, configuration_path = NULL, aggregate = TRUE, kml_path
     library("stars")
     library("stringr")
     library("future")
+    library("furrr")
     library("foreach")
     library("doParallel")
+    library("digest")
     
     keyword <- get_file_keyword(new_path) 
+
+    if (is.null(configuration_path)) {
+      configuration_path <- find_recent_file("configuration_files/", paste("research_",keyword, sep=""), "json")
+      configuration <- fromJSON(configuration_path)
+    }
+    
+    most_recent_kml_path <- find_recent_file(configuration$metadata$input_directory$spatial_data, "Sites", "kml")
     most_recent_report_path <- find_recent_file(configuration$metadata$output_directory$reports, configuration$metadata$control_data_type, "json")
-    most_recent_leg_path <- find_recent_file(configuration$metadata$output_directory$control_data, configuration$metadata$control_data_type, "csv")
-    configuration_path <- find_recent_file("configuration_files/", keyword, ".json")
-    configuration <- fromJSON(configuration_path)
-    most_recent_kml_path <- find_recent_file(configuration$metadata$input_directory$spatial_data, "sites", "kml")
+    most_recent_leg_path <- find_recent_file(configuration$metadata$output_directory$control_data_unaggregated, configuration$metadata$control_data_type, "csv")
+    serialised_spatial_path <- find_recent_file(configuration$metadata$output_directory$spatial_data, "site_regions", "rds")
     
     previous_kml_path <- NULL
-    serialised_spatial_path <- NULL
     if(!is.null(most_recent_report_path)){
       previous_report <- fromJSON(most_recent_report_path)
       previous_kml_path <- previous_report$inputs$kml_path
-      serialised_spatial_path <- previous_report$outputs$spatial_data
     } 
-    
-    if (is.null(leg_path)) {
-      leg_path <- most_recent_leg_path
-    }
-    
+
     # Attempt to use legacy data where possible. 
     is_new <- 0
     is_legacy_data_available <- 1
     if (is.null(leg_path)) {
+      leg_path <- most_recent_leg_path
       if(is.null(most_recent_leg_path)){
         is_new <- 1
         is_legacy_data_available <- 0
@@ -62,24 +62,9 @@ main <- function(new_path, configuration_path = NULL, aggregate = TRUE, kml_path
       }
     } 
     
-    # Reduce computation time by only assigning sites to raster pixels when needed.
-    # If the previous output utilised the most up-to-date kml file, then there 
-    # will be a saved serialised version of the raster data that can be utilised 
-    # instead of calculating it again as this is by far the most time consuming 
-    # part of the process. 
-    calculate_site_rasters <- 1
     if (is.null(kml_path)) {
       kml_path <- most_recent_kml_path
     }
-    tryCatch({
-      if(basename(kml_path) == basename(previous_kml_path)){
-        calculate_site_rasters <- 0
-      } 
-    }, error = function(e) {
-      print("Error comparing previous and most recent kml paths")
-      calculate_site_rasters <- 1
-    })
-   
     
     new_data_df <- rio::import(new_path)
     if(is_legacy_data_available){
@@ -121,8 +106,7 @@ main <- function(new_path, configuration_path = NULL, aggregate = TRUE, kml_path
     metadata_json_output[["decisions"]] = list(
       has_authorative_ID = has_authorative_ID,
       is_legacy_data_available = is_legacy_data_available,
-      is_new = is_new, 
-      calculate_site_rasters = calculate_site_rasters
+      is_new = is_new
     )
     
     # save metadata json file 
@@ -133,13 +117,10 @@ main <- function(new_path, configuration_path = NULL, aggregate = TRUE, kml_path
     
     transformed_data_df <- map_data_structure(new_data_df, configuration$mappings$transformations, configuration$mappings$new_fields)
     if(is_legacy_data_available){
-      legacy_df <- set_data_type(legacy_df, configuration$mappings$data_type_mappings) 
+      legacy_df <- set_data_type(legacy_df, configuration$mappings$data_type_mappings)
     }
     formatted_data_df <- set_data_type(transformed_data_df, configuration$mappings$data_type_mappings) 
     
-    if(configuration$metadata$control_data_type == "manta_tow"){
-      formatted_data_df <- seperate_date_time_manta_tow(formatted_data_df)
-    }
     
     verified_data_df <- verify_entries(formatted_data_df, configuration)
     if(is_new && is_legacy_data_available){
@@ -152,11 +133,11 @@ main <- function(new_path, configuration_path = NULL, aggregate = TRUE, kml_path
     tryCatch({
       if(configuration$metadata$assign_sites){
         if(configuration$metadata$control_data_type == "manta_tow"){
-          verified_data_df <- assign_nearest_site_method_c(verified_data_df, kml_path, configuration$metadata$control_data_type, calculate_site_rasters, previous_kml_path, serialised_spatial_path, raster_size=0.0005, x_closest=1, is_standardised=0, save_spatial_as_raster=0)
+          verified_data_df <- assign_nearest_site_method_c(verified_data_df, kml_path, configuration$metadata$control_data_type, previous_kml_path, serialised_spatial_path, configuration$metadata$output_directory$spatial_data, raster_size=0.0005, x_closest=1, is_standardised=0, save_spatial_as_raster=0)
         } else {
           verified_data_df$`Nearest Site` <- site_names_to_numbers(verified_data_df$`Site Name`)
         }
-        
+        verified_data_df$`Nearest Site` <- ifelse(is.na(verified_data_df$`Nearest Site`), -1, verified_data_df$`Nearest Site`)
       }
     }, error = function(e) {
       print(paste("Error assigning sites:", conditionMessage(e)))
@@ -165,7 +146,7 @@ main <- function(new_path, configuration_path = NULL, aggregate = TRUE, kml_path
     # separate entries and update any rows that were changed on accident. 
     tryCatch({
       if(is_legacy_data_available){
-        verified_data_df <- separate_control_dataframe(verified_data_df, legacy_df, configuration$metadata$control_data_type)
+        verified_data_df <- separate_control_dataframe(verified_data_df, legacy_df)
       }
     }, error = function(e) {
       print(paste("Error seperating control data. All data has been treated as new entries.", conditionMessage(e)))
@@ -173,11 +154,11 @@ main <- function(new_path, configuration_path = NULL, aggregate = TRUE, kml_path
     
     # Save workflow outputc
     tryCatch({
-      if (!dir.exists(configuration$metadata$output_directory$control_data)) {
-        dir.create(configuration$metadata$output_directory$control_data, recursive = TRUE)
+      if (!dir.exists(configuration$metadata$output_directory$control_data_unaggregated)) {
+        dir.create(configuration$metadata$output_directory$control_data_unaggregated, recursive = TRUE)
       }
       
-      output_directory <- configuration$metadata$output_directory$control_data
+      output_directory <- configuration$metadata$output_directory$control_data_unaggregated
       data_type <- configuration$metadata$control_data_type
       timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
       file_name <- paste(data_type, "_", timestamp, ".csv", sep = "")
@@ -189,8 +170,39 @@ main <- function(new_path, configuration_path = NULL, aggregate = TRUE, kml_path
       write.csv(verified_data_df, paste(configuration$metadata$control_data_type,"_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv", sep = ""), row.names = FALSE)
   
     })
+    
+    if(configuration$metadata$control_data_type == "manta_tow"){
+      verified_aggregated_df <- aggregate_manta_tows_site_resolution_research(verified_data_df)  
+    } else if (configuration$metadata$control_data_type == "cull") {
+      verified_aggregated_df <- aggregate_culls_site_resolution_research(verified_data_df) 
+    }
+    
+    tryCatch({
+      if (!dir.exists(configuration$metadata$output_directory$control_data_aggregated)) {
+        dir.create(configuration$metadata$output_directory$control_data_aggregated, recursive = TRUE)
+      }
+      
+      output_directory <- configuration$metadata$output_directory$control_data_aggregated
+      data_type <- configuration$metadata$control_data_type
+      timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+      file_name <- paste(data_type, "_", timestamp, ".csv", sep = "")
+      output_path <- file.path(output_directory, file_name)
+      write.csv(verified_aggregated_df, output_path, row.names = FALSE)
+      
+    }, error = function(e) {
+      print(paste("Error saving data - Data saved in source directory", conditionMessage(e)))
+      write.csv(verified_aggregated_df, paste(configuration$metadata$control_data_type,"_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv", sep = ""), row.names = FALSE)
+      
+    })
+    
+    # Reset
+    new_path <- NULL
+    configuration_path <- NULL
+    kml_path <- NULL
+    leg_path <- NULL
+    
   }, error = function(e) {
-    send_error_email("Auth\\", "ethankwaters@gmail", "TEST")
+    print(paste("Critical Error in workflow could not be resolved:", conditionMessage(e)))
   })
 }
 
@@ -202,7 +214,6 @@ new_path <- args[1]
 configuration_path <- NULL
 kml_path <- NULL
 leg_path <- NULL
-aggregate <- TRUE
 
 # Loop through the arguments to find optional ones
 for (i in 2:length(args)) {
@@ -212,8 +223,6 @@ for (i in 2:length(args)) {
     kml_path <- sub("--kml=", "", args[i])
   } else if (startsWith(args[i], "--leg=")) {
     leg_path <- sub("--leg=", "", args[i])
-  } else if (startsWith(args[i], "--aggregate=")) {
-    aggregate <- sub("--aggregate=", "", args[i])
   }
 }
 
