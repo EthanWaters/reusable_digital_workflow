@@ -1856,6 +1856,7 @@ update_config_file <- function(data_df, configuration_path, new_mappings_to_add=
   
 }
 
+
 map_new_fields <- function(data_df, transformed_df, new_fields){
   for (i in seq_len(nrow(new_fields))) {
     new_field <- new_fields$field[i]
@@ -1876,11 +1877,12 @@ map_new_fields <- function(data_df, transformed_df, new_fields){
 # Get the default value of new columns required in the dataframe from the
 # configuration file.The default value can be a function in the form of string 
 # that will be executed if the default value is dependent on other columns. 
-get_new_field_default_values <- function(data_df, new_fields){
+get_new_field_default_values <- function(new_data_df, transformed_data_df, new_fields){
   new_fields <- new_fields[new_fields$function_call == TRUE,]
   for (i in seq_len(nrow(new_fields))) {
         default_value <- new_fields$default[i]
-        expression <- gsub("\\{DATAFRAME\\}", "data_df", default_value)
+        expression <- gsub("\\{TRANSFORMED_DATAFRAME\\}", "transformed_data_df", default_value)
+        expression <- gsub("\\{DATAFRAME\\}", "data_df", expression)
         default_value <- eval(parse(text = expression))
         position <- new_fields$position[i]
         data_df[, position] <- default_value
@@ -1908,7 +1910,7 @@ map_data_structure <- function(data_df, mappings, new_fields){
   transformed_df <- data.frame(matrix(ncol = nrow(mappings) + nrow(new_fields), nrow = nrow(data_df)))
   transformed_df <- map_new_fields(data_df, transformed_df, new_fields)
   transformed_df <- map_all_fields(data_df, transformed_df, mappings)
-  transformed_df <- get_new_field_default_values(transformed_df, new_fields)
+  transformed_df <- get_new_field_default_values(data_df, transformed_df, new_fields)
   return(transformed_df)
 }
 

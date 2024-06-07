@@ -90,25 +90,25 @@
       "new_fields": [
         {
           "field": "start_latitude",
-          "default": "st_coordinates(st_startpoint({DATAFRAME}$Geometry))[,\"Y\"]",
+          "default": "st_coordinates(st_startpoint({TRANSFORMED_DATAFRAME}$Geometry))[,\"Y\"]",
           "position": 6,
           "function_call": true
         },
         {
           "field": "stop_latitude",
-          "default": "st_coordinates(st_endpoint({DATAFRAME}$Geometry))[,\"Y\"]",
+          "default": "st_coordinates(st_endpoint({TRANSFORMED_DATAFRAME}$Geometry))[,\"Y\"]",
           "position": 8,
           "function_call": true
         },
         {
           "field": "start_longitude",
-          "default": "st_coordinates(st_startpoint({DATAFRAME}$Geometry))[,\"X\"]",
+          "default": "st_coordinates(st_startpoint({TRANSFORMED_DATAFRAME}$Geometry))[,\"X\"]",
           "position": 7,
           "function_call": true
         },
         {
           "field": "stop_longitude",
-          "default": "st_coordinates(st_endpoint({DATAFRAME}$Geometry))[,\"X\"]",
+          "default": "st_coordinates(st_endpoint({TRANSFORMED_DATAFRAME}$Geometry))[,\"X\"]",
           "position": 9,
           "function_call": true
         },

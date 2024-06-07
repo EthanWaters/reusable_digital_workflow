@@ -25,16 +25,18 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     library("DBI")
     library("RMySQL")
     
-    # configuration_path <- "D:\\COTS\\on_water_PWA\\cots_on_water_pwa_draft\\back_end\\reusable_digital_workflow\\configuration_files\\app_manta_tow_config.json"
-    # connection_string <- "MySQL://root:csiro@127.0.0.1:3306/cotscontrolcentre"
-    # new_files <- c("Input/control_data/TAB#3 COTS_Surveillance_2024_1_22_9_9_7.json", "Input/control_data/TAB#5 COTS_Surveillance_2024_1_20_17_49_58.json", "Input/control_data/TAB#6 COTS_Surveillance_2024_1_20_17_49_21.json")
+    # 
+    serialised_spatial_path <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\Output\\spatial_data\\site_regions_20240606_174351.rds"
+    configuration_path <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\configuration_files\\app_manta_tow_config.json"
+    connection_string <- "MariaDB://root:csiro@127.0.0.1:3306/cotscontrolcentre"
+    new_files <- c("D:\\COTS\\on_water_PWA\\cots_on_water_pwa_draft\\back_end\\cots_control_centre\\uploads\\znwofwy0.jyg", "D:\\COTS\\on_water_PWA\\cots_on_water_pwa_draft\\back_end\\cots_control_centre\\uploads\\0mu0qjge.g55")
     
-    base::message(script_dir)
+    
     base::message(configuration_path)
     base::message(serialised_spatial_path)
     base::message(connection_string)
     base::message(new_files)
-    
+    base::message(class(new_files))
     components <- unlist(strsplit(connection_string, "://|:|@|/", perl = TRUE))
 
     # Extract the individual components of connection string
@@ -49,7 +51,7 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     control_data_type <- configuration$metadata$control_data_type
     calculate_site_rasters <- 0
     
-    new_data_df <- fromJSON(new_files[1])
+    new_data_df <- fromJSON(normalizePath(new_files[1], "/", mustWork = FALSE))
     for(i in 2:length(new_files)){
       file_path <- normalizePath(new_files[i], "/", mustWork = FALSE)
       new_data_df <- rbind(new_data_df, fromJSON(file_path))
@@ -63,14 +65,13 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
       new_data_df$Geometry <- sf::st_as_sfc(new_data_df$Geometry)
       new_data_df <- sf::st_sf(new_data_df)
     } 
-  
+    
     con <- DBI::dbConnect(RMySQL::MySQL(), user = username,password = password,host = hostname,port = as.integer(port),dbname = database_name, load_data_local_infile = TRUE)
     legacy_df <- get_app_data_database(con, configuration$metadata$control_data_type)
     
-    serialised_spatial_path <- find_recent_file(configuration$metadata$input_directory$serialised_spatial_path, "site", "rds")
-    
+    base::message("Mapping data structure...")
     transformed_data_df <- map_data_structure(new_data_df, configuration$mappings$transformations, configuration$mappings$new_fields)
-  
+    base::message("Mapping data structure complete")
     # Convert column names of both legacy (app data) and new data (json export) to
     # conventional legacy names in original research workflow to use other functions 
     app_to_research_config <- fromJSON(configuration$metadata$input_directory$app_to_research_names)
@@ -88,7 +89,7 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
       transformed_data_df[["Feeding Scars"]] <- get_feeding_scar_from_description(transformed_data_df[["Feeding Scars"]])
     }
   
-      
+    base::message("Assign missing site and reef info...")
     # assign site and reef information if they are missing
     tryCatch({
       transformed_data_df <- assign_missing_site_and_reef(transformed_data_df, serialised_spatial_path, control_data_type)
@@ -96,6 +97,8 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     }, error = function(e) {
       print(paste("Error assigning sites:", conditionMessage(e)))
     })
+    
+    base::message("Completed assigning missing site and reef info...")
     
     legacy_df <- set_data_type(legacy_df, app_to_research_config$mappings$data_type_mappings) 
     formatted_data_df <- set_data_type(transformed_data_df, app_to_research_config$mappings$data_type_mappings) 
