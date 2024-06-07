@@ -1395,9 +1395,8 @@ verify_integers_positive <- function(data_df) {
   
   is_integer <- sapply(data_df[1,],is.integer)
   if(any(is_integer)){
-    col_check <- apply(data_df[,is_integer], 2, function(x) x < 0)
-    col_check <- ifelse(is.na(col_check), FALSE, col_check)
-    check <- rowSums(col_check) > 0
+    check <- apply(data_df[,is_integer, drop = FALSE], 1, function(row) any(row < 0))
+    check <- ifelse(is.na(check), FALSE, check)
     data_df[, "error_flag"] <- as.integer(data_df[, "error_flag"] | check)
     
     if (any(check)) {

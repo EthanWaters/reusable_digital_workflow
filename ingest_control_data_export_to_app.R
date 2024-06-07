@@ -25,12 +25,12 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     library("DBI")
     library("RMySQL")
     
-    # 
+
     serialised_spatial_path <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\Output\\spatial_data\\site_regions_20240606_174351.rds"
     configuration_path <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\configuration_files\\app_manta_tow_config.json"
     connection_string <- "MariaDB://root:csiro@127.0.0.1:3306/cotscontrolcentre"
     new_files <- c("D:\\COTS\\on_water_PWA\\cots_on_water_pwa_draft\\back_end\\cots_control_centre\\uploads\\znwofwy0.jyg", "D:\\COTS\\on_water_PWA\\cots_on_water_pwa_draft\\back_end\\cots_control_centre\\uploads\\0mu0qjge.g55")
-    
+
     
     base::message(configuration_path)
     base::message(serialised_spatial_path)
@@ -110,12 +110,14 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     verified_new_df <- map_all_fields(verified_new_df, verified_new_df, app_to_research_config$mapping$reverse_transformation)
     verified_new_df$start_date <- voyage_dates$start_date
     verified_new_df$stop_date <- voyage_dates$stop_date
+    base::message("Aggregating...")
     if (control_data_type == "manta_tow"){
       verified_df <- aggregate_manta_tows_site_resolution_app(verified_new_df)
     } else if (control_data_type == "cull") { 
       verified_df <- aggregate_culls_site_resolution_app(verified_new_df)
     }
-    
+    base::message("Completed aggregating...")
+    base::message("Saving to database...")
     tryCatch({
       if(control_data_type != "RHIS"){
         
