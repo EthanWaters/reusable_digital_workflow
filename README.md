@@ -4,7 +4,7 @@
 
 ## 1.0 Overview
 
-The overall purpose of this codebase is to clean, wrangle and perform geospatial analysis on control program data from GBRMPA to produce a standardised output for utilisation in research or decision support tools. `source.R` defines a large set of functions for this and generally serves one of the following purposes:
+This codebase was developed as part of the COTS Control Innovation Program, project R-02. The overall purpose of this codebase is to clean, wrangle and perform geospatial analysis on control program data from GBRMPA to produce a standardised output for utilisation in research or decision support tools. `source.R` defines a large set of functions for this and generally serves one of the following purposes:
 
   1. `Data Transformation`
   2. Perform `Error Checking & Processing`

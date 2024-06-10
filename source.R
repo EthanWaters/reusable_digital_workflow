@@ -493,7 +493,7 @@ contribute_to_metadata_report <- function(key, data, parent_key=NULL, report_pat
 
 separate_control_dataframe <- function(new_data_df, legacy_data_df){
   if(any(grepl("ID", colnames(new_data_df)))){
-    ID_col <- colnames(new_data_df)[which(grepl("ID", colnames(new_data_df)))]
+    ID_col <- colnames(new_data_df)[which(grepl("ID", colnames(new_data_df)))[1]]
   } else {
     ID_col <- ""
   } 
