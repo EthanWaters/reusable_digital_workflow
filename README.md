@@ -34,23 +34,6 @@ This requires Docker version 24.0.6:https://www.docker.com/products/docker-deskt
 
 Although not recommended, the scripts can be executed locally after running the setup scripts. On windows execute the setup and dependencies batch files. On Linux run the setup and dependencies shell files
 
-
-### 2.1.1 How to update source code
-```bash
-# Assuming you are in your project directory
-
-# Perform changes, COMMIT and push
-
-# 1. Update source code tag e.g.
-#SPECIFY DESIRED VERSION BY REPLACEING "latest"
-git tag -a v[latest] -m "Version latest"
-git push origin v[latest]
-
-# 3. Build, tag and push the Docker image
-docker build -t ghcr.io/[USERNAME]/reusable_digital_workflow:latest .
-docker push ghcr.io/[USERNAME]/reusable_digital_workflow:latest
-```
-
 #### 2.2 R Environment Information
 
 - R version: 4.2.1 (2022-06-23 ucrt)
