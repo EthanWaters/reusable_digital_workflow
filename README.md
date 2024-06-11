@@ -21,8 +21,8 @@ Functions defined in `source.R` are then utilisesd to produce several applicatio
 This section defines several terms utilized throughout the documentation to ensure clarity. 
   - `Legacy` or `legacy data`: Refers to data previously processed by this workflow or previous versions of this work flow and is in the "Legacy format".
   - `New` or `new data`: Refers to new data exported from GBRMPA and is attempting to be processed by this workflow for the first time.
-  - `Match`: A row identified in both `legacy data` and `new data`. This row may have minor changes due to QA or mistakes
-  - `Discrepany`: A match that varies between `legacy` and `new` data.
+  - `Match`: A row identified in both `legacy data` and `new data`. 
+  - `Discrepany`: A match that has minor changes due to QA or mistakes between `legacy` and `new` data.
   
   
 ## 2.0 Installation & Requirements
