@@ -364,7 +364,6 @@ aggregate_culls_site_resolution_research <- function(data_df) {
       `Nearest Site` = `Nearest Site`,
       error_flag = as.numeric(any(as.logical(error_flag)))
     ) %>%
-    unnest_wider(coords) %>%
     dplyr::select(all_of(col_names)) %>%
     dplyr::distinct()
   
@@ -397,7 +396,6 @@ aggregate_culls_site_resolution_app <- function(data_df) {
       site_name = site_name,
       error_flag = as.numeric(any(as.logical(error_flag)))
     ) %>%
-    unnest_wider(coords) %>%
     dplyr::select(all_of(col_names)) %>%
     dplyr::distinct()
   
