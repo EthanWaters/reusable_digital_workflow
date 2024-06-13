@@ -1095,7 +1095,7 @@ verify_entries <- function(data_df, configuration){
     data_df <- verify_scar(data_df)
   } else if (control_data_type == "cull") {
     data_df <- verify_voyage_dates(data_df)
-  } else if (control_data_type == "RHISS") {
+  } else if (control_data_type == "rhis") {
     data_df <- verify_RHISS(data_df)
   } 
   data_df <- verify_na_null(data_df, configuration)
@@ -1910,6 +1910,7 @@ map_data_structure <- function(data_df, mappings, new_fields){
   transformed_df <- map_new_fields(data_df, transformed_df, new_fields)
   transformed_df <- map_all_fields(data_df, transformed_df, mappings)
   transformed_df <- get_new_field_default_values(data_df, transformed_df, new_fields)
+  transformed_df <- transformed_df[, colSums(is.na(transformed_df)) < nrow(transformed_df)]
   return(transformed_df)
 }
 

@@ -1,15 +1,14 @@
 {
   "metadata": {
     "author": "Ethan Waters",
-    "description": "Configuration for RHISS data",
+    "description": "Configuration for rhis data",
     "created": "2023-11-20",
-    "control_data_type": "RHISS",
+    "control_data_type": "rhis",
     "GBRMPA_keyword": "Dashboard",
     "legacy_sheet_index": 4,
     "ID_col": "Program ID",
     "is_ID_preferred": true,
     "assign_sites": false,
-    "separate_data": true,
     "output_directory": {
       "control_data": "Output/control_data",
       "spatial_data": "Output/spatial_data",
@@ -464,7 +463,7 @@
         "field": "error_flag",
         "position": 105,
         "default": 0,
-        "function_call": false
+        "function_call": true
       }
     ],
     "data_type_mappings": [
@@ -478,7 +477,7 @@
       },
       {
         "field": "Observation Date",
-        "data_type": "Datetime"
+        "data_type": "Date"
       },
       {
         "field": "Reef ID",
