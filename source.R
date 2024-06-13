@@ -1730,7 +1730,9 @@ set_data_type <- function(data_df, mapping){
   for (i in seq_len(nrow(mapping))) {
     column_name <- mapping$field[i]
     data_type <- mapping$data_type[i]
-    
+    if (!(column_name %in% colnames(data_df))){
+      next
+    }
     # Convert the column to the specified data type
     if(tolower(data_type) == "date"){
       # NA will cause all dates to note parse. Remove NA from parsing but 
