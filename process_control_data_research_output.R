@@ -152,7 +152,7 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
       print(paste("Error seperating control data. All data has been treated as new entries.", conditionMessage(e)))
     })
     
-    # Save workflow outputc
+    # Save workflow output
     tryCatch({
       if (!dir.exists(configuration$metadata$output_directory$control_data_unaggregated)) {
         dir.create(configuration$metadata$output_directory$control_data_unaggregated, recursive = TRUE)

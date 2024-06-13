@@ -7,7 +7,7 @@
     "GBRMPA_keyword": ["Dives"],
     "legacy_sheet_index": [2],
     "ID_col": ["Capture ID"],
-    "is_ID_preferred": [true],
+    "is_ID_preferred": [false],
     "assign_sites": [true],
     "output_directory": {
       "control_data_aggregated": ["Output/control_data/site_aggregation"],
