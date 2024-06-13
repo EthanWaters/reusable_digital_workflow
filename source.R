@@ -489,7 +489,7 @@ contribute_to_metadata_report <- function(key, data, parent_key=NULL, report_pat
   toJSON(report, pretty = TRUE, auto_unbox = TRUE) %>% writeLines(report_path)
 }
 
-separate_control_dataframe <- function(new_data_df, legacy_data_df){
+separate_control_dataframe <- function(new_data_df, legacy_data_df, has_authorative_ID){
   if(any(grepl("ID", colnames(new_data_df)))){
     ID_col <- colnames(new_data_df)[which(grepl("ID", colnames(new_data_df)))[1]]
   } else {
