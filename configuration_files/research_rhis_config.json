@@ -26,437 +26,524 @@
       {
         "target_field": "Program ID",
         "source_field": "Program Id",
-        "position": 1
+        "position": 1,
+        "verify_na_exempt": true
       },
       {
         "target_field": "Survey Program",
         "source_field": "Program",
-        "position": 2
+        "position": 2,
+        "verify_na_exempt": true
       },
       {
         "target_field": "Observation Date",
         "source_field": "Observation Time",
-        "position": 3
+        "position": 3,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Reef ID",
         "source_field": "Reef Label",
-        "position": 4
+        "position": 4,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Reef Name",
         "source_field": "Reef Name",
-        "position": 5
+        "position": 5,
+        "verify_na_exempt": false
       },
       {
         "target_field": "COTS Cull Site",
         "source_field": "Cull Site",
-        "position": 6
+        "position": 6,
+        "verify_na_exempt": true
       },
       {
         "target_field": "Longitude",
         "source_field": "Longitude",
-        "position": 7
+        "position": 7,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Latitude",
         "source_field": "Latitude",
-        "position": 8
+        "position": 8,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Marine Park Zone",
         "source_field": "Marine Park Zone Type",
-        "position": 9
+        "position": 9,
+        "verify_na_exempt": true
       },
       {
         "target_field": "Marine Park Mgmt Section",
         "source_field": "Management Area",
-        "position": 10
+        "position": 10,
+        "verify_na_exempt": true
       },
       {
         "target_field": "Habitat",
         "source_field": "Habitat",
-        "position": 11
+        "position": 11,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Aspect",
         "source_field": "Aspect",
-        "position": 12
+        "position": 12,
+        "verify_na_exempt": true
       },
       {
         "target_field": "Swim Type",
         "source_field": "Swim Type",
-        "position": 13
+        "position": 13,
+        "verify_na_exempt": true
       },
       {
         "target_field": "Water Depth (M)",
         "source_field": "Depth (m)",
-        "position": 14
+        "position": 14,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Visibility",
         "source_field": "Visibility",
-        "position": 15
+        "position": 15,
+        "verify_na_exempt": true
       },
       {
         "target_field": "Tide",
         "source_field": "Tide",
-        "position": 16
+        "position": 16,
+        "verify_na_exempt": true
       },
       {
         "target_field": "Flood Plume",
         "source_field": "Flood Plume",
-        "position": 17
+        "position": 17,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Macroalgae",
         "source_field": "Macroalgae",
-        "position": 18
+        "position": 18,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Live Coral",
         "source_field": "Live Coral",
-        "position": 19
+        "position": 19,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Live Coral Rock",
         "source_field": "Live Coral Rock",
-        "position": 20
+        "position": 20,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Recently Dead Coral",
         "source_field": "Recently Dead Coral",
-        "position": 21
+        "position": 21,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Coral Rubble",
         "source_field": "Coral Rubble",
-        "position": 22
+        "position": 22,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Live + R.Dead Coral %",
         "source_field": "Live And Recently Dead Coral",
-        "position": 23
+        "position": 23,
+        "verify_na_exempt": false
       },
       {
         "target_field": "RDC% of Total Coral Cover",
         "source_field": "Recently Dead Coral Cover % of Total Coral Cover",
-        "position": 24
+        "position": 24,
+        "verify_na_exempt": false
       },
       {
         "target_field": "LCC% of Total Coral Cover",
         "source_field": "Live Coral Cover % of Total Coral Cover",
-        "position": 25
+        "position": 25,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Total Hard Coral %",
         "source_field": "Total Hard Coral %",
-        "position": 26
+        "position": 26,
+        "verify_na_exempt": false
       },
       {
         "target_field": "% Benthos Live Soft Coral",
         "source_field": "% Benthos Live Soft Coral",
-        "position": 27
+        "position": 27,
+        "verify_na_exempt": false
       },
       {
         "target_field": "% Benthos Live Hard Coral",
         "source_field": "% Benthos Live Hard Coral",
-        "position": 28
+        "position": 28,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Slime Amount",
         "source_field": "Slime Amount",
-        "position": 29
+        "position": 29,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Slime Height (cm)",
         "source_field": "Slime Height",
-        "position": 30
+        "position": 30,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Entangled/Mat-Like Amount",
         "source_field": "Entangled/Mat-Like Amount",
-        "position": 31
+        "position": 31,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Entangled/Mat-Like Height (cm)",
         "source_field": "Entangled/Mat-Like Height",
-        "position": 32
+        "position": 32,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Filamentous Amount",
         "source_field": "Filamentous Amount",
-        "position": 33
+        "position": 33,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Filamentous Height (cm)",
         "source_field": "Filamentous Height",
-        "position": 34
+        "position": 34,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Leafy/Fleshy Amount",
         "source_field": "Leafy/Fleshy Amount",
-        "position": 35
+        "position": 35,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Leafy/Fleshy Height (cm)",
         "source_field": "Leafy/Fleshy Height",
-        "position": 36
+        "position": 36,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Tree/Bush-Like Amount",
         "source_field": "Tree/Bush-Like Amount",
-        "position": 37
+        "position": 37,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Tree/Bush-Like Height (cm)",
         "source_field": "Tree/Bush-Like Height",
-        "position": 38
+        "position": 38,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Soft Coral % (Live and Recently dead)",
         "source_field": "Soft Coral % (Live and Recently dead)",
-        "position": 39
+        "position": 39,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Soft Coral % (Recently dead of coral type)",
         "source_field": "Soft Coral % (Recently dead of coral type)",
-        "position": 40
+        "position": 40,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Soft Coral % (Live coral of coral type)",
         "source_field": "Soft Coral % (Live coral of coral type)",
-        "position": 41
+        "position": 41,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Branching Coral % (Live and Recently dead)",
         "source_field": "Branching Coral % (Live and Recently dead)",
-        "position": 42
+        "position": 42,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Branching Coral % (Recently dead of coral type)",
         "source_field": "Branching Coral % (Recently dead of coral type)",
-        "position": 43
+        "position": 43,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Branching Coral % (Live coral of coral type)",
         "source_field": "Branching Coral % (Live coral of coral type)",
-        "position": 44
+        "position": 44,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Bushy Coral % (Live and Recently dead)",
         "source_field": "Bushy Coral % (Live and Recently dead)",
-        "position": 45
+        "position": 45,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Bushy Coral % (Recently dead of coral type)",
         "source_field": "Bushy Coral % (Recently dead of coral type)",
-        "position": 46
+        "position": 46,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Bushy Coral % (Live coral of coral type)",
         "source_field": "Bushy Coral % (Live coral of coral type)",
-        "position": 47
+        "position": 47,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Plate/Table Coral % (Live and Recently dead)",
         "source_field": "Plate/Table Coral % (Live and Recently dead)",
-        "position": 48
+        "position": 48,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Plate/Table Coral % (Recently dead of coral type)",
         "source_field": "Plate/Table Coral % (Recently dead of coral type)",
-        "position": 49
+        "position": 49,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Plate/Table Coral % (Live coral of coral type)",
         "source_field": "Plate/Table Coral % (Live coral of coral type)",
-        "position": 50
+        "position": 50,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Vase/Foliose Coral % (Live and Recently dead)",
         "source_field": "Vase/Foliose Coral % (Live and Recently dead)",
-        "position": 51
+        "position": 51,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Vase/Foliose Coral % (Recently dead of coral type)",
         "source_field": "Vase/Foliose Coral % (Recently dead of coral type)",
-        "position": 52
+        "position": 52,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Vase/Foliose Coral % (Live coral of coral type)",
         "source_field": "Vase/Foliose Coral % (Live coral of coral type)",
-        "position": 53
+        "position": 53,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Encrusting Coral % (Live and Recently dead)",
         "source_field": "Encrusting Coral % (Live and Recently dead)",
-        "position": 54
+        "position": 54,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Encrusting Coral % (Recently dead of coral type)",
         "source_field": "Encrusting Coral % (Recently dead of coral type)",
-        "position": 55
+        "position": 55,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Encrusting Coral % (Live coral of coral type)",
         "source_field": "Encrusting Coral % (Live coral of coral type)",
-        "position": 56
+        "position": 56,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Massive Coral % (Live and Recently dead)",
         "source_field": "Massive Coral % (Live and Recently dead)",
-        "position": 57
+        "position": 57,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Massive Coral % (Recently dead of coral type)",
         "source_field": "Massive Coral % (Recently dead of coral type)",
-        "position": 58
+        "position": 58,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Massive Coral % (Live coral of coral type)",
         "source_field": "Massive Coral % (Live coral of coral type)",
-        "position": 59
+        "position": 59,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Mushroom Coral % (Live and Recently dead)",
         "source_field": "Mushroom Coral % (Live and Recently dead)",
-        "position": 60
+        "position": 60,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Mushroom Coral % (Recently dead of coral type)",
         "source_field": "Mushroom Coral % (Recently dead of coral type)",
-        "position": 61
+        "position": 61,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Mushroom Coral % (Live coral of coral type)",
         "source_field": "Mushroom Coral % (Live coral of coral type)",
-        "position": 62
+        "position": 62,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Bleaching Present (Y/N)",
         "source_field": "Bleaching Present",
-        "position": 63
+        "position": 63,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Bleaching Cause",
         "source_field": "Bleaching Cause",
-        "position": 64
+        "position": 64,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Bleach Impact (calculated via matrix)",
         "source_field": "Bleaching Impact (calculated via matrix)",
-        "position": 65
+        "position": 65,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Bleached Coral % (calculated via matrix)",
         "source_field": "Bleached Coral % (calculated via matrix)",
-        "position": 66
+        "position": 66,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Bleached Coral Code (calculated via matrix)",
         "source_field": "Bleached Coral Code (calculated via matrix)",
-        "position": 67
+        "position": 67,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Bleached Average Severity Index (calculated via matrix)",
         "source_field": "Bleached Average Severity Index (calculated via matrix)",
-        "position": 68
+        "position": 68,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Branching Bleached %",
         "source_field": "Branching Bleached %",
-        "position": 69
+        "position": 69,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Bushy Bleached %",
         "source_field": "Bushy Bleached %",
-        "position": 70
+        "position": 70,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Plate/Table Bleached %",
         "source_field": "Plate/Table Bleached %",
-        "position": 71
+        "position": 71,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Vase/Foliose Bleached %",
         "source_field": "Vase/Foliose Bleached %",
-        "position": 72
+        "position": 72,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Encrusting Bleached %",
         "source_field": "Encrusting Bleached %",
-        "position": 73
+        "position": 73,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Massive Bleached %",
         "source_field": "Massive Bleached %",
-        "position": 74
+        "position": 74,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Mushroom Bleached %",
         "source_field": "Mushroom Bleached %",
-        "position": 75
+        "position": 75,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Soft Bleached %",
         "source_field": "Soft Bleached %",
-        "position": 76
+        "position": 76,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Branching Bleach Severity",
         "source_field": "Branching Bleaching Severity",
-        "position": 77
+        "position": 77,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Bushy Bleach Severity",
         "source_field": "Bushy Bleaching Severity",
-        "position": 78
+        "position": 78,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Plate/Table Bleach Severity",
         "source_field": "Plate/Table Bleaching Severity",
-        "position": 79
+        "position": 79,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Vase/Foliose Bleach Severity",
         "source_field": "Vase/Foliose Bleaching Severity",
-        "position": 80
+        "position": 80,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Encrusting Bleach Severity",
         "source_field": "Encrusting Bleaching Severity",
-        "position": 81
+        "position": 81,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Massive Bleach Severity",
         "source_field": "Massive Bleaching Severity",
-        "position": 82
+        "position": 82,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Mushroom Bleach Severity",
         "source_field": "Mushroom Bleaching Severity",
-        "position": 83
+        "position": 83,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Soft Bleach Severity",
         "source_field": "Soft Bleaching Severity",
-        "position": 84
+        "position": 84,
+        "verify_na_exempt": false
       },
       {
         "target_field": "COTS Seen (Adult)",
         "source_field": "COTS (Adult)",
-        "position": 85
+        "position": 85,
+        "verify_na_exempt": false
       },
       {
         "target_field": "COTS Seen (Juvenile)",
         "source_field": "COTS (Juvenile)",
-        "position": 86
+        "position": 86,
+        "verify_na_exempt": false
       },
       {
         "target_field": "% coral cover affected by COTS",
         "source_field": "% Coral cover affected by COTS",
-        "position": 87
+        "position": 87,
+        "verify_na_exempt": false
       }
     ],
     "new_fields": [
@@ -546,7 +633,7 @@
       },
       {
         "field": "Live Coral Rock",
-        "data_type": "Numeric"
+        "data_type": "Character"
       },
       {
         "field": "Recently Dead Coral",

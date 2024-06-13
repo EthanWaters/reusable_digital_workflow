@@ -1359,8 +1359,9 @@ verify_na_null <- function(data_df, configuration) {
   ID_col <- configuration$metadata$ID_col
   control_data_type <- configuration$metadata$control_data_type
   
-  exempt_cols <- intersect(c(configuration$mappings$new_fields$field, ID_col), names(data_df))
-  nonexempt_df <- data_df[, -which(names(data_df) %in% exempt_cols)]
+  transformations <- configuration$mappings$transformations
+  nonexempt_cols <- transformations[transformations$verify_na_exempt == FALSE, "target_field"]
+  nonexempt_cols <- nonexempt_cols[nonexempt_cols %in% colnames(data_df)]
   na_present <- apply(nonexempt_df, 2, function(x) is.na(x) | is.null(x) | x == "")
   na_present <- ifelse(is.na(na_present), FALSE, na_present)
   check <- rowSums(na_present) > 0
