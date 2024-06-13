@@ -42,6 +42,7 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
     most_recent_report_path <- find_recent_file(configuration$metadata$output_directory$reports, configuration$metadata$control_data_type, "json")
     most_recent_leg_path <- find_recent_file(configuration$metadata$output_directory$control_data_unaggregated, configuration$metadata$control_data_type, "csv")
     serialised_spatial_path <- find_recent_file(configuration$metadata$output_directory$spatial_data, "site_regions", "rds")
+    separate_data <- configuration$metadata$separate_data
     
     previous_kml_path <- NULL
     if(!is.null(most_recent_report_path)){
@@ -145,7 +146,7 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
     
     # separate entries and update any rows that were changed on accident. 
     tryCatch({
-      if(is_legacy_data_available){
+      if(is_legacy_data_available & separate_data){
         verified_data_df <- separate_control_dataframe(verified_data_df, legacy_df, has_authorative_ID)
       }
     }, error = function(e) {

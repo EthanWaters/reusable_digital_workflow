@@ -9,6 +9,7 @@
     "ID_col": ["ID"],
     "is_ID_preferred": [false],
     "assign_sites": [true],
+    "separate_data": true,
     "output_directory": {
       "control_data_aggregated": ["Output/control_data/site_aggregation"],
       "control_data_unaggregated": ["Output/control_data/unaggregated"],

@@ -499,6 +499,7 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, has_authorat
   column_names <- colnames(legacy_data_df)
   verified_data_df <- data.frame(matrix(ncol = length(column_names), nrow = 0))
   perfect_duplicates <- data.frame(matrix(ncol = length(column_names), nrow = 0))
+  errors_df <- data.frame(matrix(ncol = length(column_names), nrow = 0))
   colnames(verified_data_df) <- column_names 
   colnames(perfect_duplicates) <- column_names 
   
@@ -539,6 +540,7 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, has_authorat
     non_discrepancy_ids <- c(perfect_duplicates[[ID_col]], new_entries[[ID_col]])
     discrepancies_new <- new_data_df[!(new_data_df[[ID_col]] %in% non_discrepancy_ids),]
     discrepancies_legacy <- legacy_data_df[!(legacy_data_df[[ID_col]] %in% non_discrepancy_ids),]
+    discrepancies_legacy <- discrepancies_legacy[discrepancies_legacy[[ID_col]] %in% discrepancies_new[[ID_col]], ]
     verified_discrepancies <- compare_discrepancies_directly(discrepancies_new, discrepancies_legacy)
     
   } else {
@@ -567,7 +569,7 @@ separate_control_dataframe <- function(new_data_df, legacy_data_df, has_authorat
       separated_close_matches <- vectorised_separate_close_matches(close_match_rows)
       perfect_duplicates <- new_data_df[unique(separated_close_matches$perfect[,2]),]
       new_entries_i <- unique(c(separated_close_matches$discrepancies[,2],separated_close_matches$perfect[,2]))
-      
+        
       # This will contain any new entries and any rows that could not be separated
       new_entries <- new_data_df[-new_entries_i,]
 
