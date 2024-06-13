@@ -27,87 +27,104 @@
       {
         "target_field": "ID",
         "source_field": "COTS Surveillance id",
-        "position": 1
+        "position": 1,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Tow date",
         "source_field": "Tow time",
-        "position": 2
+        "position": 2,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Vessel",
         "source_field": "Vessel",
-        "position": 4
+        "position": 4,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Voyage",
         "source_field": "Voyage",
-        "position": 5
+        "position": 5,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Reef ID",
         "source_field": "Reef label",
-        "position": 6
+        "position": 6,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Reef",
         "source_field": "Reef name",
-        "position": 7
+        "position": 7,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Start Lat",
         "source_field": "Start lat",
-        "position": 8
+        "position": 8,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Start Lng",
         "source_field": "Start long",
-        "position": 9
+        "position": 9,
+        "verify_na_exempt": false
       },
       {
         "target_field": "End Lat",
         "source_field": "End lat",
-        "position": 10
+        "position": 10,
+        "verify_na_exempt": false
       },
       {
         "target_field": "End Lng",
         "source_field": "End long",
-        "position": 11
+        "position": 11,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Distance (metres)",
         "source_field": "Distance (m)",
-        "position": 12
+        "position": 12,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Average Speed (km/h)",
         "source_field": "Average speed (km/h)",
-        "position": 13
+        "position": 13,
+        "verify_na_exempt": false
       },
       {
         "target_field": "COTS Observed",
         "source_field": "COTS observed",
-        "position": 14
+        "position": 14,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Feeding Scars",
         "source_field": "Feeding scars",
-        "position": 15
+        "position": 15,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Hard Coral",
         "source_field": "Hard coral",
-        "position": 16
+        "position": 16,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Soft Coral",
         "source_field": "Soft coral",
-        "position": 17
+        "position": 17,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Recently Dead Coral",
         "source_field": "Recently dead coral",
-        "position": 18
+        "position": 18,
+        "verify_na_exempt": false
       }
     ],
     "new_fields": [
