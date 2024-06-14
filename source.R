@@ -1077,28 +1077,128 @@ check_for_mistake <- function(control_data_type){
   }
 }
 
+
+# Run all verification functions on data sets. All verification functions are 
+# within try catch to ensure that a fatal error will not break the workflow. 
 verify_entries <- function(data_df, configuration){
   ID_col <- configuration$metadata$ID_col
   control_data_type <- configuration$metadata$control_data_type
   
-  data_df <- verify_integers_positive(data_df)
-  data_df <- verify_reef(data_df)
-  data_df <- verify_percentages(data_df)
+  tryCatch({
+    data_df <- verify_integers_positive(data_df)
+  }, error = function(e){
+    errors <- data.frame(
+      verification_function = "verify_integers_positive",
+      message = e
+    )
+    contribute_to_metadata_report("verify_integers_positive", errors, parent_key = "Error In Verification")
+  })
+
+  tryCatch({
+    data_df <- verify_reef(data_df)
+  }, error = function(e){
+    errors <- data.frame(
+      verification_function = "verify_reef",
+      message = e
+    )
+    contribute_to_metadata_report("verify_reef", errors, parent_key = "Error In Verification")
+  })
+  
+  tryCatch({
+    data_df <- verify_percentages(data_df)
+  }, error = function(e){
+    errors <- data.frame(
+      verification_function = "verify_percentages",
+      message = e
+    )
+    contribute_to_metadata_report("verify_percentages", errors, parent_key = "Error In Verification")
+  })
   
   #verify long and lat separately
-  data_df <- verify_lat_lng(data_df, max_val=160, min_val=138, columns=c("Longitude", "Start Lng", "End Lng"), ID_col)
-  data_df <- verify_lat_lng(data_df, max_val=-5, min_val=-32, columns=c("Latitude", "Start Lat", "End Lat"), ID_col)
+  tryCatch({
+    data_df <- verify_lat_lng(data_df, max_val=160, min_val=138, columns=c("Longitude", "Start Lng", "End Lng"), ID_col)
+    data_df <- verify_lat_lng(data_df, max_val=-5, min_val=-32, columns=c("Latitude", "Start Lat", "End Lat"), ID_col)
+  }, error = function(e){
+    errors <- data.frame(
+      verification_function = "verify_lat_lng",
+      message = e
+    )
+    contribute_to_metadata_report("verify_lat_lng", errors, parent_key = "Error In Verification")
+  })
+  
+
+
 
   if (control_data_type == "manta_tow") {
-    data_df <- verify_tow_date(data_df)
-    data_df <- verify_coral_cover(data_df)
-    data_df <- verify_scar(data_df)
+    
+    tryCatch({
+      data_df <- verify_tow_date(data_df)
+    }, error = function(e){
+      errors <- data.frame(
+        verification_function = "verify_tow_date",
+        message = e
+      )
+      contribute_to_metadata_report("verify_tow_date", errors, parent_key = "Error In Verification")
+    })
+    
+    tryCatch({
+      data_df <- verify_coral_cover(data_df)
+    }, error = function(e){
+      errors <- data.frame(
+        verification_function = "verify_coral_cover",
+        message = e
+      )
+      contribute_to_metadata_report("verify_coral_cover", errors, parent_key = "Error In Verification")
+    })
+    
+    tryCatch({
+      data_df <- verify_scar(data_df)
+    }, error = function(e){
+      errors <- data.frame(
+        verification_function = "verify_scar",
+        message = e
+      )
+      contribute_to_metadata_report("verify_scar", errors, parent_key = "Error In Verification")
+    })
+
   } else if (control_data_type == "cull") {
-    data_df <- verify_voyage_dates(data_df)
+
+    tryCatch({
+      data_df <- verify_voyage_dates(data_df)
+    }, error = function(e){
+      errors <- data.frame(
+        verification_function = "verify_voyage_dates",
+        message = e
+      )
+      contribute_to_metadata_report("verify_voyage_dates", errors, parent_key = "Error In Verification")
+    })
+    
   } else if (control_data_type == "rhis") {
-    data_df <- verify_RHISS(data_df)
+
+    tryCatch({
+      data_df <- verify_RHISS(data_df)
+    }, error = function(e){
+      errors <- data.frame(
+        verification_function = "verify_RHISS",
+        message = e
+      )
+      contribute_to_metadata_report("verify_RHISS", errors, parent_key = "Error In Verification")
+    })
+    
   } 
-  data_df <- verify_na_null(data_df, configuration)
+  
+  
+  tryCatch({
+    data_df <- verify_na_null(data_df, configuration)
+  }, error = function(e){
+    errors <- data.frame(
+      verification_function = "verify_na_null",
+      message = e
+    )
+    contribute_to_metadata_report("verify_na_null", errors, parent_key = "Error In Verification")
+  })
+  
+  
   data_df$error_flag <- as.integer(data_df$error_flag)
   return(data_df)
 }
