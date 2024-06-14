@@ -1092,6 +1092,7 @@ verify_entries <- function(data_df, configuration){
       message = e
     )
     contribute_to_metadata_report("verify_integers_positive", errors, parent_key = "Error In Verification")
+    data_df$error_flag <<- 1
   })
 
   tryCatch({
@@ -1102,6 +1103,7 @@ verify_entries <- function(data_df, configuration){
       message = e
     )
     contribute_to_metadata_report("verify_reef", errors, parent_key = "Error In Verification")
+    data_df$error_flag <<- 1
   })
   
   tryCatch({
@@ -1112,6 +1114,7 @@ verify_entries <- function(data_df, configuration){
       message = e
     )
     contribute_to_metadata_report("verify_percentages", errors, parent_key = "Error In Verification")
+    data_df$error_flag <<- 1
   })
   
   #verify long and lat separately
@@ -1124,6 +1127,7 @@ verify_entries <- function(data_df, configuration){
       message = e
     )
     contribute_to_metadata_report("verify_lat_lng", errors, parent_key = "Error In Verification")
+    data_df$error_flag <<- 1
   })
   
 
@@ -1139,6 +1143,7 @@ verify_entries <- function(data_df, configuration){
         message = e
       )
       contribute_to_metadata_report("verify_tow_date", errors, parent_key = "Error In Verification")
+      data_df$error_flag <<- 1
     })
     
     tryCatch({
@@ -1149,6 +1154,7 @@ verify_entries <- function(data_df, configuration){
         message = e
       )
       contribute_to_metadata_report("verify_coral_cover", errors, parent_key = "Error In Verification")
+      data_df$error_flag <<- 1
     })
     
     tryCatch({
@@ -1159,6 +1165,7 @@ verify_entries <- function(data_df, configuration){
         message = e
       )
       contribute_to_metadata_report("verify_scar", errors, parent_key = "Error In Verification")
+      data_df$error_flag <<- 1
     })
 
   } else if (control_data_type == "cull") {
@@ -1171,6 +1178,7 @@ verify_entries <- function(data_df, configuration){
         message = e
       )
       contribute_to_metadata_report("verify_voyage_dates", errors, parent_key = "Error In Verification")
+      data_df$error_flag <<- 1
     })
     
   } else if (control_data_type == "rhis") {
@@ -1183,6 +1191,7 @@ verify_entries <- function(data_df, configuration){
         message = e
       )
       contribute_to_metadata_report("verify_RHISS", errors, parent_key = "Error In Verification")
+      data_df$error_flag <<- 1
     })
     
   } 
@@ -1196,6 +1205,7 @@ verify_entries <- function(data_df, configuration){
       message = e
     )
     contribute_to_metadata_report("verify_na_null", errors, parent_key = "Error In Verification")
+    data_df$error_flag <<- 1
   })
   
   
