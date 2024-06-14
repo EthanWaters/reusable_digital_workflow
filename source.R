@@ -1390,13 +1390,29 @@ verify_RHISS <- function(data_df) {
   
   valid_descriptive_bleach_severity <- c("Totally bleached white", "pale/fluoro (very light or yellowish)", "None", "Bleached only on upper surface", "Pale (very light)/Focal bleaching", "Totally bleached white/fluoro", "Recently dead coral lightly covered in algae")
   bcols <- c("Mushroom Bleach Severity", "Massive Bleach Severity", "Encrusting Bleach Severity", "Vase/Foliose Bleach Severity", "Plate/Table Bleach Severity", "Bushy Bleach Severity", "Branching Bleach Severity")
-  is_valid_descriptive_bleach_severity <- apply(data_df[, bcols], 2, function(x) !(x %in% valid_descriptive_bleach_severity))
-  is_valid_descriptive_bleach_severity <- ifelse(is.na(is_valid_descriptive_bleach_severity), FALSE, is_valid_descriptive_bleach_severity)
-  check_descriptive_bleach_severity <- rowSums(is_valid_descriptive_bleach_severity) > 0
+  available_cols <- bcols %in% colnames(data_df)
+  if (sum(available_cols) >= 2){
+    bcols <- bcols[available_cols]
+    is_valid_descriptive_bleach_severity <- apply(data_df[, bcols], 2, function(x) !(x %in% valid_descriptive_bleach_severity))
+    is_valid_descriptive_bleach_severity <- ifelse(is.na(is_valid_descriptive_bleach_severity), FALSE, is_valid_descriptive_bleach_severity)
+    check_descriptive_bleach_severity <- rowSums(is_valid_macroalgae) > 0
+  } else if (sum(available_cols) == 1) {
+    bcols <- bcols[available_cols]
+    is_valid_descriptive_bleach_severity <- !(data_df[,bcols] %in% valid_descriptive_bleach_severity)
+    is_valid_descriptive_bleach_severity <- ifelse(is.na(is_valid_descriptive_bleach_severity), FALSE, is_valid_descriptive_bleach_severity)
+    check_descriptive_bleach_severity <- rowSums(is_valid_descriptive_bleach_severity) > 0
+  } else {
+    check_descriptive_bleach_severity <- 0
+  }
   
-  bleached_severity <- data_df$`Bleached Average Severity Index (calculated via matrix)`
-  check_bleach_severity <- bleached_severity >= 1 & bleached_severity <= 8
-  bleached_severity <- ifelse(is.na(bleached_severity), TRUE, bleached_severity)
+  if (all(c("Bleached Average Severity Index (calculated via matrix)") %in% colnames(data_df))){
+    bleached_severity <- data_df$`Bleached Average Severity Index (calculated via matrix)`
+    check_bleach_severity <- bleached_severity >= 1 & bleached_severity <= 8
+    check_bleach_severity <- ifelse(is.na(check_bleach_severity), TRUE, check_bleach_severity)
+  } else {
+    check_bleach_severity <- 1
+  }
+
   
   check <- !check_tide | check_macroalgae | !check_bleach_severity | check_descriptive_bleach_severity
   if (any(check)) {
