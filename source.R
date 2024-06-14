@@ -1210,7 +1210,25 @@ verify_entries <- function(data_df, configuration){
   
   
   data_df$error_flag <- as.integer(data_df$error_flag)
+  verify_available_columns(data_df, configuration)
   return(data_df)
+}
+
+
+verify_available_columns <- function(data_df, configuration){
+  transformations <- configuration$mappings$transformations
+  nonexempt_cols <- transformations[transformations$verify_na_exempt == FALSE, "target_field"]
+  is_nonexempt_cols_available <- !all(nonexempt_cols %in% colnames(data_df))
+  data_df[["error_flag"]] <- as.integer(is_nonexempt_cols_available)
+  
+  if (is_nonexempt_cols_available) {
+    errors <- data.frame(
+      verification_function = "verify_na_null",
+      message = e
+    )
+    contribute_to_metadata_report("verify_na_null", errors, parent_key = "Error In Verification")
+  }
+  return(is_nonexempt_cols_available)
 }
 
 
