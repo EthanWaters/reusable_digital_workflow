@@ -1353,10 +1353,22 @@ verify_RHISS <- function(data_df) {
   check_tide <- ifelse(is.na(check_tide), TRUE, check_tide)
   
   cols <- c("Slime Height (cm)", "Entangled/Mat-Like Height (cm)", "Filamentous Height (cm)", "Leafy/Fleshy Height (cm)", "Tree/Bush-Like Height (cm)")
-  valid_macroalgae <- c("A", "B", "C", "0", "1", "2", "3")
-  is_valid_macroalgae <- apply(data_df[, cols], 2, function(x) !(x %in% valid_macroalgae))
-  is_valid_macroalgae <- ifelse(is.na(is_valid_macroalgae), FALSE, is_valid_macroalgae)
-  check_macroalgae <- rowSums(is_valid_macroalgae) > 0
+  valid_macroalgae <- c(">25cm", "1 to 3cm", "None", "4 to 25cm")
+  available_cols <- cols %in% colnames(data_df)
+  if (sum(available_cols) >= 2){
+    cols <- cols[available_cols]
+    is_valid_macroalgae <- apply(data_df[, cols], 2, function(x) !(x %in% valid_macroalgae))
+    is_valid_macroalgae <- ifelse(is.na(is_valid_macroalgae), FALSE, is_valid_macroalgae)
+    check_macroalgae <- rowSums(is_valid_macroalgae) > 0
+  } else if (sum(available_cols) == 1) {
+    cols <- cols[available_cols]
+    is_valid_macroalgae <- !(data_df[,cols] %in% valid_macroalgae)
+    is_valid_macroalgae <- ifelse(is.na(is_valid_macroalgae), FALSE, is_valid_macroalgae)
+    check_macroalgae <- rowSums(is_valid_macroalgae) > 0
+  } else {
+    check_macroalgae <- 0
+  }
+
   
   valid_descriptive_bleach_severity <- c("Totally bleached white", "pale/fluoro (very light or yellowish)", "None", "Bleached only on upper surface", "Pale (very light)/Focal bleaching", "Totally bleached white/fluoro", "Recently dead coral lightly covered in algae")
   bcols <- c("Mushroom Bleach Severity", "Massive Bleach Severity", "Encrusting Bleach Severity", "Vase/Foliose Bleach Severity", "Plate/Table Bleach Severity", "Bushy Bleach Severity", "Branching Bleach Severity")
