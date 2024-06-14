@@ -561,19 +561,19 @@
         "target_field": "Water Temp (5-10m)",
         "source_field": "Water Temp (5-10m)",
         "position": 90,
-        "verify_na_exempt": false
+        "verify_na_exempt": true
       },
       {
         "target_field": "Dive Site",
         "source_field": "Dive Site",
         "position": 91,
-        "verify_na_exempt": false
+        "verify_na_exempt": true
       },
       {
         "target_field": "PRM Site",
         "source_field": "PRM Site",
         "position": 92,
-        "verify_na_exempt": false
+        "verify_na_exempt": true
       },
       {
         "target_field": "Sand %",
@@ -694,12 +694,18 @@
         "source_field": "Additional information",
         "position": 112,
         "verify_na_exempt": false
+      },
+      {
+        "target_field": "Algal Bloom",
+        "source_field": "Algal Bloom",
+        "position": 113,
+        "verify_na_exempt": false
       }
     ],
     "new_fields": [
       {
         "field": "error_flag",
-        "position": 113,
+        "position": 114,
         "default": 0,
         "function_call": false
       }
@@ -1072,7 +1078,93 @@
       {
         "field": "PRM Site",
         "data_type": "Numeric"
+      },
+      {
+        "field": "Sand %",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Coral Types Present",
+        "data_type": "Character"
+      },
+      {
+        "field": "Bleached Coral Types",
+        "data_type": "Character"
+      },
+      {
+        "field": "Bleaching Severity",
+        "data_type": "Character"
+      },
+      {
+        "field": "COTS Scar Count",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Drupella Scar Count",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Black Band Disease Count",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Brown Band Disease Count",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "White Syndromes Disease Count",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Other Disease, Tumours Count",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Disease Impact Score",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Damage Affected %",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Damage Severity",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Damage Impact",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Damage Colonies Count",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Damaged Coral Types",
+        "data_type": "Character"
+      },
+      {
+        "field": "Damage Cause",
+        "data_type": "Character"
+      },
+      {
+        "field": "Rubbish Types",
+        "data_type": "Character"
+      },
+      {
+        "field": "Rubbish Count",
+        "data_type": "Numeric"
+      },
+      {
+        "field": "Additional information",
+        "data_type": "Character"
+      },
+      {
+        "field": "Algal Bloom",
+        "data_type": "Character"
       }
     ]
   }
 }
+
+
