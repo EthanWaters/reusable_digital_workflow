@@ -1073,11 +1073,11 @@
       },
       {
         "field": "Dive Site",
-        "data_type": "Numeric"
+        "data_type": "Character"
       },
       {
         "field": "PRM Site",
-        "data_type": "Numeric"
+        "data_type": "Character"
       },
       {
         "field": "Sand %",
