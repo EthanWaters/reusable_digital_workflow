@@ -36,7 +36,7 @@ import_data <- function(data, index=1){
   return(out)
 }
 
-
+# provides vector of datetime formats to parse dates.
 get_datetime_parse_order <- function(){
   order <- c('%Y/%m/%d %I:%M:%S %p','%Y/%m/%d %H:%M:%S', '%d/%m/%Y %I:%M:%S %p', '%d/%m/%Y %H:%M:%S', '%Y/%m/%d %I:%M %p','%Y/%m/%d %H:%M', '%d/%m/%Y %I:%M %p','%d/%m/%Y %H:%M', 'ymd', 'dmy')
   return(order)
@@ -437,7 +437,7 @@ aggregate_manta_tows_site_resolution_app <- function(data_df) {
 }
 
 
-# across(c(Vessel, Voyage, `Reef ID`, `Nearest Site`), first),
+
 aggregate_manta_tows_site_resolution_research <- function(data_df) {
   col_names <- colnames(data_df)
   
@@ -470,7 +470,8 @@ aggregate_manta_tows_site_resolution_research <- function(data_df) {
   return(aggregated_data)
 } 
 
-
+# Updates the metadata report to contain information about noteworthy events that occur
+# in the workflow.
 contribute_to_metadata_report <- function(key, data, parent_key=NULL, report_path=NULL){
   if(is.null(report_path)){
     report_path <- find_recent_file("Output\\reports", "Report", "json")
@@ -1231,7 +1232,8 @@ verify_available_columns <- function(data_df, configuration){
   return(is_nonexempt_cols_available)
 }
 
-
+# ensures that the lat and long coords are within the acceptable region for the great 
+# barrier reef
 verify_lat_lng <- function(data_df, max_val, min_val, columns, ID_col){
   for (col in columns) {
     if (col %in% colnames(data_df)) {
