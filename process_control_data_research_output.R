@@ -99,7 +99,7 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
       kml_path <- most_recent_kml_path
     }
 
-
+    ### Import Data -------------------------------------------------------------
     # import new and legacy data. 
     # A legacy dataset with no error_flag column indicates it is new becuase R implementation 
     # of this workflow exports an error flag column, whereas the mathmatica implementation 
@@ -214,7 +214,7 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
     # in the legacy dataset. This provides the oppirtunity to seperate the new dataset 
     # into sections to perform further error checking. 
 
-    A
+    
     tryCatch({
       if(is_legacy_data_available & separate_data){
         verified_data_df <- separate_control_dataframe(verified_data_df, legacy_df, has_authorative_ID)
