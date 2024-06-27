@@ -2016,6 +2016,9 @@ update_config_file <- function(data_df, configuration_path, new_mappings_to_add=
 
 
 map_new_fields <- function(data_df, transformed_df, new_fields){
+
+  # iterate though new fields that are required and add them to expected 
+  # locaiton that is specified in the config file. 
   for (i in seq_len(nrow(new_fields))) {
     new_field <- new_fields$field[i]
     default_value <- new_fields$default[i]
@@ -2050,7 +2053,12 @@ get_new_field_default_values <- function(new_data_df, transformed_data_df, new_f
 
 
 map_all_fields <- function(data_df, transformed_df, mappings){
+  # Finds closest matches between expected input column names and actual 
+  # input column names.
   closest_matches <- get_closest_matches(colnames(data_df), mappings$source_field)
+
+  # Use the matches to the expected column names to acquire related information 
+  # from the config file and update the transformed dataframe. 
   for (i in seq_len(ncol(closest_matches))) {
     index <- match(closest_matches[2,i], mappings$source_field)
     position <- mappings$position[index]
@@ -2076,24 +2084,33 @@ map_data_structure <- function(data_df, mappings, new_fields){
   transformed_df <- map_new_fields(data_df, transformed_df, new_fields)
 
   # Maps existing fields from input to desired output. This utilises levienhein distances to pair the 
-  # actual input to the expected input to ensure that deviations are appropriately mapped.
+  # actual input to the expected input to ensure that deviations are appropriately mapped. This 
+  # includes mapping the data from the input dataset to the output dataset.
   transformed_df <- map_all_fields(data_df, transformed_df, mappings)
+
+  # Update the NA cell values for new columns to a default value.
   transformed_df <- get_new_field_default_values(data_df, transformed_df, new_fields)
+
+  # Remove columns filled with NA if the dataset provided does not contain expected data 
+  # that requires mapping.
   transformed_df <- transformed_df[, colSums(is.na(transformed_df)) < nrow(transformed_df)]
   return(transformed_df)
 }
 
 
+# Finds closest matches between two vectors of strings.
 get_closest_matches <- function(sources, targets){
   
-  # perform swap to ensure that sources is longer than targets
+  # perform swap to ensure that sources is longer than targets. These will be 
+  # swapped back at the end if targets is longer. 
   is_targets_longer <- length(targets) > length(sources)
   if(is_targets_longer){
     temp <- targets
     targets <- sources
     sources <- temp
   }  
-  
+
+  # create levenshtein distance matrix to determine to find closest matches.
   transformed_sources <- matrix(0, nrow = 2, ncol = min(length(sources), length(targets)))
   levenshtein_distances <- adist(sources , targets)
   smallest_source_distances <- apply(levenshtein_distances, 1, min)
@@ -2104,6 +2121,9 @@ get_closest_matches <- function(sources, targets){
   if(is_targets_longer){
     transformed_sources[c(1, 2), ] <- transformed_sources[c(2, 1), ]
   }  
+
+  # Return matrix with source strings as row one. Corresponding matches from the
+  # target vector will be in row two. 
   return(transformed_sources)
 }
 
