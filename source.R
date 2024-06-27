@@ -1367,7 +1367,7 @@ verify_tow_date <- function(data_df){
 
 
 verify_RHISS <- function(data_df) {
-  # check that columns in RHISS data contain expected values according to metadata
+  # check that columns in RHISS data contain expected categorical values indicated by the files original metadata
   valid_tide <- c("L", "M", "H")
   check_tide <- data_df$`Tide` %in% valid_tide
   check_tide <- ifelse(is.na(check_tide), TRUE, check_tide)
