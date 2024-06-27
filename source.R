@@ -2062,11 +2062,21 @@ map_all_fields <- function(data_df, transformed_df, mappings){
   
 }
 
-
+# Map the structure of new to the a different format.
 map_data_structure <- function(data_df, mappings, new_fields){
-  
+  ## new_fields: dataframe that is acquired from config file specifying new columns required in dataset
+  ## mappings: dataframe that is acquired from config file specifying column mappings from expected 
+  # input to desired output.
+  ## data_df: new datase to map to desired structure
+
+  # create new dataframe to output
   transformed_df <- data.frame(matrix(ncol = nrow(mappings) + nrow(new_fields), nrow = nrow(data_df)))
+
+  # Create new fields not present in new dataset in their correct positions 
   transformed_df <- map_new_fields(data_df, transformed_df, new_fields)
+
+  # Maps existing fields from input to desired output. This utilises levienhein distances to pair the 
+  # actual input to the expected input to ensure that deviations are appropriately mapped.
   transformed_df <- map_all_fields(data_df, transformed_df, mappings)
   transformed_df <- get_new_field_default_values(data_df, transformed_df, new_fields)
   transformed_df <- transformed_df[, colSums(is.na(transformed_df)) < nrow(transformed_df)]
