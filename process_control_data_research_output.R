@@ -124,6 +124,9 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
     
     has_authorative_ID <-  !any(is.na(new_data_df[[configuration$metadata$ID_col]])) & configuration$metadata$is_ID_preferred
     assign("has_authorative_ID", has_authorative_ID, envir = .GlobalEnv) 
+
+
+    ### Setup Report -------------------------------------------------------------
     
     # create list to export as json file with metadata about workflow
     metadata_json_output <- list()    
@@ -151,7 +154,8 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
     json_data <- toJSON(metadata_json_output, pretty = TRUE)
     writeLines(json_data, file.path(getwd(), configuration$metadata$output_directory$reports, paste(configuration$metadata$control_data_type, "_Report_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".json", sep = "")))
     
-    
+
+    ### Transform Data -------------------------------------------------------------
     # Transform the new incoming data into the desired structure. Create new 
     # columns that are required but not present in the incoming dataset and 
     # populate them with defaul values that can be constant or derived from 
@@ -172,6 +176,8 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
     # and is optional but helpful
     # configuration <- update_config_file(new_data_df, configuration_path)
 
+
+    ### Verify Data -------------------------------------------------------------
     # verification functions flag whether a row is deemed to have an error. 
     # Although there may be situations where subsets of these rows can still 
     # be utilised it provides a quick way to filter out data not considered 
@@ -189,6 +195,7 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
     # this is the only situation where duplicates are flagged as errors. 
     verified_data_df <- flag_duplicates(verified_data_df)
 
+    ### Assign Sites to Data -------------------------------------------------------------
     # This process determines the site number where manta tow and culls were performed.
     # Although cull sites have the site name included in the dataset, including the 
     # site number makes it easier for researchers to compare the datasets.
@@ -207,14 +214,26 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
     }, error = function(e) {
       print(paste("Error assigning sites:", conditionMessage(e)))
     })
-    
+
+
+    ### Separate Data -------------------------------------------------------------
     # Datasets are provided as a single large tabular file which contain all control 
     # data from the inception of the COTS control program to present date. Consequently, 
     # a large portion of the rows will have been processed previously and will be seen 
     # in the legacy dataset. This provides the oppirtunity to seperate the new dataset 
     # into sections to perform further error checking. 
 
-    
+    # The three sections that the data from "new_path" can be split into are, new, perfect
+    # match and discrepancy. New is data that this workflow has never seen before. perfect 
+    # match is data that is present in the legacy data set and has therefore been processed 
+    # previously by this workflow. Discrepancy is a row deemed to have been processed
+    # previously but has has minor changes since which could be either quality assurance or 
+    # a mistake. 
+
+    # Separating the data can provide the oppirtunity to identify and prevent discrepancies  
+    # that transition from having no flagged error in the legacy dataset to a flagged error 
+    # as this is likely a mistake. This process can be time consuming and is up to the 
+    # user to determine if the trade off is beneficial for their applications. 
     tryCatch({
       if(is_legacy_data_available & separate_data){
         verified_data_df <- separate_control_dataframe(verified_data_df, legacy_df, has_authorative_ID)
@@ -222,8 +241,11 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
     }, error = function(e) {
       print(paste("Error seperating control data. All data has been treated as new entries.", conditionMessage(e)))
     })
+
+
+    ### Save & Aggregate Data -------------------------------------------------------------
     
-    # Save workflow output
+    # Save unaggrgated workflow with specific naming convension output
     tryCatch({
       if (!dir.exists(configuration$metadata$output_directory$control_data_unaggregated)) {
         dir.create(configuration$metadata$output_directory$control_data_unaggregated, recursive = TRUE)
@@ -241,13 +263,15 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
       write.csv(verified_data_df, paste(configuration$metadata$control_data_type,"_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".csv", sep = ""), row.names = FALSE)
   
     })
-    
+
+    # Aggregate the cull an manta tow data 
     if(configuration$metadata$control_data_type == "manta_tow"){
       verified_aggregated_df <- aggregate_manta_tows_site_resolution_research(verified_data_df)  
     } else if (configuration$metadata$control_data_type == "cull") {
       verified_aggregated_df <- aggregate_culls_site_resolution_research(verified_data_df) 
     }
-    
+
+    # Save aggregated data
     tryCatch({
       if (!dir.exists(configuration$metadata$output_directory$control_data_aggregated)) {
         dir.create(configuration$metadata$output_directory$control_data_aggregated, recursive = TRUE)
@@ -276,6 +300,12 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
     print(paste("Critical Error in workflow could not be resolved:", conditionMessage(e)))
   })
 }
+
+
+### Command Line -----------------------------
+# The following allows the code to be executed from the command line provided the syntax is followed.
+# All parameters are follow this syntax:
+# {NEW PATH} --config={CONFIG PATH} --kml={KML PATH} --leg={LEG PATH}
 
 
 args <- commandArgs(trailingOnly = TRUE)
