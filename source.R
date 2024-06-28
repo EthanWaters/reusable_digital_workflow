@@ -1086,8 +1086,8 @@ verify_entries <- function(data_df, configuration){
   data_df <- verify_percentages(data_df)
   
   #verify long and lat separately
-  data_df <- verify_lat_lng(data_df, max_val=160, min_val=138, columns=c("Longitude", "Start Lng", "End Lng"), ID_col)
-  data_df <- verify_lat_lng(data_df, max_val=-5, min_val=-32, columns=c("Latitude", "Start Lat", "End Lat"), ID_col)
+  data_df <- verify_lat_lng(data_df, max_val=160, min_val=138, columns=c("Longitude", "Start Lng", "End Lng"))
+  data_df <- verify_lat_lng(data_df, max_val=-5, min_val=-32, columns=c("Latitude", "Start Lat", "End Lat"))
   
   if (control_data_type == "manta_tow") {
     data_df <- verify_tow_date(data_df)
