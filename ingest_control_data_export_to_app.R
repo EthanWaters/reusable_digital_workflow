@@ -24,12 +24,12 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     library("stringr")
     library("DBI")
     library("RMySQL")
-    
 
+    
     serialised_spatial_path <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\Output\\spatial_data\\site_regions_20240606_174351.rds"
     configuration_path <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\configuration_files\\app_manta_tow_config.json"
     connection_string <- "MariaDB://root:csiro@127.0.0.1:3306/cotscontrolcentre"
-    new_files <- c("D:\\COTS\\on_water_PWA\\cots_on_water_pwa_draft\\back_end\\cots_control_centre\\uploads\\znwofwy0.jyg", "D:\\COTS\\on_water_PWA\\cots_on_water_pwa_draft\\back_end\\cots_control_centre\\uploads\\0mu0qjge.g55")
+    new_files <- c("D:\\COTS\\on_water_PWA\\cots_on_water_pwa_draft\\back_end\\cots_control_centre\\uploads\\olq4shue.enu", "D:\\COTS\\on_water_PWA\\cots_on_water_pwa_draft\\back_end\\cots_control_centre\\uploads\\vn3ufh0o.zwn")
 
     
     base::message(configuration_path)

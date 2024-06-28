@@ -1083,44 +1083,94 @@ check_for_mistake <- function(control_data_type){
 verify_entries <- function(data_df, configuration){
   ID_col <- configuration$metadata$ID_col
   control_data_type <- configuration$metadata$control_data_type
+
+  data_df <- verify_integers_positive(data_df)
+  data_df <- verify_reef(data_df)
+  data_df <- verify_percentages(data_df)
+  
+  #verify long and lat separately
+  data_df <- verify_lat_lng(data_df, max_val=160, min_val=138, columns=c("Longitude", "Start Lng", "End Lng"), ID_col)
+  data_df <- verify_lat_lng(data_df, max_val=-5, min_val=-32, columns=c("Latitude", "Start Lat", "End Lat"), ID_col)
+  
+  if (control_data_type == "manta_tow") {
+    data_df <- verify_tow_date(data_df)
+    data_df <- verify_coral_cover(data_df)
+    data_df <- verify_scar(data_df)
+  } else if (control_data_type == "cull") {
+    data_df <- verify_voyage_dates(data_df)
+  } else if (control_data_type == "RHISS") {
+    data_df <- verify_RHISS(data_df)
+  } 
+  data_df <- verify_na_null(data_df, configuration)
+  data_df$error_flag <- as.integer(data_df$error_flag)
+  return(data_df)
+  
+  
+  data_df$error_flag <- as.integer(data_df$error_flag)
+  data_df <- verify_available_columns(data_df, configuration)
+  return(data_df)
+}
+
+
+verify_available_columns <- function(data_df, configuration){
   
   tryCatch({
-    data_df <- verify_integers_positive(data_df)
+    transformations <- configuration$mappings$transformations
+    nonexempt_cols <- transformations[transformations$verify_na_exempt == FALSE, "target_field"]
+    is_nonexempt_cols_available <- !all(nonexempt_cols %in% colnames(data_df))
+    data_df[["error_flag"]] <- as.integer(is_nonexempt_cols_available)
+    
+    if (is_nonexempt_cols_available) {
+      errors <- data.frame(
+        verification_function = "is_nonexempt_cols_available",
+        message = e
+      )
+      contribute_to_metadata_report("is_nonexempt_cols_available", errors, parent_key = "Columns missing")
+    }
   }, error = function(e){
     errors <- data.frame(
-      verification_function = "verify_integers_positive",
+      verification_function = "verify_available_columns",
       message = e
     )
-    contribute_to_metadata_report("verify_integers_positive", errors, parent_key = "Error In Verification")
+    contribute_to_metadata_report("verify_available_columns", errors, parent_key = "Error In Verification")
     data_df$error_flag <<- 1
   })
 
+  return(data_df)
+}
+
+
+verify_lat_lng <- function(data_df, max_val, min_val, columns, ID_col){
   tryCatch({
-    data_df <- verify_reef(data_df)
-  }, error = function(e){
-    errors <- data.frame(
-      verification_function = "verify_reef",
-      message = e
-    )
-    contribute_to_metadata_report("verify_reef", errors, parent_key = "Error In Verification")
-    data_df$error_flag <<- 1
-  })
-  
-  tryCatch({
-    data_df <- verify_percentages(data_df)
-  }, error = function(e){
-    errors <- data.frame(
-      verification_function = "verify_percentages",
-      message = e
-    )
-    contribute_to_metadata_report("verify_percentages", errors, parent_key = "Error In Verification")
-    data_df$error_flag <<- 1
-  })
-  
-  #verify long and lat separately
-  tryCatch({
-    data_df <- verify_lat_lng(data_df, max_val=160, min_val=138, columns=c("Longitude", "Start Lng", "End Lng"), ID_col)
-    data_df <- verify_lat_lng(data_df, max_val=-5, min_val=-32, columns=c("Latitude", "Start Lat", "End Lat"), ID_col)
+    for (col in columns) {
+      if (col %in% colnames(data_df)) {
+        values <- data_df[[col]]
+        out_of_range <- values < min_val | values > max_val
+        
+        # Set any NA values to TRUE as the check was unable to be completed 
+        # correctly
+        out_of_range <- ifelse(is.na(out_of_range), FALSE, out_of_range)
+        data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | out_of_range)
+        
+        if (any(out_of_range)) {
+          grandparent <- as.character(sys.call(sys.parent()))[1]
+          parent <- as.character(match.call())[1]
+          warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have inappropriate LatLong coordinates:", 
+                           toString(data_df[out_of_range, 1]), "and the following indexes", toString((1:nrow(data_df))[out_of_range]))
+          base::message(warning)
+          
+          if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
+            # Append the warning to an existing matrix 
+            warnings <- data.frame(
+              ID = data_df[out_of_range, 1],
+              index = which(out_of_range),
+              message = "Inappropriate Lat Long values"
+            )
+            contribute_to_metadata_report("Coordinates", warnings, parent_key = "Warning")
+          }
+        }
+      }
+    }
   }, error = function(e){
     errors <- data.frame(
       verification_function = "verify_lat_lng",
@@ -1129,76 +1179,329 @@ verify_entries <- function(data_df, configuration){
     contribute_to_metadata_report("verify_lat_lng", errors, parent_key = "Error In Verification")
     data_df$error_flag <<- 1
   })
-  
+  return(data_df)
+}
 
 
-
-  if (control_data_type == "manta_tow") {
-    
-    tryCatch({
-      data_df <- verify_tow_date(data_df)
-    }, error = function(e){
-      errors <- data.frame(
-        verification_function = "verify_tow_date",
-        message = e
-      )
-      contribute_to_metadata_report("verify_tow_date", errors, parent_key = "Error In Verification")
-      data_df$error_flag <<- 1
-    })
-    
-    tryCatch({
-      data_df <- verify_coral_cover(data_df)
-    }, error = function(e){
-      errors <- data.frame(
-        verification_function = "verify_coral_cover",
-        message = e
-      )
-      contribute_to_metadata_report("verify_coral_cover", errors, parent_key = "Error In Verification")
-      data_df$error_flag <<- 1
-    })
-    
-    tryCatch({
-      data_df <- verify_scar(data_df)
-    }, error = function(e){
-      errors <- data.frame(
-        verification_function = "verify_scar",
-        message = e
-      )
-      contribute_to_metadata_report("verify_scar", errors, parent_key = "Error In Verification")
-      data_df$error_flag <<- 1
-    })
-
-  } else if (control_data_type == "cull") {
-
-    tryCatch({
-      data_df <- verify_voyage_dates(data_df)
-    }, error = function(e){
-      errors <- data.frame(
-        verification_function = "verify_voyage_dates",
-        message = e
-      )
-      contribute_to_metadata_report("verify_voyage_dates", errors, parent_key = "Error In Verification")
-      data_df$error_flag <<- 1
-    })
-    
-  } else if (control_data_type == "rhis") {
-
-    tryCatch({
-      data_df <- verify_RHISS(data_df)
-    }, error = function(e){
-      errors <- data.frame(
-        verification_function = "verify_RHISS",
-        message = e
-      )
-      contribute_to_metadata_report("verify_RHISS", errors, parent_key = "Error In Verification")
-      data_df$error_flag <<- 1
-    })
-    
-  } 
-  
-  
+verify_scar <- function(data_df) {
   tryCatch({
-    data_df <- verify_na_null(data_df, configuration)
+    # check that columns in RHISS data contain expected values according to metadata
+    valid_scar <- c("a", "p", "c")
+    
+    
+    check_valid_scar <- data_df$`Feeding Scars` %in% valid_scar
+    out_of_range <- ifelse(is.na(check_valid_scar), TRUE, check_valid_scar)
+    data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | !out_of_range)
+    
+    
+    if (any(!out_of_range )) {
+      grandparent <- as.character(sys.call(sys.parent()))[1]
+      parent <- as.character(match.call())[1]
+      warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid COTS scar:",
+                       toString(data_df[!out_of_range , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[!out_of_range ]))
+      base::message(warning)
+      
+      
+      if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
+        # Append the warning to an existing matrix 
+        warnings <- data.frame(
+          ID = data_df[!out_of_range, 1],
+          index = which(!out_of_range),
+          message = "Invalid COT Scar"
+        )
+        contribute_to_metadata_report("Scar", warnings, parent_key = "Warning")
+      }
+      
+    }
+  }, error = function(e){
+    errors <- data.frame(
+      verification_function = "verify_scar",
+      message = e
+    )
+    contribute_to_metadata_report("verify_scar", errors, parent_key = "Error In Verification")
+    data_df$error_flag <<- 1
+  })
+  return(data_df)
+}
+
+verify_tow_date <- function(data_df){
+  tryCatch({
+    # Approximate a tow date based on vessel and voyage if it does not exist. 
+    
+    tow_date <- data_df[["Tow date"]]
+    incomplete_dates <- unique(which(is.na(tow_date)))
+    if (length(incomplete_dates) > 0){
+      incomplete_date_rows <- data_df[incomplete_dates,]
+      vessel_voyage <- unique(incomplete_date_rows[,which(names(incomplete_date_rows) %in% c("Vessel", "Voyage"))])
+      for(i in 1:nrow(vessel_voyage)){
+        data_df_filtered <- data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),]
+        is_any_voyage_date_correct <- any(!is.na(data_df_filtered$`Tow date`))
+        if(is_any_voyage_date_correct){
+          correct_date <- data_df_filtered[!(is.na(data_df_filtered$`Tow date`) | is.null(data_df_filtered$`Tow date`)),][1,"Tow date"]
+          data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Tow date`)), "Tow date"] <- correct_date
+        } else if(!is_any_voyage_date_correct & !is_any_survey_date_correct) {
+          data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Tow date`)), c("error_flag")] <- 1
+          
+        }
+      }
+      
+    }
+    
+    
+    
+    post_estimation_tow_dates <- data_df[["Tow date"]]
+    na_present <- (is.na(post_estimation_tow_dates) | is.null(post_estimation_tow_dates)) & (is.na(tow_date) | is.null(tow_date))
+    dated_estimated <- !(is.na(post_estimation_tow_dates) | is.null(post_estimation_tow_dates)) & (is.na(tow_date) | is.null(tow_date))
+    
+    if (any(dated_estimated | na_present)) {
+      grandparent <- as.character(sys.call(sys.parent()))[1]
+      parent <- as.character(match.call())[1]
+      warning <- c()
+      if (any(dated_estimated)) {
+        warning1 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have their tow date estimated from their vessel",
+                          toString(data_df[dated_estimated , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[dated_estimated]))
+        base::message(warning1)
+      }
+      if (any(na_present)) {
+        warning2 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have no tow date",
+                          toString(data_df[na_present , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[na_present]))
+        base::message(warning2)
+      }  
+      
+      
+      if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
+        # Append the warning to an existing matrix 
+        warnings <- data.frame(
+          ID = data_df[dated_estimated, 1],
+          index = which(dated_estimated),
+          message = "Invalid Tow Date. Date was successfully estimated."
+        )
+        contribute_to_metadata_report("Estimated Tow Date", warnings, parent_key = "Warning")
+        warnings <- data.frame(
+          ID = data_df[na_present, 1],
+          index = which(na_present),
+          message = "Invalid Tow Date. "
+        )
+        contribute_to_metadata_report("Invalid Tow Date", warnings, parent_key = "Warning")
+      }
+      
+    }
+  }, error = function(e){
+    errors <- data.frame(
+      verification_function = "verify_tow_date",
+      message = e
+    )
+    contribute_to_metadata_report("verify_tow_date", errors, parent_key = "Error In Verification")
+    data_df$error_flag <<- 1
+  })
+  return(data_df)
+}
+
+
+verify_RHISS <- function(data_df) {
+  tryCatch({
+    # check that columns in RHISS data contain expected values according to metadata
+    valid_tide <- c("L", "M", "H")
+    check_tide <- data_df$`Tide` %in% valid_tide
+    check_tide <- ifelse(is.na(check_tide), TRUE, check_tide)
+    
+    cols <- c("Slime Height (cm)", "Entangled/Mat-Like Height (cm)", "Filamentous Height (cm)", "Leafy/Fleshy Height (cm)", "Tree/Bush-Like Height (cm)")
+    valid_macroalgae <- c(">25cm", "1 to 3cm", "None", "4 to 25cm")
+    available_cols <- cols %in% colnames(data_df)
+    if (sum(available_cols) >= 2){
+      cols <- cols[available_cols]
+      is_valid_macroalgae <- apply(data_df[, cols], 2, function(x) !(x %in% valid_macroalgae))
+      is_valid_macroalgae <- ifelse(is.na(is_valid_macroalgae), FALSE, is_valid_macroalgae)
+      check_macroalgae <- rowSums(is_valid_macroalgae) > 0
+    } else if (sum(available_cols) == 1) {
+      cols <- cols[available_cols]
+      is_valid_macroalgae <- !(data_df[,cols] %in% valid_macroalgae)
+      is_valid_macroalgae <- ifelse(is.na(is_valid_macroalgae), FALSE, is_valid_macroalgae)
+      check_macroalgae <- rowSums(is_valid_macroalgae) > 0
+    } else {
+      check_macroalgae <- 0
+    }
+  
+    
+    valid_descriptive_bleach_severity <- c("Totally bleached white", "pale/fluoro (very light or yellowish)", "None", "Bleached only on upper surface", "Pale (very light)/Focal bleaching", "Totally bleached white/fluoro", "Recently dead coral lightly covered in algae")
+    bcols <- c("Mushroom Bleach Severity", "Massive Bleach Severity", "Encrusting Bleach Severity", "Vase/Foliose Bleach Severity", "Plate/Table Bleach Severity", "Bushy Bleach Severity", "Branching Bleach Severity")
+    available_cols <- bcols %in% colnames(data_df)
+    if (sum(available_cols) >= 2){
+      bcols <- bcols[available_cols]
+      is_valid_descriptive_bleach_severity <- apply(data_df[, bcols], 2, function(x) !(x %in% valid_descriptive_bleach_severity))
+      is_valid_descriptive_bleach_severity <- ifelse(is.na(is_valid_descriptive_bleach_severity), FALSE, is_valid_descriptive_bleach_severity)
+      check_descriptive_bleach_severity <- rowSums(is_valid_macroalgae) > 0
+    } else if (sum(available_cols) == 1) {
+      bcols <- bcols[available_cols]
+      is_valid_descriptive_bleach_severity <- !(data_df[,bcols] %in% valid_descriptive_bleach_severity)
+      is_valid_descriptive_bleach_severity <- ifelse(is.na(is_valid_descriptive_bleach_severity), FALSE, is_valid_descriptive_bleach_severity)
+      check_descriptive_bleach_severity <- rowSums(is_valid_descriptive_bleach_severity) > 0
+    } else {
+      check_descriptive_bleach_severity <- 0
+    }
+    
+    if (all(c("Bleached Average Severity Index (calculated via matrix)") %in% colnames(data_df))){
+      bleached_severity <- data_df$`Bleached Average Severity Index (calculated via matrix)`
+      check_bleach_severity <- bleached_severity >= 1 & bleached_severity <= 8
+      check_bleach_severity <- ifelse(is.na(check_bleach_severity), TRUE, check_bleach_severity)
+    } else {
+      check_bleach_severity <- 1
+    }
+  
+    
+    check <- !check_tide | check_macroalgae | !check_bleach_severity | check_descriptive_bleach_severity
+    if (any(check)) {
+      grandparent <- as.character(sys.call(sys.parent()))[1]
+      parent <- as.character(match.call())[1]
+      if (any(!check_tide)) {
+        warning1 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid tide values:",
+                          toString(data_df[!check_tide , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[!check_tide]))
+        
+      }
+      if (any(check_macroalgae)) {
+        warning2 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid macroalgae values:",
+                          toString(data_df[check_macroalgae, 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[check_macroalgae]))
+      }
+      if (any(!check_bleach_severity)) {
+        warning3 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid bleach severity values:",
+                          toString(data_df[!check_bleach_severity, 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[!check_bleach_severity]))
+      }
+      if (any(check_descriptive_bleach_severity)) {
+        warning4 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid descriptive beach severity:",
+                          toString(data_df[check_descriptive_bleach_severity , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[check_descriptive_bleach_severity ]))
+      }
+      
+      if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
+        # Append the warning to an existing matrix 
+        warnings <- data.frame(
+          ID = data_df[!check_tide, 1],
+          index = which(!check_tide),
+          message = "Invalid tide value"
+        )
+        contribute_to_metadata_report("Tide", warnings, parent_key = "Warning")
+        
+        warnings <- data.frame(
+          ID = data_df[check_macroalgae, 1],
+          index = which(check_macroalgae),
+          message = "Invalid macroalgae"
+        )
+        contribute_to_metadata_report("Macroalgae", warnings, parent_key = "Warning")
+        
+        warnings <- data.frame(
+          ID = data_df[!check_bleach_severity, 1],
+          index = which(!check_bleach_severity),
+          message = "Invalid Bleach Severity"
+        )
+        contribute_to_metadata_report("Bleach Severity", warnings, parent_key = "Warning")
+        
+        warnings <- data.frame(
+          ID = data_df[check_descriptive_bleach_severity, 1],
+          index = which(check_descriptive_bleach_severity),
+          message = "Invalid Bleach Severity Description"
+        )
+        contribute_to_metadata_report("Bleach Severity Description", warnings, parent_key = "Warning")
+      }
+      
+    }
+    data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | check)
+    
+  }, error = function(e){
+    errors <- data.frame(
+      verification_function = "verify_RHISS",
+      message = e
+    )
+    contribute_to_metadata_report("verify_RHISS", errors, parent_key = "Error In Verification")
+    data_df$error_flag <<- 1
+  })
+  return(data_df)
+}
+
+
+update_path <- function(path) {
+  # Replace backslashes with forward slashes
+  fixed_path <- gsub("\\\\", "/", path)
+  # Reduce multiple forward slashes to a single one
+  normalized_path <- gsub("/{2,}", "/", fixed_path)
+  return(normalized_path)
+}
+
+
+verify_percentages <- function(data_df) {
+  trycatch({
+    # Check that all percentages in a row are between 0 and 100
+    perc_cols <- grep("%", colnames(data_df))
+    if(length(perc_cols) > 0){
+      perc_cols_vals <- data_df[, perc_cols]
+      col_check <- apply(perc_cols_vals, 2, function(x) x < 0 | x > 100)
+      col_check <- ifelse(is.na(col_check), FALSE, col_check)
+      check <- rowSums(col_check) > 0
+      data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | check)
+      if (any(check)) {
+        grandparent <- as.character(sys.call(sys.parent()))[1]
+        parent <- as.character(match.call())[1]
+        warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have percentages in an invalid format:",
+                         toString(data_df[check , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[check]))
+        base::message(warning)
+        
+        if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
+          # Append the warning to an existing matrix 
+          warnings <- data.frame(
+            ID = data_df[check, 1],
+            index = which(check),
+            message = "Invalid Percentages"
+          )
+          contribute_to_metadata_report("Percentages", warnings, parent_key = "Warning")
+          
+        }
+        
+      }
+    }
+  }, error = function(e){
+    errors <- data.frame(
+      verification_function = "verify_percentages",
+      message = e
+    )
+    contribute_to_metadata_report("verify_percentages", errors, parent_key = "Error In Verification")
+    data_df$error_flag <<- 1
+  })
+  return(data_df)
+}
+
+
+verify_na_null <- function(data_df, configuration) {
+  trycatch({
+    # check if there are any values that are NA or NULL and flag those rows as an 
+    # error. This does not include new additional columns as they are assigned a
+    # default value at the end of the verification process or ID column.
+    ID_col <- configuration$metadata$ID_col
+    control_data_type <- configuration$metadata$control_data_type
+    
+    transformations <- configuration$mappings$transformations
+    nonexempt_cols <- transformations[transformations$verify_na_exempt == FALSE, "target_field"]
+    nonexempt_cols <- nonexempt_cols[nonexempt_cols %in% colnames(data_df)]
+    na_present <- apply(nonexempt_df, 2, function(x) is.na(x) | is.null(x) | x == "")
+    na_present <- ifelse(is.na(na_present), FALSE, na_present)
+    check <- rowSums(na_present) > 0
+    data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | check)
+    if (any(check)) {
+      grandparent <- as.character(sys.call(sys.parent()))[1]
+      parent <- as.character(match.call())[1]
+      warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have missing data:",
+                       toString(data_df[check , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[check]))
+      base::message(warning)
+      
+      if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
+        # Append the warning to an existing matrix 
+        warnings <- data.frame(
+          ID = data_df[check, 1],
+          index = which(check),
+          message = "NA or Null values present"
+        )
+        contribute_to_metadata_report("NA|NULL", warnings, parent_key = "Warning")
+        
+      }
+      
+    }
   }, error = function(e){
     errors <- data.frame(
       verification_function = "verify_na_null",
@@ -1207,375 +1510,50 @@ verify_entries <- function(data_df, configuration){
     contribute_to_metadata_report("verify_na_null", errors, parent_key = "Error In Verification")
     data_df$error_flag <<- 1
   })
-  
-  
-  data_df$error_flag <- as.integer(data_df$error_flag)
-  verify_available_columns(data_df, configuration)
-  return(data_df)
-}
-
-
-verify_available_columns <- function(data_df, configuration){
-  transformations <- configuration$mappings$transformations
-  nonexempt_cols <- transformations[transformations$verify_na_exempt == FALSE, "target_field"]
-  is_nonexempt_cols_available <- !all(nonexempt_cols %in% colnames(data_df))
-  data_df[["error_flag"]] <- as.integer(is_nonexempt_cols_available)
-  
-  if (is_nonexempt_cols_available) {
-    errors <- data.frame(
-      verification_function = "verify_na_null",
-      message = e
-    )
-    contribute_to_metadata_report("verify_na_null", errors, parent_key = "Error In Verification")
-  }
-  return(is_nonexempt_cols_available)
-}
-
-
-verify_lat_lng <- function(data_df, max_val, min_val, columns, ID_col){
-  for (col in columns) {
-    if (col %in% colnames(data_df)) {
-      values <- data_df[[col]]
-      out_of_range <- values < min_val | values > max_val
-      
-      # Set any NA values to TRUE as the check was unable to be completed 
-      # correctly
-      out_of_range <- ifelse(is.na(out_of_range), FALSE, out_of_range)
-      data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | out_of_range)
-      
-      if (any(out_of_range)) {
-        grandparent <- as.character(sys.call(sys.parent()))[1]
-        parent <- as.character(match.call())[1]
-        warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have inappropriate LatLong coordinates:", 
-                         toString(data_df[out_of_range, 1]), "and the following indexes", toString((1:nrow(data_df))[out_of_range]))
-        base::message(warning)
-        
-        if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
-          # Append the warning to an existing matrix 
-          warnings <- data.frame(
-            ID = data_df[out_of_range, 1],
-            index = which(out_of_range),
-            message = "Inappropriate Lat Long values"
-          )
-          contribute_to_metadata_report("Coordinates", warnings, parent_key = "Warning")
-        }
-      }
-    }
-  }
-  return(data_df)
-}
-
-
-verify_scar <- function(data_df) {
-  # check that columns in RHISS data contain expected values according to metadata
-  valid_scar <- c("a", "p", "c")
-  
-  
-  check_valid_scar <- data_df$`Feeding Scars` %in% valid_scar
-  out_of_range <- ifelse(is.na(check_valid_scar), TRUE, check_valid_scar)
-  data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | !out_of_range)
-  
-  
-  if (any(!out_of_range )) {
-    grandparent <- as.character(sys.call(sys.parent()))[1]
-    parent <- as.character(match.call())[1]
-    warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid COTS scar:",
-                     toString(data_df[!out_of_range , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[!out_of_range ]))
-    base::message(warning)
-    
-    
-    if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
-      # Append the warning to an existing matrix 
-      warnings <- data.frame(
-        ID = data_df[!out_of_range, 1],
-        index = which(!out_of_range),
-        message = "Invalid COT Scar"
-      )
-      contribute_to_metadata_report("Scar", warnings, parent_key = "Warning")
-    }
-    
-  }
-  
-  return(data_df)
-}
-
-verify_tow_date <- function(data_df){
-  # Approximate a tow date based on vessel and voyage if it does not exist. 
-  
-  tow_date <- data_df[["Tow date"]]
-  incomplete_dates <- unique(which(is.na(tow_date)))
-  if (length(incomplete_dates) > 0){
-    incomplete_date_rows <- data_df[incomplete_dates,]
-    vessel_voyage <- unique(incomplete_date_rows[,which(names(incomplete_date_rows) %in% c("Vessel", "Voyage"))])
-    for(i in 1:nrow(vessel_voyage)){
-      data_df_filtered <- data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),]
-      is_any_voyage_date_correct <- any(!is.na(data_df_filtered$`Tow date`))
-      if(is_any_voyage_date_correct){
-        correct_date <- data_df_filtered[!(is.na(data_df_filtered$`Tow date`) | is.null(data_df_filtered$`Tow date`)),][1,"Tow date"]
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Tow date`)), "Tow date"] <- correct_date
-      } else if(!is_any_voyage_date_correct & !is_any_survey_date_correct) {
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Tow date`)), c("error_flag")] <- 1
-        
-      }
-    }
-    
-  }
-  
-  
-  
-  post_estimation_tow_dates <- data_df[["Tow date"]]
-  na_present <- (is.na(post_estimation_tow_dates) | is.null(post_estimation_tow_dates)) & (is.na(tow_date) | is.null(tow_date))
-  dated_estimated <- !(is.na(post_estimation_tow_dates) | is.null(post_estimation_tow_dates)) & (is.na(tow_date) | is.null(tow_date))
-  
-  if (any(dated_estimated | na_present)) {
-    grandparent <- as.character(sys.call(sys.parent()))[1]
-    parent <- as.character(match.call())[1]
-    warning <- c()
-    if (any(dated_estimated)) {
-      warning1 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have their tow date estimated from their vessel",
-                        toString(data_df[dated_estimated , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[dated_estimated]))
-      base::message(warning1)
-    }
-    if (any(na_present)) {
-      warning2 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have no tow date",
-                        toString(data_df[na_present , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[na_present]))
-      base::message(warning2)
-    }  
-    
-    
-    if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
-      # Append the warning to an existing matrix 
-      warnings <- data.frame(
-        ID = data_df[dated_estimated, 1],
-        index = which(dated_estimated),
-        message = "Invalid Tow Date. Date was successfully estimated."
-      )
-      contribute_to_metadata_report("Estimated Tow Date", warnings, parent_key = "Warning")
-      warnings <- data.frame(
-        ID = data_df[na_present, 1],
-        index = which(na_present),
-        message = "Invalid Tow Date. "
-      )
-      contribute_to_metadata_report("Invalid Tow Date", warnings, parent_key = "Warning")
-    }
-    
-  }
-  return(data_df)
-}
-
-
-verify_RHISS <- function(data_df) {
-  # check that columns in RHISS data contain expected values according to metadata
-  valid_tide <- c("L", "M", "H")
-  check_tide <- data_df$`Tide` %in% valid_tide
-  check_tide <- ifelse(is.na(check_tide), TRUE, check_tide)
-  
-  cols <- c("Slime Height (cm)", "Entangled/Mat-Like Height (cm)", "Filamentous Height (cm)", "Leafy/Fleshy Height (cm)", "Tree/Bush-Like Height (cm)")
-  valid_macroalgae <- c(">25cm", "1 to 3cm", "None", "4 to 25cm")
-  available_cols <- cols %in% colnames(data_df)
-  if (sum(available_cols) >= 2){
-    cols <- cols[available_cols]
-    is_valid_macroalgae <- apply(data_df[, cols], 2, function(x) !(x %in% valid_macroalgae))
-    is_valid_macroalgae <- ifelse(is.na(is_valid_macroalgae), FALSE, is_valid_macroalgae)
-    check_macroalgae <- rowSums(is_valid_macroalgae) > 0
-  } else if (sum(available_cols) == 1) {
-    cols <- cols[available_cols]
-    is_valid_macroalgae <- !(data_df[,cols] %in% valid_macroalgae)
-    is_valid_macroalgae <- ifelse(is.na(is_valid_macroalgae), FALSE, is_valid_macroalgae)
-    check_macroalgae <- rowSums(is_valid_macroalgae) > 0
-  } else {
-    check_macroalgae <- 0
-  }
-
-  
-  valid_descriptive_bleach_severity <- c("Totally bleached white", "pale/fluoro (very light or yellowish)", "None", "Bleached only on upper surface", "Pale (very light)/Focal bleaching", "Totally bleached white/fluoro", "Recently dead coral lightly covered in algae")
-  bcols <- c("Mushroom Bleach Severity", "Massive Bleach Severity", "Encrusting Bleach Severity", "Vase/Foliose Bleach Severity", "Plate/Table Bleach Severity", "Bushy Bleach Severity", "Branching Bleach Severity")
-  available_cols <- bcols %in% colnames(data_df)
-  if (sum(available_cols) >= 2){
-    bcols <- bcols[available_cols]
-    is_valid_descriptive_bleach_severity <- apply(data_df[, bcols], 2, function(x) !(x %in% valid_descriptive_bleach_severity))
-    is_valid_descriptive_bleach_severity <- ifelse(is.na(is_valid_descriptive_bleach_severity), FALSE, is_valid_descriptive_bleach_severity)
-    check_descriptive_bleach_severity <- rowSums(is_valid_macroalgae) > 0
-  } else if (sum(available_cols) == 1) {
-    bcols <- bcols[available_cols]
-    is_valid_descriptive_bleach_severity <- !(data_df[,bcols] %in% valid_descriptive_bleach_severity)
-    is_valid_descriptive_bleach_severity <- ifelse(is.na(is_valid_descriptive_bleach_severity), FALSE, is_valid_descriptive_bleach_severity)
-    check_descriptive_bleach_severity <- rowSums(is_valid_descriptive_bleach_severity) > 0
-  } else {
-    check_descriptive_bleach_severity <- 0
-  }
-  
-  if (all(c("Bleached Average Severity Index (calculated via matrix)") %in% colnames(data_df))){
-    bleached_severity <- data_df$`Bleached Average Severity Index (calculated via matrix)`
-    check_bleach_severity <- bleached_severity >= 1 & bleached_severity <= 8
-    check_bleach_severity <- ifelse(is.na(check_bleach_severity), TRUE, check_bleach_severity)
-  } else {
-    check_bleach_severity <- 1
-  }
-
-  
-  check <- !check_tide | check_macroalgae | !check_bleach_severity | check_descriptive_bleach_severity
-  if (any(check)) {
-    grandparent <- as.character(sys.call(sys.parent()))[1]
-    parent <- as.character(match.call())[1]
-    if (any(!check_tide)) {
-      warning1 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid tide values:",
-                        toString(data_df[!check_tide , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[!check_tide]))
-      
-    }
-    if (any(check_macroalgae)) {
-      warning2 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid macroalgae values:",
-                        toString(data_df[check_macroalgae, 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[check_macroalgae]))
-    }
-    if (any(!check_bleach_severity)) {
-      warning3 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid bleach severity values:",
-                        toString(data_df[!check_bleach_severity, 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[!check_bleach_severity]))
-    }
-    if (any(check_descriptive_bleach_severity)) {
-      warning4 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid descriptive beach severity:",
-                        toString(data_df[check_descriptive_bleach_severity , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[check_descriptive_bleach_severity ]))
-    }
-    
-    if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
-      # Append the warning to an existing matrix 
-      warnings <- data.frame(
-        ID = data_df[!check_tide, 1],
-        index = which(!check_tide),
-        message = "Invalid tide value"
-      )
-      contribute_to_metadata_report("Tide", warnings, parent_key = "Warning")
-      
-      warnings <- data.frame(
-        ID = data_df[check_macroalgae, 1],
-        index = which(check_macroalgae),
-        message = "Invalid macroalgae"
-      )
-      contribute_to_metadata_report("Macroalgae", warnings, parent_key = "Warning")
-      
-      warnings <- data.frame(
-        ID = data_df[!check_bleach_severity, 1],
-        index = which(!check_bleach_severity),
-        message = "Invalid Bleach Severity"
-      )
-      contribute_to_metadata_report("Bleach Severity", warnings, parent_key = "Warning")
-      
-      warnings <- data.frame(
-        ID = data_df[check_descriptive_bleach_severity, 1],
-        index = which(check_descriptive_bleach_severity),
-        message = "Invalid Bleach Severity Description"
-      )
-      contribute_to_metadata_report("Bleach Severity Description", warnings, parent_key = "Warning")
-    }
-    
-  }
-  data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | check)
-  
-  
-  return(data_df)
-}
-
-
-verify_percentages <- function(data_df) {
-  # Check that all percentages in a row are between 0 and 100
-  perc_cols <- grep("%", colnames(data_df))
-  if(length(perc_cols) > 0){
-    perc_cols_vals <- data_df[, perc_cols]
-    col_check <- apply(perc_cols_vals, 2, function(x) x < 0 | x > 100)
-    col_check <- ifelse(is.na(col_check), FALSE, col_check)
-    check <- rowSums(col_check) > 0
-    data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | check)
-    if (any(check)) {
-      grandparent <- as.character(sys.call(sys.parent()))[1]
-      parent <- as.character(match.call())[1]
-      warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have percentages in an invalid format:",
-                       toString(data_df[check , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[check]))
-      base::message(warning)
-      
-      if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
-        # Append the warning to an existing matrix 
-        warnings <- data.frame(
-          ID = data_df[check, 1],
-          index = which(check),
-          message = "Invalid Percentages"
-        )
-        contribute_to_metadata_report("Percentages", warnings, parent_key = "Warning")
-        
-      }
-      
-    }
-  }
-  return(data_df)
-}
-
-
-verify_na_null <- function(data_df, configuration) {
-  # check if there are any values that are NA or NULL and flag those rows as an 
-  # error. This does not include new additional columns as they are assigned a
-  # default value at the end of the verification process or ID column.
-  ID_col <- configuration$metadata$ID_col
-  control_data_type <- configuration$metadata$control_data_type
-  
-  transformations <- configuration$mappings$transformations
-  nonexempt_cols <- transformations[transformations$verify_na_exempt == FALSE, "target_field"]
-  nonexempt_cols <- nonexempt_cols[nonexempt_cols %in% colnames(data_df)]
-  na_present <- apply(nonexempt_df, 2, function(x) is.na(x) | is.null(x) | x == "")
-  na_present <- ifelse(is.na(na_present), FALSE, na_present)
-  check <- rowSums(na_present) > 0
-  data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | check)
-  if (any(check)) {
-    grandparent <- as.character(sys.call(sys.parent()))[1]
-    parent <- as.character(match.call())[1]
-    warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have missing data:",
-                     toString(data_df[check , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[check]))
-    base::message(warning)
-    
-    if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
-      # Append the warning to an existing matrix 
-      warnings <- data.frame(
-        ID = data_df[check, 1],
-        index = which(check),
-        message = "NA or Null values present"
-      )
-      contribute_to_metadata_report("NA|NULL", warnings, parent_key = "Warning")
-      
-    }
-    
-  }
   return(data_df)
 }
 
 verify_integers_positive <- function(data_df) {
-  # R function that verifys all integers are positive values as they represent 
-  # real quantities. Note: Whole numbers are not integers, they must be declared
-  # as such. All relevant columns were set as integers in the set_data_type 
-  # function
-  
-  is_integer <- sapply(data_df[1,],is.integer)
-  if(any(is_integer)){
-    check <- apply(data_df[,is_integer, drop = FALSE], 1, function(row) any(row < 0))
-    check <- ifelse(is.na(check), FALSE, check)
-    data_df[, "error_flag"] <- as.integer(data_df[, "error_flag"] | check)
+  trycatch({
+    # R function that verifys all integers are positive values as they represent 
+    # real quantities. Note: Whole numbers are not integers, they must be declared
+    # as such. All relevant columns were set as integers in the set_data_type 
+    # function
     
-    if (any(check)) {
-      grandparent <- as.character(sys.call(sys.parent()))[1]
-      parent <- as.character(match.call())[1]
-      warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have non-positive integer values:",
-                       toString(data_df[check , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[check]))
-      base::message(warning)
+    is_integer <- sapply(data_df[1,],is.integer)
+    if(any(is_integer)){
+      check <- apply(data_df[,is_integer, drop = FALSE], 1, function(row) any(row < 0))
+      check <- ifelse(is.na(check), FALSE, check)
+      data_df[, "error_flag"] <- as.integer(data_df[, "error_flag"] | check)
       
-      
-      if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
-        # Append the warning to an existing matrix 
-        warnings <- data.frame(
-          ID = data_df[check, 1],
-          index = which(check),
-          message = "Non-positive integers present"
-        )
-        contribute_to_metadata_report("Integers", warnings, parent_key = "Warning")
+      if (any(check)) {
+        grandparent <- as.character(sys.call(sys.parent()))[1]
+        parent <- as.character(match.call())[1]
+        warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have non-positive integer values:",
+                         toString(data_df[check , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[check]))
+        base::message(warning)
         
+        
+        if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
+          # Append the warning to an existing matrix 
+          warnings <- data.frame(
+            ID = data_df[check, 1],
+            index = which(check),
+            message = "Non-positive integers present"
+          )
+          contribute_to_metadata_report("Integers", warnings, parent_key = "Warning")
+          
+        }
       }
     }
-  }
+  }, error = function(e){
+    errors <- data.frame(
+      verification_function = "verify_integers_positive",
+      message = e
+    )
+    contribute_to_metadata_report("verify_integers_positive", errors, parent_key = "Error In Verification")
+    data_df$error_flag <<- 1
+  })
   return(data_df)
 }
 
@@ -1594,190 +1572,216 @@ remove_leading_spaces <- function(data_df) {
 
 
 verify_coral_cover <- function(data_df) {
-  accepted_values <- c("1-", "2-", "3-", "4-", "5-", "1+", "2+", "3+", "4+", "5+", "0")
-  
-  # Identify possible corrections based on common mistakes
-  possible_corrections <- data.frame(
-    Old_Value = c("-1", "-2", "-3", "-4", "-5","+1", "+2", "+3", "+4", "+5"),
-    New_Value = c("1-", "2-", "3-", "4-", "5-", "1+", "2+", "3+", "4+", "5+")
-  )
-  
-  # Substitute similar characters for correct ones
-  data_df[["Hard Coral"]] <- gsub("—|–|−", "-", data_df[["Hard Coral"]])
-  data_df[["Soft Coral"]] <- gsub("—|–|−", "-", data_df[["Soft Coral"]])
-  data_df[["Recently Dead Coral"]] <- gsub("—|–|−", "-", data_df[["Recently Dead Coral"]])
-  
-  # Loop through possible corrections and replace values
-  for (i in 1:nrow(possible_corrections)) {
-    old_value <- possible_corrections$Old_Value[i]
-    new_value <- possible_corrections$New_Value[i]
-    data_df$`Hard Coral`[data_df$`Hard Coral` == old_value] <- new_value
-    data_df$`Soft Coral`[data_df$`Soft Coral` == old_value] <- new_value
-    data_df$`Recently Dead Coral`[data_df$`Recently Dead Coral` == old_value] <- new_value
-  }
-  
-  hc_check <- data_df$`Hard Coral` %in% accepted_values
-  sc_check <- data_df$`Soft Coral` %in% accepted_values
-  rdc_check <- data_df$`Recently Dead Coral` %in% accepted_values
-  
-  hc_check <- ifelse(is.na(hc_check), TRUE, hc_check)
-  sc_check <- ifelse(is.na(sc_check), TRUE, sc_check)
-  rdc_check <- ifelse(is.na(rdc_check), TRUE, rdc_check)
-  
-  error <- !hc_check | !sc_check | !rdc_check
-  
-  data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | error)
-  if (any(error)) {
-    grandparent <- as.character(sys.call(sys.parent()))[1]
-    parent <- as.character(match.call())[1]
-    warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid coral cover values:",
-                     toString(data_df[error , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[error]))
-    base::message(warning)
+  trycatch({
+    accepted_values <- c("1-", "2-", "3-", "4-", "5-", "1+", "2+", "3+", "4+", "5+", "0")
     
+    # Identify possible corrections based on common mistakes
+    possible_corrections <- data.frame(
+      Old_Value = c("-1", "-2", "-3", "-4", "-5","+1", "+2", "+3", "+4", "+5"),
+      New_Value = c("1-", "2-", "3-", "4-", "5-", "1+", "2+", "3+", "4+", "5+")
+    )
     
-    if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
-      # Append the warning to an existing matrix 
-      warnings <- data.frame(
-        ID = data_df[error, 1],
-        index = which(error),
-        message = "Invalid coral cover values"
-      )
-      contribute_to_metadata_report("Coral Cover", warnings, parent_key = "Warning")
+    # Substitute similar characters for correct ones
+    data_df[["Hard Coral"]] <- gsub("—|–|−", "-", data_df[["Hard Coral"]])
+    data_df[["Soft Coral"]] <- gsub("—|–|−", "-", data_df[["Soft Coral"]])
+    data_df[["Recently Dead Coral"]] <- gsub("—|–|−", "-", data_df[["Recently Dead Coral"]])
+    
+    # Loop through possible corrections and replace values
+    for (i in 1:nrow(possible_corrections)) {
+      old_value <- possible_corrections$Old_Value[i]
+      new_value <- possible_corrections$New_Value[i]
+      data_df$`Hard Coral`[data_df$`Hard Coral` == old_value] <- new_value
+      data_df$`Soft Coral`[data_df$`Soft Coral` == old_value] <- new_value
+      data_df$`Recently Dead Coral`[data_df$`Recently Dead Coral` == old_value] <- new_value
     }
-  }
+    
+    hc_check <- data_df$`Hard Coral` %in% accepted_values
+    sc_check <- data_df$`Soft Coral` %in% accepted_values
+    rdc_check <- data_df$`Recently Dead Coral` %in% accepted_values
+    
+    hc_check <- ifelse(is.na(hc_check), TRUE, hc_check)
+    sc_check <- ifelse(is.na(sc_check), TRUE, sc_check)
+    rdc_check <- ifelse(is.na(rdc_check), TRUE, rdc_check)
+    
+    error <- !hc_check | !sc_check | !rdc_check
+    
+    data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | error)
+    if (any(error)) {
+      grandparent <- as.character(sys.call(sys.parent()))[1]
+      parent <- as.character(match.call())[1]
+      warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid coral cover values:",
+                       toString(data_df[error , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[error]))
+      base::message(warning)
+      
+      
+      if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
+        # Append the warning to an existing matrix 
+        warnings <- data.frame(
+          ID = data_df[error, 1],
+          index = which(error),
+          message = "Invalid coral cover values"
+        )
+        contribute_to_metadata_report("Coral Cover", warnings, parent_key = "Warning")
+      }
+    }
+  }, error = function(e){
+    errors <- data.frame(
+      verification_function = "verify_coral_cover",
+      message = e
+    )
+    contribute_to_metadata_report("verify_coral_cover", errors, parent_key = "Error In Verification")
+    data_df$error_flag <<- 1
+  })
   return(data_df)
 }
 
 verify_reef <- function(data_df){
-  # Check that the reef ID is in one of the correct standard formats with regex.
-  # Look for most similar reef ID if it is not. Am not checking for a match 
-  # because that would mean no new reefs would be accepted and I believe that 
-  # the reef input is restricted to existing reefs so it is unlikley to be a typo
-  
-  reef_id <- data_df[["Reef ID"]]
-  correct_reef_id_format <- grepl("^(1[0-9]|2[0-9]|10)-\\d{3}[a-z]?$", reef_id)
-  data_df[,"error_flag"] <- as.integer(data_df[,"error_flag"] | !correct_reef_id_format)
-  if (any(!correct_reef_id_format)) {
-    grandparent <- as.character(sys.call(sys.parent()))[1]
-    parent <- as.character(match.call())[1]
-    warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid Reef IDs:",
-                     toString(data_df[!correct_reef_id_format , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[!correct_reef_id_format]))
-    base::message(warning)
+  trycatch({
+    # Check that the reef ID is in one of the correct standard formats with regex.
+    # Look for most similar reef ID if it is not. Am not checking for a match 
+    # because that would mean no new reefs would be accepted and I believe that 
+    # the reef input is restricted to existing reefs so it is unlikley to be a typo
     
-    if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
-      # Append the warning to an existing matrix 
-      warnings <- data.frame(
-        ID = data_df[!correct_reef_id_format, 1],
-        index = which(!correct_reef_id_format),
-        message = "Invalid reef ID"
-      )
-      contribute_to_metadata_report("Reef ID", warnings, parent_key = "Warning")
+    reef_id <- data_df[["Reef ID"]]
+    correct_reef_id_format <- grepl("^(1[0-9]|2[0-9]|10)-\\d{3}[a-z]?$", reef_id)
+    data_df[,"error_flag"] <- as.integer(data_df[,"error_flag"] | !correct_reef_id_format)
+    if (any(!correct_reef_id_format)) {
+      grandparent <- as.character(sys.call(sys.parent()))[1]
+      parent <- as.character(match.call())[1]
+      warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid Reef IDs:",
+                       toString(data_df[!correct_reef_id_format , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[!correct_reef_id_format]))
+      base::message(warning)
+      
+      if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
+        # Append the warning to an existing matrix 
+        warnings <- data.frame(
+          ID = data_df[!correct_reef_id_format, 1],
+          index = which(!correct_reef_id_format),
+          message = "Invalid reef ID"
+        )
+        contribute_to_metadata_report("Reef ID", warnings, parent_key = "Warning")
+      }
     }
-  }
+  }, error = function(e){
+    errors <- data.frame(
+      verification_function = "verify_reef",
+      message = e
+    )
+    contribute_to_metadata_report("verify_reef", errors, parent_key = "Error In Verification")
+    data_df$error_flag <<- 1
+  })
   return(data_df)
 }
 
 verify_voyage_dates <- function(data_df){
-  # Check that voyage dates of observation are within in voyage dates and that 
-  # none of the dates are NA. If Voyage dates are NA set start and end to min 
-  # and max observation date. Check that voyage dates associated with a vessels 
-  # voyage are unique (There should only be on departure and return date)
-  voyage_start <- data_df[["Voyage Start"]]
-  voyage_end <- data_df[["Voyage End"]]
-  
-  incomplete_dates <- unique(c(which(is.na(voyage_end)), which(is.na(voyage_start))))
-  if (length(incomplete_dates) > 0){
-    incomplete_date_rows <- data_df[incomplete_dates,]
-    vessel_voyage <- unique(incomplete_date_rows[,which(names(incomplete_date_rows) %in% c("Vessel", "Voyage"))])
-    for(i in 1:nrow(vessel_voyage)){
-      data_df_filtered <- data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),]
-      is_any_voyage_date_correct <- any(!is.na(data_df_filtered$`Voyage Start`) & !is.na(data_df_filtered$`Voyage End`))
-      is_any_survey_date_correct <- any(!is.na(data_df_filtered$`Survey Date`))
-      if(is_any_voyage_date_correct){
-        correct_dates <- data_df_filtered[!is.na(data_df_filtered),][1,c("Voyage Start", "Voyage End")]
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage Start`)), "Voyage Start"] <- correct_dates[1]
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage End`)), "Voyage End"] <- correct_dates[2]
-      } else if(!is_any_voyage_date_correct & is_any_survey_date_correct){
-        incomplete_date_rows_filtered <- incomplete_date_rows[(incomplete_date_rows$Vessel == vessel_voyage[i,1]) & (incomplete_date_rows$Voyage == vessel_voyage[i,2]),]
-        estimate_start <- min(incomplete_date_rows_filtered$`Survey Date`)
-        estimate_end <- min(incomplete_date_rows_filtered$`Survey Date`)
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage Start`)), c("Voyage Start")] <-  estimate_start
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage End`)), c("Voyage End")] <-  estimate_end
-      } else if(!is_any_voyage_date_correct & !is_any_survey_date_correct) {
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage Start`) | is.na(data_df$`Voyage End`)), "error_flag"] <- 1
+  tryCatch({
+    # Check that voyage dates of observation are within in voyage dates and that 
+    # none of the dates are NA. If Voyage dates are NA set start and end to min 
+    # and max observation date. Check that voyage dates associated with a vessels 
+    # voyage are unique (There should only be on departure and return date)
+    voyage_start <- data_df[["Voyage Start"]]
+    voyage_end <- data_df[["Voyage End"]]
+    
+    incomplete_dates <- unique(c(which(is.na(voyage_end)), which(is.na(voyage_start))))
+    if (length(incomplete_dates) > 0){
+      incomplete_date_rows <- data_df[incomplete_dates,]
+      vessel_voyage <- unique(incomplete_date_rows[,which(names(incomplete_date_rows) %in% c("Vessel", "Voyage"))])
+      for(i in 1:nrow(vessel_voyage)){
+        data_df_filtered <- data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),]
+        is_any_voyage_date_correct <- any(!is.na(data_df_filtered$`Voyage Start`) & !is.na(data_df_filtered$`Voyage End`))
+        is_any_survey_date_correct <- any(!is.na(data_df_filtered$`Survey Date`))
+        if(is_any_voyage_date_correct){
+          correct_dates <- data_df_filtered[!is.na(data_df_filtered),][1,c("Voyage Start", "Voyage End")]
+          data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage Start`)), "Voyage Start"] <- correct_dates[1]
+          data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage End`)), "Voyage End"] <- correct_dates[2]
+        } else if(!is_any_voyage_date_correct & is_any_survey_date_correct){
+          incomplete_date_rows_filtered <- incomplete_date_rows[(incomplete_date_rows$Vessel == vessel_voyage[i,1]) & (incomplete_date_rows$Voyage == vessel_voyage[i,2]),]
+          estimate_start <- min(incomplete_date_rows_filtered$`Survey Date`)
+          estimate_end <- min(incomplete_date_rows_filtered$`Survey Date`)
+          data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage Start`)), c("Voyage Start")] <-  estimate_start
+          data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage End`)), c("Voyage End")] <-  estimate_end
+        } else if(!is_any_voyage_date_correct & !is_any_survey_date_correct) {
+          data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage Start`) | is.na(data_df$`Voyage End`)), "error_flag"] <- 1
+        }
+      }
+      
+    }
+    
+    
+    post_voyage_start <- data_df[["Voyage Start"]]
+    post_voyage_end <- data_df[["Voyage End"]]
+    na_present <- ((is.na(post_voyage_start) | is.null(post_voyage_start)) | (is.na(post_voyage_end) | is.null(post_voyage_end))) & ((is.na(voyage_start) | is.null(voyage_start)) | (is.na(voyage_end) | is.null(voyage_end)))
+    dated_estimated <- !((is.na(post_voyage_start) | is.null(post_voyage_start)) | (is.na(post_voyage_end) | is.null(post_voyage_end))) & ((is.na(voyage_start) | is.null(voyage_start)) | (is.na(voyage_end) | is.null(voyage_end)))
+    
+    if (any(dated_estimated | na_present)) {
+      grandparent <- as.character(sys.call(sys.parent()))[1]
+      parent <- as.character(match.call())[1]
+      if (any(dated_estimated) & !any(na_present)) {
+        warning1 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have their voyage dates estimated from their vessel",
+                          toString(data_df[dated_estimated , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[dated_estimated]))
+        base::message(warning1)
+      }
+      if (any(na_present)) {
+        warning2 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have voyage dates",
+                          toString(data_df[na_present , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[na_present]))
+        base::message(warning2)
+      }  
+      
+      if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
+        # Append the warning to an existing matrix 
+        warnings <- data.frame(
+          ID = data_df[dated_estimated, 1],
+          index = which(dated_estimated),
+          message = "Invalid Voyage Date. Date was successfully estimated."
+        )
+        contribute_to_metadata_report("Estimated Voyage Date", warnings, parent_key = "Warning")
+        warnings <- data.frame(
+          ID = data_df[na_present, 1],
+          index = which(na_present),
+          message = "Invalid Voyage Date. "
+        )
+        contribute_to_metadata_report("Invalid Voyage Date", warnings, parent_key = "Warning")
+      }
+      
+    }
+    
+    survey_date_error <- (data_df$`Survey Date` < data_df$`Voyage Start` | data_df$`Survey Date` > data_df$`Voyage End`)
+    data_df$error_flag <- data_df$error_flag | survey_date_error
+    
+    if(any(survey_date_error)){
+      if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
+        # Append the warning to an existing matrix 
+        warnings <- data.frame(
+          ID = data_df[survey_date_error, 1],
+          index = which(survey_date_error),
+          message = "Survey date outside voyage date range"
+        )
+        contribute_to_metadata_report("Survey Date", warnings, parent_key = "Warning")
       }
     }
     
-  }
-  
-  
-  post_voyage_start <- data_df[["Voyage Start"]]
-  post_voyage_end <- data_df[["Voyage End"]]
-  na_present <- ((is.na(post_voyage_start) | is.null(post_voyage_start)) | (is.na(post_voyage_end) | is.null(post_voyage_end))) & ((is.na(voyage_start) | is.null(voyage_start)) | (is.na(voyage_end) | is.null(voyage_end)))
-  dated_estimated <- !((is.na(post_voyage_start) | is.null(post_voyage_start)) | (is.na(post_voyage_end) | is.null(post_voyage_end))) & ((is.na(voyage_start) | is.null(voyage_start)) | (is.na(voyage_end) | is.null(voyage_end)))
-  
-  if (any(dated_estimated | na_present)) {
-    grandparent <- as.character(sys.call(sys.parent()))[1]
-    parent <- as.character(match.call())[1]
-    if (any(dated_estimated) & !any(na_present)) {
-      warning1 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have their voyage dates estimated from their vessel",
-                        toString(data_df[dated_estimated , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[dated_estimated]))
-      base::message(warning1)
+    vessel_voyage <- unique(data_df[,which(names(data_df) %in% c("Vessel", "Voyage"))])
+    for (i in 1:nrow(vessel_voyage)){
+      filtered_data_df <- data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),]
+      start_dates <- unique(filtered_data_df$`Voyage Start`) 
+      end_dates <- unique(filtered_data_df$`Voyage End`)
+      if(length(start_dates) > 1){
+        mf_start <- names(sort(table(start_dates), decreasing = TRUE)[1])
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), "Voyage Start"] <- mf_start
+      }
+      if(length(end_dates) > 1){
+        mf_end <- names(sort(table(end_dates), decreasing = TRUE)[1])
+        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), "Voyage End"] <- mf_end
+      }
     }
-    if (any(na_present)) {
-      warning2 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have voyage dates",
-                        toString(data_df[na_present , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[na_present]))
-      base::message(warning2)
-    }  
-    
-    if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
-      # Append the warning to an existing matrix 
-      warnings <- data.frame(
-        ID = data_df[dated_estimated, 1],
-        index = which(dated_estimated),
-        message = "Invalid Voyage Date. Date was successfully estimated."
-      )
-      contribute_to_metadata_report("Estimated Voyage Date", warnings, parent_key = "Warning")
-      warnings <- data.frame(
-        ID = data_df[na_present, 1],
-        index = which(na_present),
-        message = "Invalid Voyage Date. "
-      )
-      contribute_to_metadata_report("Invalid Voyage Date", warnings, parent_key = "Warning")
-    }
-    
-  }
-  
-  survey_date_error <- (data_df$`Survey Date` < data_df$`Voyage Start` | data_df$`Survey Date` > data_df$`Voyage End`)
-  data_df$error_flag <- data_df$error_flag | survey_date_error
-  
-  if(any(survey_date_error)){
-    if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
-      # Append the warning to an existing matrix 
-      warnings <- data.frame(
-        ID = data_df[survey_date_error, 1],
-        index = which(survey_date_error),
-        message = "Survey date outside voyage date range"
-      )
-      contribute_to_metadata_report("Survey Date", warnings, parent_key = "Warning")
-    }
-  }
-  
-  vessel_voyage <- unique(data_df[,which(names(data_df) %in% c("Vessel", "Voyage"))])
-  for (i in 1:nrow(vessel_voyage)){
-    filtered_data_df <- data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),]
-    start_dates <- unique(filtered_data_df$`Voyage Start`) 
-    end_dates <- unique(filtered_data_df$`Voyage End`)
-    if(length(start_dates) > 1){
-      mf_start <- names(sort(table(start_dates), decreasing = TRUE)[1])
-      data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), "Voyage Start"] <- mf_start
-    }
-    if(length(end_dates) > 1){
-      mf_end <- names(sort(table(end_dates), decreasing = TRUE)[1])
-      data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), "Voyage End"] <- mf_end
-    }
-  }
-  
+  }, error = function(e){
+    errors <- data.frame(
+      verification_function = "verify_voyage_dates",
+      message = e
+    )
+    contribute_to_metadata_report("verify_voyage_dates", errors, parent_key = "Error In Verification")
+    data_df$error_flag <<- 1
+  })
   return(data_df)
 }
 
