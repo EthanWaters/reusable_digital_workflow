@@ -25,87 +25,104 @@
       {
         "target_field": "Capture ID",
         "source_field": "COTS Cull Dive Id",
-        "position": 1
+        "position": 1,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Vessel",
         "source_field": "Vessel",
-        "position": 2
+        "position": 2,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Voyage",
         "source_field": "Voyage",
-        "position": 3
+        "position": 3,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Site Name",
         "source_field": "Site name",
-        "position": 4
+        "position": 4,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Reef Name",
         "source_field": "Reef name",
-        "position": 5
+        "position": 5,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Reef ID",
         "source_field": "Reef label",
-        "position": 6
+        "position": 6,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Voyage Start",
         "source_field": "Voyage start",
-        "position": 7
+        "position": 7,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Voyage End",
         "source_field": "Voyage end",
-        "position": 8
+        "position": 8,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Survey Date",
         "source_field": "Survey date",
-        "position": 9
+        "position": 9,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Depth (meters)",
         "source_field": "Depth (m)",
-        "position": 10
+        "position": 10,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Bottomtime",
         "source_field": "Bottomtime",
-        "position": 11
+        "position": 11,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Cohort 1 (<15cm)",
         "source_field": "Cohort 1 (< 15cm)",
-        "position": 12
+        "position": 12,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Cohort2 (15-25cm)",
         "source_field": "Cohort 2 (15cm - 25cm)",
-        "position": 13
+        "position": 13,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Cohort3 (25-40cm)",
         "source_field": "Cohort 3 (25cm - 40cm)",
-        "position": 14
+        "position": 14,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Cohort4 (>40cm)",
         "source_field": "Cohort 4 (> 40cm)",
-        "position": 15
+        "position": 15,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Longitude",
         "source_field": "Longitude",
-        "position": 16
+        "position": 16,
+        "verify_na_exempt": false
       },
       {
         "target_field": "Latitude",
         "source_field": "Latitude",
-        "position": 17
+        "position": 17,
+        "verify_na_exempt": false
       }
     ],
     "new_fields": [

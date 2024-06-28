@@ -24,67 +24,80 @@
         {
           "target_field": "date",
           "source_field": "SurveyTime",
-          "position": 1
+          "position": 1,
+          "verify_na_exempt": false
         },
         {
           "target_field": "vessel_name",
           "source_field": "VesselName",
-          "position": 2
+          "position": 2,
+          "verify_na_exempt": false
         },
         {
           "target_field": "vessel_voyage_number",
           "source_field": "CrownOfThornsStarfishVoyageId",
-          "position": 3
+          "position": 3,
+          "verify_na_exempt": false
         },
         {
           "target_field": "reef_label",
           "source_field": "ReefId",
-          "position": 4
+          "position": 4,
+          "verify_na_exempt": false
         },
         {
           "target_field": "reef_name",
           "source_field": "ReefName",
-          "position": 5
+          "position": 5,
+          "verify_na_exempt": false
         },
         {
           "target_field": "distance",
           "source_field": "TowDistance",
-          "position": 10
+          "position": 10,
+          "verify_na_exempt": false
         },
         {
           "target_field": "average_speed",
           "source_field": "AverageSpeed",
-          "position": 11
+          "position": 11,
+          "verify_na_exempt": false
         },
         {
           "target_field": "cots",
           "source_field": "CrownOfThornsStarfishCount",
-          "position": 12
+          "position": 12,
+          "verify_na_exempt": false
         },
         {
           "target_field": "scars",
           "source_field": "FeedingScarCountRangeDescription",
-          "position": 13
+          "position": 13,
+          "verify_na_exempt": false
         },
         {
           "target_field": "hard_coral",
           "source_field": "HardCoralProportionRangeDescription",
-          "position": 14
+          "position": 14,
+          "verify_na_exempt": false
         },
         {
           "target_field": "soft_coral",
           "source_field": "SoftCoralProportionRangeDescription",
-          "position": 15
+          "position": 15,
+          "verify_na_exempt": false
         },
         {
           "target_field": "recently_dead_coral",
           "source_field": "RecentlyDeadCoralProportionRangeDescription",
-          "position": 16
+          "position": 16,
+          "verify_na_exempt": false
         },
         {
           "target_field": "site_name",
           "source_field": "CullSiteName",
-          "position": 17
+          "position": 17,
+          "verify_na_exempt": false
         }
       ],
       "new_fields": [

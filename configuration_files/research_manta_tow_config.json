@@ -28,7 +28,7 @@
         "target_field": "ID",
         "source_field": "COTS Surveillance id",
         "position": 1,
-        "verify_na_exempt": false
+        "verify_na_exempt": true
       },
       {
         "target_field": "Tow date",
