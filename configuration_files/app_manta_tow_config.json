@@ -6,6 +6,7 @@
       "control_data_type": "manta_tow",
       "GBRMPA_keyword": "Surveillance",
       "legacy_sheet_index": 4,
+      "is_ID_preferred": false,
       "ID_col": "ID",
       "output_directory": {
         "control_data": "Output/control_data",
@@ -105,31 +106,110 @@
           "field": "start_latitude",
           "default": "st_coordinates(st_startpoint({RAW_DATAFRAME}$Geometry))[,\"Y\"]",
           "position": 6,
-          "function_call": true
+          "function_call": true,
+          "verify_na_exempt": false
         },
         {
           "field": "stop_latitude",
           "default": "st_coordinates(st_endpoint({RAW_DATAFRAME}$Geometry))[,\"Y\"]",
           "position": 8,
-          "function_call": true
+          "function_call": true,
+          "verify_na_exempt": false
         },
         {
           "field": "start_longitude",
           "default": "st_coordinates(st_startpoint({RAW_DATAFRAME}$Geometry))[,\"X\"]",
           "position": 7,
-          "function_call": true
+          "function_call": true,
+          "verify_na_exempt": false
         },
         {
           "field": "stop_longitude",
           "default": "st_coordinates(st_endpoint({RAW_DATAFRAME}$Geometry))[,\"X\"]",
           "position": 9,
-          "function_call": true
+          "function_call": true,
+          "verify_na_exempt": false
         },
         {
           "field": "error_flag",
           "position": 18,
           "default": 0,
-          "function_call": true
+          "function_call": true,
+          "verify_na_exempt": true
+        }
+      ],
+      "data_type_mappings": [
+        {
+          "field": "reef_label",
+          "data_type": "character"
+        },
+        {
+          "field": "date",
+          "data_type": "date"
+        },
+        {
+          "field": "vessel_name",
+          "data_type": "character"
+        },
+        {
+          "field": "vessel_voyage_number",
+          "data_type": "character"
+        },
+        {
+          "field": "reef_name",
+          "data_type": "character"
+        },
+        {
+          "field": "start_latitude",
+          "data_type": "numeric"
+        },
+        {
+          "field": "start_longitude",
+          "data_type": "numeric"
+        },
+        {
+          "field": "end_latitude",
+          "data_type": "numeric"
+        },
+        {
+          "field": "end_longitude",
+          "data_type": "numeric"
+        },
+        {
+          "field": "distance",
+          "data_type": "numeric"
+        },
+        {
+          "field": "average_speed",
+          "data_type": "numeric"
+        },
+        {
+          "field": "cots",
+          "data_type": "integer"
+        },
+        {
+          "field": "scars",
+          "data_type": "character"
+        },
+        {
+          "field": "hard_coral",
+          "data_type": "character"
+        },
+        {
+          "field": "soft_coral",
+          "data_type": "character"
+        },
+        {
+          "field": "recently_dead_coral",
+          "data_type": "character"
+        },
+        {
+          "field": "site_name",
+          "data_type": "character"
+        },
+        {
+          "field": "error_flag",
+          "data_type": "numeric"
         }
       ]
     }

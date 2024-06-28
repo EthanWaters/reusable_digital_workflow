@@ -31,6 +31,11 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     connection_string <- "MariaDB://root:csiro@127.0.0.1:3306/cotscontrolcentre"
     new_files <- c("D:\\COTS\\on_water_PWA\\cots_on_water_pwa_draft\\back_end\\cots_control_centre\\uploads\\olq4shue.enu", "D:\\COTS\\on_water_PWA\\cots_on_water_pwa_draft\\back_end\\cots_control_centre\\uploads\\vn3ufh0o.zwn")
 
+    serialised_spatial_path <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\Output\\spatial_data\\site_regions_20240606_174351.rds"
+    configuration_path <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\configuration_files\\app_cull_config.json"
+    connection_string <- "MariaDB://root:csiro@127.0.0.1:3306/cotscontrolcentre"
+    new_files <- c("D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\backup\\Test Inputs\\COTS_Culls_ManualUpload.json")
+    
     
     base::message(configuration_path)
     base::message(serialised_spatial_path)
@@ -52,11 +57,13 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     calculate_site_rasters <- 0
     
     new_data_df <- fromJSON(normalizePath(new_files[1], "/", mustWork = FALSE))
-    for(i in 2:length(new_files)){
-      file_path <- normalizePath(new_files[i], "/", mustWork = FALSE)
-      new_data_df <- rbind(new_data_df, fromJSON(file_path))
+    if (length(new_files) > 1){
+      for(i in 2:length(new_files)){
+        file_path <- normalizePath(new_files[i], "/", mustWork = FALSE)
+        new_data_df <- rbind(new_data_df, fromJSON(file_path))
+      }
     }
-    
+
     voyage_dates <- get_voyage_dates_strings(new_data_df$CrownOfThornsStarfishVoyageTitle)
     
     # create geometry initially if manta tow so that start and end point 
@@ -75,25 +82,25 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     # Convert column names of both legacy (app data) and new data (json export) to
     # conventional legacy names in original research workflow to use other functions 
     app_to_research_config <- fromJSON(configuration$metadata$input_directory$app_to_research_names)
-    legacy_df <- map_all_fields(legacy_df, legacy_df, app_to_research_config$mappings$transformations)
-    transformed_data_df <- map_all_fields(transformed_data_df, transformed_data_df, app_to_research_config$mapping$transformations)
+    # legacy_df <- map_all_fields(legacy_df, legacy_df, app_to_research_config$mappings$transformations)
+    # transformed_data_df <- map_all_fields(transformed_data_df, transformed_data_df, app_to_research_config$mapping$transformations)
     
-    coral_cover_cols <- which(colnames(transformed_data_df) %in% c("Hard Coral", "Soft Coral", "Recently Dead Coral"))
+    coral_cover_cols <- which(colnames(transformed_data_df) %in% c("hard_coral", "soft_coral", "recently_dead_coral"))
     if (length(coral_cover_cols) > 0){
       for(i in coral_cover_cols){
         transformed_data_df[,i] <- get_coral_cover(transformed_data_df[,i])
       }
     }
     
-    if ("Feeding Scars" %in% colnames(transformed_data_df)){
-      transformed_data_df[["Feeding Scars"]] <- get_feeding_scar_from_description(transformed_data_df[["Feeding Scars"]])
+    if ("scars" %in% colnames(transformed_data_df)){
+      transformed_data_df[["scars"]] <- get_feeding_scar_from_description(transformed_data_df[["scars"]])
     }
   
     base::message("Assign missing site and reef info...")
     # assign site and reef information if they are missing
     tryCatch({
       transformed_data_df <- assign_missing_site_and_reef(transformed_data_df, serialised_spatial_path, control_data_type)
-      transformed_data_df$`Reef ID` <- get_reef_label(transformed_data_df$Reef)
+      transformed_data_df$`reef_label` <- get_reef_label(transformed_data_df$reef_name)
     }, error = function(e) {
       print(paste("Error assigning sites:", conditionMessage(e)))
     })
@@ -107,7 +114,7 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     
     ### AGGREGATION 
     verified_new_df <- separate_new_control_app_data(verified_data_df, legacy_df)
-    verified_new_df <- map_all_fields(verified_new_df, verified_new_df, app_to_research_config$mapping$reverse_transformation)
+    # verified_new_df <- map_all_fields(verified_new_df, verified_new_df, app_to_research_config$mapping$reverse_transformation)
     verified_new_df$start_date <- voyage_dates$start_date
     verified_new_df$stop_date <- voyage_dates$stop_date
     base::message("Aggregating...")
@@ -172,7 +179,7 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
       data_df <- na.omit(data_df)
       data_df <- data_df[!(data_df$error_flag == 1),]
       data_df <- as.data.frame(data_df, check.name = FALSE)
-      append_to_table_unique(con, "manta_tow", data_df)
+      append_to_table_unique(con, control_data_type, data_df)
       
     }, error = function(e) {
       print(paste("Error uploading entry",i , ":", conditionMessage(e)))

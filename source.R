@@ -146,7 +146,7 @@ get_app_data_database <- function(con, control_data_type){
       "
   } else if (control_data_type == "cull") {
     query <- "
-      SELECT cull.date, vessel.name AS vessel_name, voyage.vessel_voyage_number, voyage.start_date, voyage.stop_date, reef.reef_label, reef.name AS reef_name, site.latitude, site.longitude, cull.average_depth, cull.less_than_fifteen_centimeters, cull.fifteen_to_twenty_five_centimeters, cull.twenty_five_to_forty_centimeters, cull.greater_than_forty_centimeters, site.name AS site_name, cull.error_flag, cull.bottom_time
+      SELECT cull.date, vessel.name AS vessel_name, voyage.vessel_voyage_number, voyage.start_date, voyage.stop_date, reef.reef_label, reef.name AS reef_name, site.latitude, site.longitude, cull.average_depth, cull.less_than_fifteen_centimetres, cull.fifteen_to_twenty_five_centimetres, cull.twenty_five_to_forty_centimetres, cull.greater_than_forty_centimetres, site.name AS site_name, cull.error_flag, cull.bottom_time
       FROM cull
       INNER JOIN voyage ON cull.voyage_id = voyage.id
       INNER JOIN vessel ON voyage.vessel_id = vessel.id
@@ -1133,7 +1133,7 @@ verify_available_columns <- function(data_df, configuration){
 }
 
 
-verify_lat_lng <- function(data_df, max_val, min_val, columns, ID_col){
+verify_lat_lng <- function(data_df, max_val, min_val, columns){
   tryCatch({
     for (col in columns) {
       if (col %in% colnames(data_df)) {
