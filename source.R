@@ -1081,9 +1081,6 @@ check_for_mistake <- function(control_data_type){
 # Run all verification functions on data sets. All verification functions are 
 # within try catch to ensure that a fatal error will not break the workflow. 
 verify_entries <- function(data_df, configuration){
-  ID_col <- configuration$metadata$ID_col
-  control_data_type <- configuration$metadata$control_data_type
-
   data_df <- verify_integers_positive(data_df)
   data_df <- verify_reef(data_df)
   data_df <- verify_percentages(data_df)
@@ -1102,10 +1099,6 @@ verify_entries <- function(data_df, configuration){
     data_df <- verify_RHISS(data_df)
   } 
   data_df <- verify_na_null(data_df, configuration)
-  data_df$error_flag <- as.integer(data_df$error_flag)
-  return(data_df)
-  
-  
   data_df$error_flag <- as.integer(data_df$error_flag)
   data_df <- verify_available_columns(data_df, configuration)
   return(data_df)
@@ -1427,7 +1420,7 @@ update_path <- function(path) {
 
 
 verify_percentages <- function(data_df) {
-  trycatch({
+  tryCatch({
     # Check that all percentages in a row are between 0 and 100
     perc_cols <- grep("%", colnames(data_df))
     if(length(perc_cols) > 0){
@@ -1469,13 +1462,11 @@ verify_percentages <- function(data_df) {
 
 
 verify_na_null <- function(data_df, configuration) {
-  trycatch({
+  tryCatch({
     # check if there are any values that are NA or NULL and flag those rows as an 
     # error. This does not include new additional columns as they are assigned a
     # default value at the end of the verification process or ID column.
-    ID_col <- configuration$metadata$ID_col
-    control_data_type <- configuration$metadata$control_data_type
-    
+
     transformations <- configuration$mappings$transformations
     nonexempt_cols <- transformations[transformations$verify_na_exempt == FALSE, "target_field"]
     nonexempt_cols <- nonexempt_cols[nonexempt_cols %in% colnames(data_df)]
@@ -1514,7 +1505,7 @@ verify_na_null <- function(data_df, configuration) {
 }
 
 verify_integers_positive <- function(data_df) {
-  trycatch({
+  tryCatch({
     # R function that verifys all integers are positive values as they represent 
     # real quantities. Note: Whole numbers are not integers, they must be declared
     # as such. All relevant columns were set as integers in the set_data_type 
@@ -1572,7 +1563,7 @@ remove_leading_spaces <- function(data_df) {
 
 
 verify_coral_cover <- function(data_df) {
-  trycatch({
+  tryCatch({
     accepted_values <- c("1-", "2-", "3-", "4-", "5-", "1+", "2+", "3+", "4+", "5+", "0")
     
     # Identify possible corrections based on common mistakes
@@ -1636,7 +1627,7 @@ verify_coral_cover <- function(data_df) {
 }
 
 verify_reef <- function(data_df){
-  trycatch({
+  tryCatch({
     # Check that the reef ID is in one of the correct standard formats with regex.
     # Look for most similar reef ID if it is not. Am not checking for a match 
     # because that would mean no new reefs would be accepted and I believe that 
