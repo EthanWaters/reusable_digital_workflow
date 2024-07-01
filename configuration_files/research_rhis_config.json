@@ -707,7 +707,8 @@
         "field": "error_flag",
         "position": 114,
         "default": 0,
-        "function_call": false
+        "function_call": false,
+        "verify_na_exempt": true
       }
     ],
     "data_type_mappings": [

@@ -132,18 +132,21 @@
         "field": "Tow Time",
         "position": 3,
         "default": "separate_date_time({TRANSFORMED_DATAFRAME}$`Tow date`)",
-        "function_call": true
+        "function_call": true,
+        "verify_na_exempt": false
       },
       {
         "field": "Nearest Site",
         "position": 19,
-        "function_call": false
+        "function_call": false,
+        "verify_na_exempt": false
       },
       {
         "field": "error_flag",
         "position": 20,
         "default": "0",
-        "function_call": false
+        "function_call": false,
+        "verify_na_exempt": true
       }
     ],
     "data_type_mappings": [

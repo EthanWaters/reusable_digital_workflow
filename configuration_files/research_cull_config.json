@@ -132,7 +132,8 @@
         "field": "error_flag",
         "position": 18,
         "default": 0,
-        "function_call": false
+        "function_call": false,
+        "verify_na_exempt": true
       }
     ],
     "data_type_mappings": [

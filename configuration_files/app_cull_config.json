@@ -108,7 +108,7 @@
         "position": 14,
         "default": 0,
         "function_call": true,
-        "verify_na_exempt": false
+        "verify_na_exempt": true
       }
     ],
     "data_type_mappings": [

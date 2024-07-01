@@ -1081,6 +1081,8 @@ check_for_mistake <- function(control_data_type){
 # Run all verification functions on data sets. All verification functions are 
 # within try catch to ensure that a fatal error will not break the workflow. 
 verify_entries <- function(data_df, configuration){
+  control_data_type <- configuration$metadata$control_data_type
+  
   data_df <- verify_integers_positive(data_df)
   data_df <- verify_reef(data_df)
   data_df <- verify_percentages(data_df)
@@ -1099,8 +1101,8 @@ verify_entries <- function(data_df, configuration){
     data_df <- verify_RHISS(data_df)
   } 
   data_df <- verify_na_null(data_df, configuration)
-  data_df$error_flag <- as.integer(data_df$error_flag)
   data_df <- verify_available_columns(data_df, configuration)
+  data_df$error_flag <- as.integer(data_df$error_flag)
   return(data_df)
 }
 
@@ -1468,8 +1470,13 @@ verify_na_null <- function(data_df, configuration) {
     # default value at the end of the verification process or ID column.
 
     transformations <- configuration$mappings$transformations
-    nonexempt_cols <- transformations[transformations$verify_na_exempt == FALSE, "target_field"]
+    new_fields <- configuration$mappings$new_fields
+    
+    nonexempt_existing_cols <- transformations[transformations$verify_na_exempt == FALSE, "target_field"]
+    nonexempt_new_cols <- new_fields[new_fields$verify_na_exempt == FALSE, "field"]
+    nonexempt_cols <- c(nonexempt_new_cols, nonexempt_existing_cols)
     nonexempt_cols <- nonexempt_cols[nonexempt_cols %in% colnames(data_df)]
+    nonexempt_df <- data_df[,nonexempt_cols]
     na_present <- apply(nonexempt_df, 2, function(x) is.na(x) | is.null(x) | x == "")
     na_present <- ifelse(is.na(na_present), FALSE, na_present)
     check <- rowSums(na_present) > 0
