@@ -1183,31 +1183,38 @@ verify_scar <- function(data_df) {
     # check that columns in RHISS data contain expected values according to metadata
     valid_scar <- c("a", "p", "c")
     
+    col_names <- colnames(data_df)
+    col_names <- tolower(col_names)
+    search_word <- "scar"
+    matching_columns <- col_names[grepl(search_word, col_names)]
     
-    check_valid_scar <- data_df$`Feeding Scars` %in% valid_scar
-    out_of_range <- ifelse(is.na(check_valid_scar), TRUE, check_valid_scar)
-    data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | !out_of_range)
-    
-    
-    if (any(!out_of_range )) {
-      grandparent <- as.character(sys.call(sys.parent()))[1]
-      parent <- as.character(match.call())[1]
-      warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid COTS scar:",
-                       toString(data_df[!out_of_range , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[!out_of_range ]))
-      base::message(warning)
+    for (col in matching_columns) {
+      check_valid_scar <- data_df[[col]] %in% valid_scar
+      is_not_valid <- ifelse(is.na(check_valid_scar), TRUE, check_valid_scar)
+      is_not_valid <- !is_not_valid
+      data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | is_not_valid)
       
-      
-      if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
-        # Append the warning to an existing matrix 
-        warnings <- data.frame(
-          ID = data_df[!out_of_range, 1],
-          index = which(!out_of_range),
-          message = "Invalid COT Scar"
-        )
-        contribute_to_metadata_report("Scar", warnings, parent_key = "Warning")
+      if (any(is_not_valid )) {
+        grandparent <- as.character(sys.call(sys.parent()))[1]
+        parent <- as.character(match.call())[1]
+        warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid COTS scar:",
+                         toString(data_df[is_not_valid , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[is_not_valid]))
+        base::message(warning)
+        
+        
+        if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
+          # Append the warning to an existing matrix 
+          warnings <- data.frame(
+            ID = data_df[is_not_valid, 1],
+            index = which(is_not_valid),
+            message = "Invalid COT Scar"
+          )
+          contribute_to_metadata_report(col, warnings, parent_key = "Warning")
+        }
+        
       }
-      
     }
+    
   }, error = function(e){
     errors <- data.frame(
       verification_function = "verify_scar",
