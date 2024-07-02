@@ -1122,14 +1122,14 @@ verify_available_columns <- function(data_df, configuration){
     if (is_nonexempt_cols_available) {
       errors <- data.frame(
         verification_function = "is_nonexempt_cols_available",
-        message = e
+        message = as.character(e)
       )
       contribute_to_metadata_report("is_nonexempt_cols_available", errors, parent_key = "Columns missing")
     }
   }, error = function(e){
     errors <- data.frame(
       verification_function = "verify_available_columns",
-      message = e
+      message = as.character(e)
     )
     contribute_to_metadata_report("verify_available_columns", errors, parent_key = "Error In Verification")
     data_df$error_flag <<- 1
@@ -1173,7 +1173,7 @@ verify_lat_lng <- function(data_df, max_val, min_val, columns){
   }, error = function(e){
     errors <- data.frame(
       verification_function = "verify_lat_lng",
-      message = e
+      message = as.character(e)
     )
     contribute_to_metadata_report("verify_lat_lng", errors, parent_key = "Error In Verification")
     data_df$error_flag <<- 1
@@ -1222,7 +1222,7 @@ verify_scar <- function(data_df) {
   }, error = function(e){
     errors <- data.frame(
       verification_function = "verify_scar",
-      message = e
+      message = as.character(e)
     )
     contribute_to_metadata_report("verify_scar", errors, parent_key = "Error In Verification")
     data_df$error_flag <<- 1
@@ -1295,7 +1295,7 @@ verify_tow_date <- function(data_df){
   }, error = function(e){
     errors <- data.frame(
       verification_function = "verify_tow_date",
-      message = e
+      message = as.character(e)
     )
     contribute_to_metadata_report("verify_tow_date", errors, parent_key = "Error In Verification")
     data_df$error_flag <<- 1
@@ -1414,7 +1414,7 @@ verify_RHISS <- function(data_df) {
   }, error = function(e){
     errors <- data.frame(
       verification_function = "verify_RHISS",
-      message = e
+      message = as.character(e)
     )
     contribute_to_metadata_report("verify_RHISS", errors, parent_key = "Error In Verification")
     data_df$error_flag <<- 1
@@ -1465,7 +1465,7 @@ verify_percentages <- function(data_df) {
   }, error = function(e){
     errors <- data.frame(
       verification_function = "verify_percentages",
-      message = e
+      message = as.character(e)
     )
     contribute_to_metadata_report("verify_percentages", errors, parent_key = "Error In Verification")
     data_df$error_flag <<- 1
@@ -1515,7 +1515,7 @@ verify_na_null <- function(data_df, configuration) {
   }, error = function(e){
     errors <- data.frame(
       verification_function = "verify_na_null",
-      message = e
+      message = as.character(e)
     )
     contribute_to_metadata_report("verify_na_null", errors, parent_key = "Error In Verification")
     data_df$error_flag <<- 1
@@ -1559,7 +1559,7 @@ verify_integers_positive <- function(data_df) {
   }, error = function(e){
     errors <- data.frame(
       verification_function = "verify_integers_positive",
-      message = e
+      message = as.character(e)
     )
     contribute_to_metadata_report("verify_integers_positive", errors, parent_key = "Error In Verification")
     data_df$error_flag <<- 1
@@ -1638,7 +1638,7 @@ verify_coral_cover <- function(data_df) {
   }, error = function(e){
     errors <- data.frame(
       verification_function = "verify_coral_cover",
-      message = e
+      message = as.character(e)
     )
     contribute_to_metadata_report("verify_coral_cover", errors, parent_key = "Error In Verification")
     data_df$error_flag <<- 1
@@ -1684,7 +1684,7 @@ verify_reef <- function(data_df){
   }, error = function(e){
     errors <- data.frame(
       verification_function = "verify_reef",
-      message = e
+      message = as.character(e)
     )
     contribute_to_metadata_report("verify_reef", errors, parent_key = "Error In Verification")
     data_df$error_flag <<- 1
@@ -1796,7 +1796,7 @@ verify_voyage_dates <- function(data_df){
   }, error = function(e){
     errors <- data.frame(
       verification_function = "verify_voyage_dates",
-      message = e
+      message = as.character(e)
     )
     contribute_to_metadata_report("verify_voyage_dates", errors, parent_key = "Error In Verification")
     data_df$error_flag <<- 1
