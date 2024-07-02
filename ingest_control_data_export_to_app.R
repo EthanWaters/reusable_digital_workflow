@@ -26,16 +26,20 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     library("RMySQL")
 
     
-    serialised_spatial_path <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\Output\\spatial_data\\site_regions_20240606_174351.rds"
+    # serialised_spatial_path <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\Output\\spatial_data\\site_regions_20240606_174351.rds"
+    # configuration_path <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\configuration_files\\app_manta_tow_config.json"
+    # connection_string <- "MariaDB://root:csiro@127.0.0.1:3306/cotscontrolcentre"
+    # new_files <- c("D:\\COTS\\on_water_PWA\\cots_on_water_pwa_draft\\back_end\\cots_control_centre\\uploads\\olq4shue.enu", "D:\\COTS\\on_water_PWA\\cots_on_water_pwa_draft\\back_end\\cots_control_centre\\uploads\\vn3ufh0o.zwn")
+    # 
+    # serialised_spatial_path <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\Output\\spatial_data\\site_regions_20240606_174351.rds"
+    # configuration_path <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\configuration_files\\app_cull_config.json"
+    # connection_string <- "MariaDB://root:csiro@127.0.0.1:3306/cotscontrolcentre"
+    # new_files <- c("D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\backup\\Test Inputs\\COTS_Culls_ManualUpload.json")
+    # 
     configuration_path <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\configuration_files\\app_manta_tow_config.json"
+    serialised_spatial_path <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\Output\\spatial_data\\site_regions_20240606_174351.rds" 
     connection_string <- "MariaDB://root:csiro@127.0.0.1:3306/cotscontrolcentre"
-    new_files <- c("D:\\COTS\\on_water_PWA\\cots_on_water_pwa_draft\\back_end\\cots_control_centre\\uploads\\olq4shue.enu", "D:\\COTS\\on_water_PWA\\cots_on_water_pwa_draft\\back_end\\cots_control_centre\\uploads\\vn3ufh0o.zwn")
-
-    serialised_spatial_path <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\Output\\spatial_data\\site_regions_20240606_174351.rds"
-    configuration_path <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\configuration_files\\app_cull_config.json"
-    connection_string <- "MariaDB://root:csiro@127.0.0.1:3306/cotscontrolcentre"
-    new_files <- c("D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\backup\\Test Inputs\\COTS_Culls_ManualUpload.json")
-    
+    new_files <- c("D:\\COTS\\on_water_PWA\\cots_on_water_pwa_draft\\back_end\\cots_control_centre\\uploads\\vxwuv1ql.rvu")
     
     base::message(configuration_path)
     base::message(serialised_spatial_path)
@@ -79,9 +83,11 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     base::message("Mapping data structure...")
     transformed_data_df <- map_data_structure(new_data_df, configuration$mappings$transformations, configuration$mappings$new_fields)
     base::message("Mapping data structure complete")
-    # Convert column names of both legacy (app data) and new data (json export) to
+   
+    
+     # Convert column names of both legacy (app data) and new data (json export) to
     # conventional legacy names in original research workflow to use other functions 
-    app_to_research_config <- fromJSON(configuration$metadata$input_directory$app_to_research_names)
+    # app_to_research_config <- fromJSON(configuration$metadata$input_directory$app_to_research_names)
     # legacy_df <- map_all_fields(legacy_df, legacy_df, app_to_research_config$mappings$transformations)
     # transformed_data_df <- map_all_fields(transformed_data_df, transformed_data_df, app_to_research_config$mapping$transformations)
     
@@ -107,10 +113,15 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     
     base::message("Completed assigning missing site and reef info...")
     
-    legacy_df <- set_data_type(legacy_df, app_to_research_config$mappings$data_type_mappings) 
-    formatted_data_df <- set_data_type(transformed_data_df, app_to_research_config$mappings$data_type_mappings) 
+    base::message("Setting data type ...")
+    legacy_df <- set_data_type(legacy_df, configuration$mappings$data_type_mappings) 
+    formatted_data_df <- set_data_type(transformed_data_df, configuration$mappings$data_type_mappings)
+    base::message("Completed Setting data type ...")
+    
+    base::message("Performing verification of entries ...")
     verified_data_df <- verify_entries(formatted_data_df, configuration)
     verified_data_df <- flag_duplicates(verified_data_df)
+    base::message("Completed verification of entries ...")
     
     ### AGGREGATION 
     verified_new_df <- separate_new_control_app_data(verified_data_df, legacy_df)

@@ -463,7 +463,7 @@
         "field": "error_flag",
         "position": 105,
         "default": 0,
-        "function_call": true
+        "function_call": false
       }
     ],
     "data_type_mappings": [

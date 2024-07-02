@@ -1579,47 +1579,48 @@ verify_coral_cover <- function(data_df) {
       New_Value = c("1-", "2-", "3-", "4-", "5-", "1+", "2+", "3+", "4+", "5+")
     )
     
-    # Substitute similar characters for correct ones
-    data_df[["Hard Coral"]] <- gsub("—|–|−", "-", data_df[["Hard Coral"]])
-    data_df[["Soft Coral"]] <- gsub("—|–|−", "-", data_df[["Soft Coral"]])
-    data_df[["Recently Dead Coral"]] <- gsub("—|–|−", "-", data_df[["Recently Dead Coral"]])
+    col_names <- colnames(data_df)
     
-    # Loop through possible corrections and replace values
-    for (i in 1:nrow(possible_corrections)) {
-      old_value <- possible_corrections$Old_Value[i]
-      new_value <- possible_corrections$New_Value[i]
-      data_df$`Hard Coral`[data_df$`Hard Coral` == old_value] <- new_value
-      data_df$`Soft Coral`[data_df$`Soft Coral` == old_value] <- new_value
-      data_df$`Recently Dead Coral`[data_df$`Recently Dead Coral` == old_value] <- new_value
-    }
+    # Convert column names to lowercase
+    col_names <- tolower(col_names)
     
-    hc_check <- data_df$`Hard Coral` %in% accepted_values
-    sc_check <- data_df$`Soft Coral` %in% accepted_values
-    rdc_check <- data_df$`Recently Dead Coral` %in% accepted_values
-    
-    hc_check <- ifelse(is.na(hc_check), TRUE, hc_check)
-    sc_check <- ifelse(is.na(sc_check), TRUE, sc_check)
-    rdc_check <- ifelse(is.na(rdc_check), TRUE, rdc_check)
-    
-    error <- !hc_check | !sc_check | !rdc_check
-    
-    data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | error)
-    if (any(error)) {
-      grandparent <- as.character(sys.call(sys.parent()))[1]
-      parent <- as.character(match.call())[1]
-      warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid coral cover values:",
-                       toString(data_df[error , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[error]))
-      base::message(warning)
-      
-      
-      if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
-        # Append the warning to an existing matrix 
-        warnings <- data.frame(
-          ID = data_df[error, 1],
-          index = which(error),
-          message = "Invalid coral cover values"
-        )
-        contribute_to_metadata_report("Coral Cover", warnings, parent_key = "Warning")
+    # Iterate through the column names containing "coral"
+    for (col in col_names) {
+      if (grepl("coral", col)) {
+        # Substitute similar characters for correct ones
+        data_df[[col]] <- gsub("—|–|−", "-", data_df[[col]])
+       
+        # Loop through possible corrections and replace values
+        for (i in 1:nrow(possible_corrections)) {
+          old_value <- possible_corrections$Old_Value[i]
+          new_value <- possible_corrections$New_Value[i]
+          data_df[[col]][data_df[[col]] == old_value] <- new_value
+        }
+        
+        check <- data_df[[col]] %in% accepted_values
+        check <- ifelse(is.na(check), TRUE, check)
+        check <- !check
+        
+        data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | check)
+        
+        if (any(check)) {
+          grandparent <- as.character(sys.call(sys.parent()))[1]
+          parent <- as.character(match.call())[1]
+          warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid coral cover values:",
+                           toString(data_df[check , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[check]))
+          base::message(warning)
+          
+          
+          if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
+            # Append the warning to an existing matrix 
+            warnings <- data.frame(
+              ID = data_df[check, 1],
+              index = which(check),
+              message = "Invalid coral cover values"
+            )
+            contribute_to_metadata_report(col, warnings, parent_key = "Warning")
+          }
+        }
       }
     }
   }, error = function(e){

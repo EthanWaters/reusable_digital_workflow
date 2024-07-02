@@ -134,7 +134,7 @@
           "field": "error_flag",
           "position": 18,
           "default": 0,
-          "function_call": true,
+          "function_call": false,
           "verify_na_exempt": true
         }
       ],
