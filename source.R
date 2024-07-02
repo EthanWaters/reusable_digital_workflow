@@ -1082,15 +1082,17 @@ check_for_mistake <- function(control_data_type){
 # within try catch to ensure that a fatal error will not break the workflow. 
 verify_entries <- function(data_df, configuration){
   control_data_type <- configuration$metadata$control_data_type
-  
+  base::message("HEREREREEEEEEEEEEEEEEEEEE")
   data_df <- verify_integers_positive(data_df)
+  base::message("HEREREREEEEEEEEEEEEEEEEEE")
   data_df <- verify_reef(data_df)
+  base::message("HEREREREEEEEEEEEEEEEEEEEE")
   data_df <- verify_percentages(data_df)
-  
+  base::message("HEREREREEEEEEEEEEEEEEEEEE")
   #verify long and lat separately
   data_df <- verify_lat_lng(data_df, max_val=160, min_val=138, columns=c("Longitude", "Start Lng", "End Lng"))
   data_df <- verify_lat_lng(data_df, max_val=-5, min_val=-32, columns=c("Latitude", "Start Lat", "End Lat"))
-  
+  base::message("HEREREREEEEEEEEEEEEEEEEEE")
   if (control_data_type == "manta_tow") {
     data_df <- verify_tow_date(data_df)
     data_df <- verify_coral_cover(data_df)
@@ -1653,10 +1655,9 @@ verify_reef <- function(data_df){
     reef_id_col_to_find <- c("reef id", "reef label", "reef_id", "reef_label")
     col_names <- colnames(data_df)
     col_names_lower <- tolower(col_names)
-    is_col_present <- sapply(strings_to_find, function(string) grepl(string, col_names_lower))
+    is_col_present <- sapply(reef_id_col_to_find, function(string) grepl(string, col_names_lower))
     reef_id_col_index <- which(rowSums(is_col_present) > 0)
     reef_id_cols <- col_names[reef_id_col_index]
-    
     for (reef_id_col in reef_id_cols){
       reef_id <- data_df[[reef_id_col]]
       correct_reef_id_format <- grepl("^(1[0-9]|2[0-9]|10)-\\d{3}[a-z]?$", reef_id)

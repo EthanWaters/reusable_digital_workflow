@@ -24,12 +24,8 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     library("stringr")
     library("DBI")
     library("RMySQL")
+ 
 
-    configuration_path <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\configuration_files\\app_manta_tow_config.json"
-    serialised_spatial_path <- "D:\\COTS\\Reusable Digital Workflows\\reusable_digital_workflow\\Output\\spatial_data\\site_regions_20240606_174351.rds" 
-    connection_string <- "MariaDB://root:csiro@127.0.0.1:3306/cotscontrolcentre"
-    new_files <- c("D:\\COTS\\on_water_PWA\\cots_on_water_pwa_draft\\back_end\\cots_control_centre\\uploads\\vxwuv1ql.rvu")
-    
     base::message(configuration_path)
     base::message(serialised_spatial_path)
     base::message(connection_string)
@@ -49,10 +45,10 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     control_data_type <- configuration$metadata$control_data_type
     calculate_site_rasters <- 0
     
-    new_data_df <- fromJSON(normalizePath(new_files[1], "/", mustWork = FALSE))
+    new_data_df <- fromJSON(new_files[1])
     if (length(new_files) > 1){
       for(i in 2:length(new_files)){
-        file_path <- normalizePath(new_files[i], "/", mustWork = FALSE)
+        file_path <- new_files[i]
         new_data_df <- rbind(new_data_df, fromJSON(file_path))
       }
     }
@@ -101,6 +97,8 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     base::message("Completed Setting data type ...")
     
     base::message("Performing verification of entries ...")
+    base::message(formatted_data_df)
+    base::message(class(formatted_data_df))
     verified_data_df <- verify_entries(formatted_data_df, configuration)
     verified_data_df <- flag_duplicates(verified_data_df)
     base::message("Completed verification of entries ...")
@@ -185,12 +183,16 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
 
 
 args <- commandArgs(trailingOnly = TRUE)
+
+for (i in 1:length(args)) {
+  args[i] <- gsub("\\\\", "\\\\\\\\", args[i])
+}
+
 script_dir <- args[1]
 configuration_path <- args[2]
 serialised_spatial_path <- args[3]
 connection_string <- args[4]
 new_files <- args[-c(1:4)]
-
 
 main(script_dir, configuration_path, serialised_spatial_path, connection_string, new_files)
 
