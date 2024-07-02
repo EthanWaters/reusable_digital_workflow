@@ -1113,7 +1113,9 @@ verify_available_columns <- function(data_df, configuration){
     transformations <- configuration$mappings$transformations
     nonexempt_cols <- transformations[transformations$verify_na_exempt == FALSE, "target_field"]
     is_nonexempt_cols_available <- !all(nonexempt_cols %in% colnames(data_df))
-    data_df[["error_flag"]] <- as.integer(is_nonexempt_cols_available)
+    if (is_nonexempt_cols_available){
+      data_df[["error_flag"]] <- as.integer(is_nonexempt_cols_available)
+    }
     
     if (is_nonexempt_cols_available) {
       errors <- data.frame(
