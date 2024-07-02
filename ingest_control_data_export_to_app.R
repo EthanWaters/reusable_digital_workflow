@@ -72,14 +72,7 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     base::message("Mapping data structure...")
     transformed_data_df <- map_data_structure(new_data_df, configuration$mappings$transformations, configuration$mappings$new_fields)
     base::message("Mapping data structure complete")
-   
-    
-     # Convert column names of both legacy (app data) and new data (json export) to
-    # conventional legacy names in original research workflow to use other functions 
-    # app_to_research_config <- fromJSON(configuration$metadata$input_directory$app_to_research_names)
-    # legacy_df <- map_all_fields(legacy_df, legacy_df, app_to_research_config$mappings$transformations)
-    # transformed_data_df <- map_all_fields(transformed_data_df, transformed_data_df, app_to_research_config$mapping$transformations)
-    
+
     coral_cover_cols <- which(colnames(transformed_data_df) %in% c("hard_coral", "soft_coral", "recently_dead_coral"))
     if (length(coral_cover_cols) > 0){
       for(i in coral_cover_cols){
@@ -114,7 +107,6 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     
     ### AGGREGATION 
     verified_new_df <- separate_new_control_app_data(verified_data_df, legacy_df)
-    # verified_new_df <- map_all_fields(verified_new_df, verified_new_df, app_to_research_config$mapping$reverse_transformation)
     verified_new_df$start_date <- voyage_dates$start_date
     verified_new_df$stop_date <- voyage_dates$stop_date
     base::message("Aggregating...")

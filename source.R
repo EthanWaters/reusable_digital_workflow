@@ -38,7 +38,7 @@ import_data <- function(data, index=1){
 
 # get vector of datetime formats to parse
 get_datetime_parse_order <- function(){
-  order <- c('%Y/%m/%d %I:%M:%S %p','%Y/%m/%d %H:%M:%S', '%d/%m/%Y %I:%M:%S %p', '%d/%m/%Y %H:%M:%S', '%Y/%m/%d %I:%M %p','%Y/%m/%d %H:%M', '%d/%m/%Y %I:%M %p','%d/%m/%Y %H:%M', '%Y-%m-%d %H:%M:%OS', 'ymd', 'dmy')
+  order <- c('%Y/%m/%d %I:%M:%S %p','%Y/%m/%d %H:%M:%S', '%d/%m/%Y %I:%M:%S %p', '%d/%m/%Y %H:%M:%S', '%Y/%m/%d %I:%M %p','%Y/%m/%d %H:%M', '%d/%m/%Y %I:%M %p','%d/%m/%Y %H:%M', '%Y-%m-%d %H:%M:%OS%z', '%Y-%m-%d %H:%M:%OS', 'ymd', 'dmy')
   return(order)
 }
 
@@ -1485,9 +1485,9 @@ verify_na_null <- function(data_df, configuration) {
     nonexempt_cols <- nonexempt_cols[nonexempt_cols %in% colnames(data_df)]
     nonexempt_df <- data_df[,nonexempt_cols]
     na_present <- apply(nonexempt_df, 2, function(x) is.na(x) | is.null(x) | x == "")
-    na_present <- ifelse(is.na(na_present), FALSE, na_present)
+    na_present <- ifelse(is.na(na_present), TRUE, na_present)
     check <- rowSums(na_present) > 0
-    data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | check)
+    data_df[,"error_flag"] <- as.integer(data_df[,"error_flag"] | check)
     if (any(check)) {
       grandparent <- as.character(sys.call(sys.parent()))[1]
       parent <- as.character(match.call())[1]
@@ -1507,6 +1507,7 @@ verify_na_null <- function(data_df, configuration) {
       }
       
     }
+    return(data_df)
   }, error = function(e){
     errors <- data.frame(
       verification_function = "verify_na_null",
@@ -1647,27 +1648,36 @@ verify_reef <- function(data_df){
     # Look for most similar reef ID if it is not. Am not checking for a match 
     # because that would mean no new reefs would be accepted and I believe that 
     # the reef input is restricted to existing reefs so it is unlikley to be a typo
+    reef_id_col_to_find <- c("reef id", "reef label", "reef_id", "reef_label")
+    col_names <- colnames(data_df)
+    col_names_lower <- tolower(col_names)
+    is_col_present <- sapply(strings_to_find, function(string) grepl(string, col_names_lower))
+    reef_id_col_index <- which(rowSums(is_col_present) > 0)
+    reef_id_cols <- col_names[reef_id_col_index]
     
-    reef_id <- data_df[["Reef ID"]]
-    correct_reef_id_format <- grepl("^(1[0-9]|2[0-9]|10)-\\d{3}[a-z]?$", reef_id)
-    data_df[,"error_flag"] <- as.integer(data_df[,"error_flag"] | !correct_reef_id_format)
-    if (any(!correct_reef_id_format)) {
-      grandparent <- as.character(sys.call(sys.parent()))[1]
-      parent <- as.character(match.call())[1]
-      warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid Reef IDs:",
-                       toString(data_df[!correct_reef_id_format , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[!correct_reef_id_format]))
-      base::message(warning)
-      
-      if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
-        # Append the warning to an existing matrix 
-        warnings <- data.frame(
-          ID = data_df[!correct_reef_id_format, 1],
-          index = which(!correct_reef_id_format),
-          message = "Invalid reef ID"
-        )
-        contribute_to_metadata_report("Reef ID", warnings, parent_key = "Warning")
+    for (reef_id_col in reef_id_cols){
+      reef_id <- data_df[[reef_id_col]]
+      correct_reef_id_format <- grepl("^(1[0-9]|2[0-9]|10)-\\d{3}[a-z]?$", reef_id)
+      data_df[,"error_flag"] <- as.integer(data_df[,"error_flag"] | !correct_reef_id_format)
+      if (any(!correct_reef_id_format)) {
+        grandparent <- as.character(sys.call(sys.parent()))[1]
+        parent <- as.character(match.call())[1]
+        warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have invalid Reef IDs:",
+                         toString(data_df[!correct_reef_id_format , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[!correct_reef_id_format]))
+        base::message(warning)
+        
+        if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
+          # Append the warning to an existing matrix 
+          warnings <- data.frame(
+            ID = data_df[!correct_reef_id_format, 1],
+            index = which(!correct_reef_id_format),
+            message = "Invalid reef ID"
+          )
+          contribute_to_metadata_report(reef_id_col, warnings, parent_key = "Warning")
+        }
       }
     }
+    
   }, error = function(e){
     errors <- data.frame(
       verification_function = "verify_reef",
