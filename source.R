@@ -36,9 +36,9 @@ import_data <- function(data, index=1){
   return(out)
 }
 
-
+# get vector of datetime formats to parse
 get_datetime_parse_order <- function(){
-  order <- c('%Y/%m/%d %I:%M:%S %p','%Y/%m/%d %H:%M:%S', '%d/%m/%Y %I:%M:%S %p', '%d/%m/%Y %H:%M:%S', '%Y/%m/%d %I:%M %p','%Y/%m/%d %H:%M', '%d/%m/%Y %I:%M %p','%d/%m/%Y %H:%M', 'ymd', 'dmy')
+  order <- c('%Y/%m/%d %I:%M:%S %p','%Y/%m/%d %H:%M:%S', '%d/%m/%Y %I:%M:%S %p', '%d/%m/%Y %H:%M:%S', '%Y/%m/%d %I:%M %p','%Y/%m/%d %H:%M', '%d/%m/%Y %I:%M %p','%d/%m/%Y %H:%M', '%Y-%m-%d %H:%M:%OS', 'ymd', 'dmy')
   return(order)
 }
 
