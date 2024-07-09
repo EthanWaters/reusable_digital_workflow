@@ -84,19 +84,19 @@
         "verify_na_exempt": false
       },
       {
-        "target_field": "Cohort2 (15-25cm)",
+        "target_field": "Cohort 2 (15-25cm)",
         "source_field": "Cohort2",
         "position": 11,
         "verify_na_exempt": false
       },
       {
-        "target_field": "Cohort3 (25-40cm)",
+        "target_field": "Cohort 3 (25-40cm)",
         "source_field": "Cohort3",
         "position": 12,
         "verify_na_exempt": false
       },
       {
-        "target_field": "Cohort4 (>40cm)",
+        "target_field": "Cohort 4 (>40cm)",
         "source_field": "Cohort4",
         "position": 13,
         "verify_na_exempt": false
