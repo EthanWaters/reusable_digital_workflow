@@ -1,3 +1,36 @@
+### Initialize Libraries -------------------------------------------------------------
+
+# Include functions from source code R file. 
+source("source.R")
+
+# Include libraries to perform this workflow. 
+library("tools")
+library("installr")
+library("sets")
+library("methods")
+library("rio")
+library("dplyr")
+library("stringr")
+library("fastmatch")
+library("lubridate")
+library("rlang")
+library("purrr")
+library("jsonlite")
+library("sf")
+library("raster")
+library("terra")
+library("units")
+library("tidyverse")
+library("tidyr")
+library("lwgeom")
+library("stars")
+library("stringr")
+library("future")
+library("furrr")
+library("foreach")
+library("doParallel")
+library("digest")
+
 # Process GBRMPA control data into a standardised format that researchers have utilised
 # historically. Verification functions were written in consultation with domain experts 
 # determine whether a row contains an error and is suitable for use in research. 
@@ -15,39 +48,6 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
 
   
   tryCatch({
-    ### Initialize Libraries -------------------------------------------------------------
-
-    # Include functions from source code R file. 
-    source("source.R")
-
-    # Include libraries to perform this workflow. 
-    library("tools")
-    library("installr")
-    library("sets")
-    library("methods")
-    library("rio")
-    library("dplyr")
-    library("stringr")
-    library("fastmatch")
-    library("lubridate")
-    library("rlang")
-    library("purrr")
-    library("jsonlite")
-    library("sf")
-    library("raster")
-    library("terra")
-    library("units")
-    library("tidyverse")
-    library("tidyr")
-    library("lwgeom")
-    library("stars")
-    library("stringr")
-    library("future")
-    library("furrr")
-    library("foreach")
-    library("doParallel")
-    library("digest")
-
 
     ### Initialize Required Variables -------------------------------------------------------------
     # Get the keyword from the new input file used to identify what type of control 
