@@ -113,19 +113,19 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
       if(control_data_type != "RHIS"){
         
         vessel_df <- data.frame(
-          name = verified_df$vessel_name,
-          short_name = get_vessel_short_name(verified_df$vessel_name)
+          name = verified_new_df$vessel_name,
+          short_name = get_vessel_short_name(verified_new_df$vessel_name)
         )
         
         append_to_table_unique(con, "vessel", vessel_df)
         vessel_ids <- get_id_by_row(con, "vessel", vessel_df)
-        verified_df$vessel_id <- vessel_ids
+        verified_new_df$vessel_id <- vessel_ids
         
         voyage_df <- data.frame(
-          vessel_voyage_number = as.character(verified_df$vessel_voyage_number),
-          start_date = as.character(verified_df$start_date),
-          stop_date = as.character(verified_df$stop_date),
-          vessel_id = verified_df$vessel_id
+          vessel_voyage_number = as.character(verified_new_df$vessel_voyage_number),
+          start_date = as.character(verified_new_df$start_date),
+          stop_date = as.character(verified_new_df$stop_date),
+          vessel_id = verified_new_df$vessel_id
         )
 
         voyage_df <- voyage_df %>%
@@ -137,17 +137,17 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
         
         append_to_table_unique(con, "voyage", voyage_df)
         voyage_ids <- get_id_by_row(con, "voyage", voyage_df)
-        verified_df$voyage_id <- voyage_ids
+        verified_new_df$voyage_id <- voyage_ids
  
         reef_df <- data.frame(
-          reef_label = verified_df$reef_label
+          reef_label = verified_new_df$reef_label
         )
         reef_ids <- get_id_by_row(con, "reef", reef_df)
-        verified_df$reef_id <- reef_ids
+        verified_new_df$reef_id <- reef_ids
         
         site_df <- data.frame(
-          name = verified_df$site_name,
-          reef_id = verified_df$reef_id
+          name = verified_new_df$site_name,
+          reef_id = verified_new_df$reef_id
         )
         
         site_ids <- get_id_by_row(con, "site", site_df)
@@ -155,11 +155,11 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
         site_to_append_df <- na.omit(site_to_append_df)
         append_to_table_unique(con, "site", site_to_append_df)
         site_ids <- get_id_by_row(con, "site", site_df)
-        verified_df$site_id <- site_ids
+        verified_new_df$site_id <- site_ids
       } 
       
       column_names <- dbListFields(con, control_data_type)
-      data_df <- verified_df[,which(colnames(verified_df) %in% column_names)]
+      data_df <- verified_new_df[,which(colnames(verified_new_df) %in% column_names)]
       data_df <- na.omit(data_df)
       data_df <- data_df[!(data_df$error_flag == 1),]
       data_df <- as.data.frame(data_df, check.name = FALSE)
