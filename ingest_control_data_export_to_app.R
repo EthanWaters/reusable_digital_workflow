@@ -106,11 +106,6 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     verified_new_df$start_date <- voyage_dates$start_date
     verified_new_df$stop_date <- voyage_dates$stop_date
     base::message("Aggregating...")
-    if (control_data_type == "manta_tow"){
-      verified_df <- aggregate_manta_tows_site_resolution_app(verified_new_df)
-    } else if (control_data_type == "cull") { 
-      verified_df <- aggregate_culls_site_resolution_app(verified_new_df)
-    }
 
     base::message("Completed aggregating...")
     base::message("Saving to database...")

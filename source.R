@@ -90,15 +90,10 @@ append_to_table_unique <- function(con, table_name, data_df) {
   unique_df <- distinct(data_df)
   data_to_apppend <- anti_join(unique_df, db_df[,-which(colnames(db_df) %in% "id")])
   data_to_apppend <- data.frame(data_to_apppend)
-  print(data_to_apppend)
-  print(con)
-  print(table_name)
-  print(nrow(data_to_apppend) > 0)
   if (nrow(data_to_apppend) > 0){
     append_cmd  <-  sqlAppendTable( con = con , table = table_name , values = data_to_apppend , row.names = FALSE )
     dbExecute( conn = con , statement = append_cmd )
   }
-  print("COMPLETE")
 }
 
 
@@ -1088,17 +1083,12 @@ check_for_mistake <- function(control_data_type){
 # within try catch to ensure that a fatal error will not break the workflow. 
 verify_entries <- function(data_df, configuration){
   control_data_type <- configuration$metadata$control_data_type
-  base::message("HEREREREEEEEEEEEEEEEEEEEE")
   data_df <- verify_integers_positive(data_df)
-  base::message("HEREREREEEEEEEEEEEEEEEEEE")
   data_df <- verify_reef(data_df)
-  base::message("HEREREREEEEEEEEEEEEEEEEEE")
   data_df <- verify_percentages(data_df)
-  base::message("HEREREREEEEEEEEEEEEEEEEEE")
   #verify long and lat separately
   data_df <- verify_lat_lng(data_df, max_val=160, min_val=138, columns=c("Longitude", "Start Lng", "End Lng"))
   data_df <- verify_lat_lng(data_df, max_val=-5, min_val=-32, columns=c("Latitude", "Start Lat", "End Lat"))
-  base::message("HEREREREEEEEEEEEEEEEEEEEE")
   if (control_data_type == "manta_tow") {
     data_df <- verify_tow_date(data_df)
     data_df <- verify_coral_cover(data_df)
