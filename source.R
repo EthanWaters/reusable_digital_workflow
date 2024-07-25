@@ -421,7 +421,7 @@ aggregate_manta_tows_site_resolution_app <- function(data_df) {
       vessel_name = vessel_name, 
       vessel_voyage_number = vessel_voyage_number,
       reef_label = reef_label,
-      coords = list(get_start_and_end_coords_app(start_latitude, start_longitude, stop_latitude, stop_latitude)),
+      coords = list(get_start_and_end_coords_app(start_latitude, start_longitude, stop_latitude, stop_longitude)),
       distance = sum(distance),
       average_speed = mean(average_speed),
       cots = sum(cots),

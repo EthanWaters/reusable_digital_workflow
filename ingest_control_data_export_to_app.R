@@ -54,7 +54,6 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     }
 
     voyage_dates <- get_voyage_dates_strings(new_data_df$CrownOfThornsStarfishVoyageTitle)
-    print(voyage_dates)
     # create geometry initially if manta tow so that start and end point 
     # coordinates can be derived from the geospatial line
     if(control_data_type == "manta_tow"){
@@ -97,8 +96,7 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     base::message("Completed Setting data type ...")
     
     base::message("Performing verification of entries ...")
-    base::message(formatted_data_df)
-    base::message(class(formatted_data_df))
+    
     verified_data_df <- verify_entries(formatted_data_df, configuration)
     verified_data_df <- flag_duplicates(verified_data_df)
     base::message("Completed verification of entries ...")
@@ -113,6 +111,7 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     } else if (control_data_type == "cull") { 
       verified_df <- aggregate_culls_site_resolution_app(verified_new_df)
     }
+
     base::message("Completed aggregating...")
     base::message("Saving to database...")
     tryCatch({
@@ -144,7 +143,7 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
         append_to_table_unique(con, "voyage", voyage_df)
         voyage_ids <- get_id_by_row(con, "voyage", voyage_df)
         verified_df$voyage_id <- voyage_ids
-        print("TESTING")
+ 
         reef_df <- data.frame(
           reef_label = verified_df$reef_label
         )
@@ -155,7 +154,7 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
           name = verified_df$site_name,
           reef_id = verified_df$reef_id
         )
-
+        
         site_ids <- get_id_by_row(con, "site", site_df)
         site_to_append_df <- site_df[is.na(site_ids),]
         site_to_append_df <- na.omit(site_to_append_df)
@@ -163,7 +162,7 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
         site_ids <- get_id_by_row(con, "site", site_df)
         verified_df$site_id <- site_ids
       } 
-
+      
       column_names <- dbListFields(con, control_data_type)
       data_df <- verified_df[,which(colnames(verified_df) %in% column_names)]
       data_df <- na.omit(data_df)
