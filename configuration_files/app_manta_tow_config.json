@@ -168,11 +168,11 @@
           "data_type": "numeric"
         },
         {
-          "field": "end_latitude",
+          "field": "stop_latitude",
           "data_type": "numeric"
         },
         {
-          "field": "end_longitude",
+          "field": "stop_longitude",
           "data_type": "numeric"
         },
         {

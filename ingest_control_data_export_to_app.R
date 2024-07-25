@@ -25,7 +25,7 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     library("DBI")
     library("RMySQL")
  
-
+    
     base::message(configuration_path)
     base::message(serialised_spatial_path)
     base::message(connection_string)
@@ -54,7 +54,7 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     }
 
     voyage_dates <- get_voyage_dates_strings(new_data_df$CrownOfThornsStarfishVoyageTitle)
-    
+    print(voyage_dates)
     # create geometry initially if manta tow so that start and end point 
     # coordinates can be derived from the geospatial line
     if(control_data_type == "manta_tow"){
@@ -133,18 +133,18 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
           stop_date = as.character(verified_df$stop_date),
           vessel_id = verified_df$vessel_id
         )
-        
+
         voyage_df <- voyage_df %>%
           group_by(vessel_voyage_number, vessel_id) %>%
           mutate(
-            start_date = if_else(is.na(start_date), names(sort(table(start_date), decreasing = TRUE))[1], start_date),
-            stop_date = if_else(is.na(stop_date), names(sort(table(stop_date), decreasing = TRUE))[1], stop_date)
+            start_date = as.character(names(sort(table(start_date), decreasing = TRUE))[1]),
+            stop_date = as.character(names(sort(table(stop_date), decreasing = TRUE))[1])
           )
         
         append_to_table_unique(con, "voyage", voyage_df)
         voyage_ids <- get_id_by_row(con, "voyage", voyage_df)
         verified_df$voyage_id <- voyage_ids
-
+        print("TESTING")
         reef_df <- data.frame(
           reef_label = verified_df$reef_label
         )

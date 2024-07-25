@@ -89,10 +89,16 @@ append_to_table_unique <- function(con, table_name, data_df) {
   db_df <- dbReadTable(con, table_name, row.names = FALSE)
   unique_df <- distinct(data_df)
   data_to_apppend <- anti_join(unique_df, db_df[,-which(colnames(db_df) %in% "id")])
+  data_to_apppend <- data.frame(data_to_apppend)
+  print(data_to_apppend)
+  print(con)
+  print(table_name)
+  print(nrow(data_to_apppend) > 0)
   if (nrow(data_to_apppend) > 0){
     append_cmd  <-  sqlAppendTable( con = con , table = table_name , values = data_to_apppend , row.names = FALSE )
     dbExecute( conn = con , statement = append_cmd )
   }
+  print("COMPLETE")
 }
 
 
