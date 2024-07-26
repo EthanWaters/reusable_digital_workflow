@@ -107,8 +107,7 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     verified_new_df <- separate_new_control_app_data(verified_data_df, legacy_df)
     verified_new_df$start_date <- voyage_dates$start_date
     verified_new_df$stop_date <- voyage_dates$stop_date
-
-    base::message("Completed aggregating...")
+    
     base::message("Saving to database...")
     tryCatch({
       if(control_data_type != "RHIS"){

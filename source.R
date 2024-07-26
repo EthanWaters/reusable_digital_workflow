@@ -147,13 +147,22 @@ get_app_data_database <- function(con, control_data_type){
       "
   } else if (control_data_type == "cull") {
     query <- "
-      SELECT cull.date, vessel.name AS vessel_name, voyage.vessel_voyage_number, voyage.start_date, voyage.stop_date, reef.reef_label, reef.name AS reef_name, site.latitude, site.longitude, cull.average_depth, cull.less_than_fifteen_centimetres, cull.fifteen_to_twenty_five_centimetres, cull.twenty_five_to_forty_centimetres, cull.greater_than_forty_centimetres, site.name AS site_name, cull.error_flag, cull.bottom_time
+      SELECT cull.date, vessel.name AS vessel_name, voyage.vessel_voyage_number, reef.reef_label, reef.name AS reef_name, cull.average_depth, cull.less_than_fifteen_centimetres, cull.fifteen_to_twenty_five_centimetres, cull.twenty_five_to_forty_centimetres, cull.greater_than_forty_centimetres, site.name AS site_name, cull.error_flag, cull.bottom_time
       FROM cull
       INNER JOIN voyage ON cull.voyage_id = voyage.id
       INNER JOIN vessel ON voyage.vessel_id = vessel.id
       INNER JOIN site ON cull.site_id = site.id
       INNER JOIN reef ON site.reef_id = reef.id
       "
+    
+    # query <- "
+    #   SELECT cull.date, vessel.name AS vessel_name, voyage.vessel_voyage_number, voyage.start_date, voyage.stop_date, reef.reef_label, reef.name AS reef_name, site.latitude, site.longitude, cull.average_depth, cull.less_than_fifteen_centimetres, cull.fifteen_to_twenty_five_centimetres, cull.twenty_five_to_forty_centimetres, cull.greater_than_forty_centimetres, site.name AS site_name, cull.error_flag, cull.bottom_time
+    #   FROM cull
+    #   INNER JOIN voyage ON cull.voyage_id = voyage.id
+    #   INNER JOIN vessel ON voyage.vessel_id = vessel.id
+    #   INNER JOIN site ON cull.site_id = site.id
+    #   INNER JOIN reef ON site.reef_id = reef.id
+    #   "
   } else {
     ### WRITE QUERY FOR RHIS ###
     query <- ""
@@ -638,15 +647,19 @@ separate_new_control_app_data <- function(new_data_df, legacy_data_df){
     temp_legacy_df <- legacy_data_df
   } 
   
+  print("here 1")
+  print(head(temp_new_df))
+  print(head(temp_legacy_df))
   # find close matching rows (distance of three) based on all columns except ID. ID is not 
   # because it will always be null if the data is exported from powerBI. 
   distance <- 3
  
   close_match_rows <- matrix_close_matches_vectorised(temp_legacy_df, temp_new_df, distance)
-  
+  print("here 2")
   # There can be many to many perfect matches. This means that there will be 
   # multiple indices referring to the same row for perfect duplicates. 
   # unique() should be utilised when subsetting the input dataframes.
+  print(close_match_rows)
   if(nrow(close_match_rows) > 0){
     separated_close_matches <- vectorised_separate_close_matches(close_match_rows)
     print(head(separated_close_matches))

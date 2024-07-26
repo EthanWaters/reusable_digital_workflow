@@ -25,7 +25,7 @@
     "transformations": [
       {
         "target_field": "vessel_name",
-        "source_field": "Vessel",
+        "source_field": "VesselName",
         "position": 2,
         "verify_na_exempt": false
       },
