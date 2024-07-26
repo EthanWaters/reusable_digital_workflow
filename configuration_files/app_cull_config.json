@@ -24,79 +24,73 @@
   "mappings": {
     "transformations": [
       {
-        "target_field": "Capture ID",
-        "source_field": "CrownOfThornsStarfishCullDiveId",
-        "position": 1,
-        "verify_na_exempt": false
-      },
-      {
-        "target_field": "Vessel",
+        "target_field": "vessel_name",
         "source_field": "Vessel",
         "position": 2,
         "verify_na_exempt": false
       },
       {
-        "target_field": "Voyage",
+        "target_field": "vessel_voyage_number",
         "source_field": "CrownOfThornsStarfishVoyageId",
         "position": 3,
         "verify_na_exempt": false
       },
       {
-        "target_field": "Site Name",
+        "target_field": "site_name",
         "source_field": "CullSiteName",
         "position": 4,
         "verify_na_exempt": false
       },
       {
-        "target_field": "Reef Name",
+        "target_field": "reef_name",
         "source_field": "ReefName",
         "position": 5,
         "verify_na_exempt": false
       },
       {
-        "target_field": "Reef ID",
+        "target_field": "reef_label",
         "source_field": "ReefId",
         "position": 6,
         "verify_na_exempt": false
       },
       {
-        "target_field": "Survey Date",
+        "target_field": "date",
         "source_field": "SurveyDate",
         "position": 7,
         "verify_na_exempt": false
       },
       {
-        "target_field": "Depth (meters)",
+        "target_field": "average_depth",
         "source_field": "Depth",
         "position": 8,
         "verify_na_exempt": false
       },
       {
-        "target_field": "Bottomtime",
+        "target_field": "bottom_time",
         "source_field": "Bottomtime",
         "position": 9,
         "verify_na_exempt": false
       },
       {
-        "target_field": "Cohort 1 (<15cm)",
+        "target_field": "less_than_fifteen_centimetres",
         "source_field": "Cohort1",
         "position": 10,
         "verify_na_exempt": false
       },
       {
-        "target_field": "Cohort 2 (15-25cm)",
+        "target_field": "fifteen_to_twenty_five_centimetres",
         "source_field": "Cohort2",
         "position": 11,
         "verify_na_exempt": false
       },
       {
-        "target_field": "Cohort 3 (25-40cm)",
+        "target_field": "twenty_five_to_forty_centimetres",
         "source_field": "Cohort3",
         "position": 12,
         "verify_na_exempt": false
       },
       {
-        "target_field": "Cohort 4 (>40cm)",
+        "target_field": "greater_than_forty_centimetres",
         "source_field": "Cohort4",
         "position": 13,
         "verify_na_exempt": false
@@ -113,71 +107,67 @@
     ],
     "data_type_mappings": [
       {
-        "field": "Capture ID",
-        "data_type": "integer"
-      },
-      {
-        "field": "Site Name",
+        "field": "site_name",
         "data_type": "character"
       },
       {
-        "field": "Reef Name",
+        "field": "reef_name",
         "data_type": "character"
       },
       {
-        "field": "Voyage Start",
+        "field": "start_date",
         "data_type": "date"
       },
       {
-        "field": "Voyage",
+        "field": "vessel_voyage_number",
         "data_type": "character"
       },
       {
-        "field": "Vessel",
+        "field": "vessel",
         "data_type": "character"
       },
       {
-        "field": "Voyage End",
+        "field": "stop_date",
         "data_type": "date"
       },
       {
-        "field": "Survey Date",
+        "field": "date",
         "data_type": "datetime"
       },
       {
-        "field": "Depth (meters)",
+        "field": "average_depth",
         "data_type": "numeric"
       },
       {
-        "field": "Bottomtime",
+        "field": "bottom_time",
         "data_type": "integer"
       },
       {
-        "field": "Cohort 1 (<15cm)",
+        "field": "less_than_fifteen_centimetres",
         "data_type": "integer"
       },
       {
-        "field": "Cohort2 (15-25cm)",
+        "field": "fifteen_to_twenty_five_centimetres",
         "data_type": "integer"
       },
       {
-        "field": "Cohort3 (25-40cm)",
+        "field": "twenty_five_to_forty_centimetres",
         "data_type": "integer"
       },
       {
-        "field": "Cohort4 (>40cm)",
+        "field": "greater_than_forty_centimetres",
         "data_type": "integer"
       },
       {
-        "field": "Longitude",
+        "field": "longitude",
         "data_type": "numeric"
       },
       {
-        "field": "Latitude",
+        "field": "latitude",
         "data_type": "numeric"
       },
       {
-        "field": "Reef ID",
+        "field": "reef_label",
         "data_type": "character"
       },
       {

@@ -101,11 +101,12 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     verified_data_df <- flag_duplicates(verified_data_df)
     base::message("Completed verification of entries ...")
     
+    print(head(verified_data_df))
+    print(head(legacy_df))
     ### AGGREGATION 
     verified_new_df <- separate_new_control_app_data(verified_data_df, legacy_df)
     verified_new_df$start_date <- voyage_dates$start_date
     verified_new_df$stop_date <- voyage_dates$stop_date
-    base::message("Aggregating...")
 
     base::message("Completed aggregating...")
     base::message("Saving to database...")
