@@ -81,11 +81,19 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
   
     base::message("Assign missing site and reef info...")
     # assign site and reef information if they are missing
+    if(control_data_type == "manta_tow"){
+      tryCatch({
+        transformed_data_df <- assign_missing_site_and_reef(transformed_data_df, serialised_spatial_path, control_data_type)
+      }, error = function(e) {
+        print(paste("Error assigning sites:", conditionMessage(e)))
+      })
+    }
+
+    
     tryCatch({
-      transformed_data_df <- assign_missing_site_and_reef(transformed_data_df, serialised_spatial_path, control_data_type)
       transformed_data_df$`reef_label` <- get_reef_label(transformed_data_df$reef_name)
     }, error = function(e) {
-      print(paste("Error assigning sites:", conditionMessage(e)))
+      print(paste("Error assigning reef label:", conditionMessage(e)))
     })
     
     base::message("Completed assigning missing site and reef info...")
@@ -101,8 +109,6 @@ main <- function(script_dir, configuration_path, serialised_spatial_path, connec
     verified_data_df <- flag_duplicates(verified_data_df)
     base::message("Completed verification of entries ...")
     
-    print(head(verified_data_df))
-    print(head(legacy_df))
     ### AGGREGATION 
     verified_new_df <- separate_new_control_app_data(verified_data_df, legacy_df)
     verified_new_df$start_date <- voyage_dates$start_date

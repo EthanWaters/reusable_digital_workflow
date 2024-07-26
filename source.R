@@ -288,7 +288,7 @@ assign_missing_site_and_reef <- function(transformed_data_df, serialised_spatial
   # Determines if the dataframe derived from app export is missing information 
   # about the site or reef. Creates a geometry collection with available coordinates
   # and extracts the the missing information from the RDS file. 
-  
+  print(transformed_data_df)
   crs_ <- st_crs("+proj=longlat +datum=WGS84 +no_defs") 
   if(control_data_type == "manta_tow"){
     data_sf <- get_centroids(transformed_data_df, crs_)
@@ -647,19 +647,15 @@ separate_new_control_app_data <- function(new_data_df, legacy_data_df){
     temp_legacy_df <- legacy_data_df
   } 
   
-  print("here 1")
-  print(head(temp_new_df))
-  print(head(temp_legacy_df))
   # find close matching rows (distance of three) based on all columns except ID. ID is not 
   # because it will always be null if the data is exported from powerBI. 
   distance <- 3
  
   close_match_rows <- matrix_close_matches_vectorised(temp_legacy_df, temp_new_df, distance)
-  print("here 2")
   # There can be many to many perfect matches. This means that there will be 
   # multiple indices referring to the same row for perfect duplicates. 
   # unique() should be utilised when subsetting the input dataframes.
-  print(close_match_rows)
+  
   if(nrow(close_match_rows) > 0){
     separated_close_matches <- vectorised_separate_close_matches(close_match_rows)
     print(head(separated_close_matches))
@@ -1703,103 +1699,106 @@ verify_reef <- function(data_df){
 
 verify_voyage_dates <- function(data_df){
   tryCatch({
-    # Check that voyage dates of observation are within in voyage dates and that 
-    # none of the dates are NA. If Voyage dates are NA set start and end to min 
-    # and max observation date. Check that voyage dates associated with a vessels 
-    # voyage are unique (There should only be on departure and return date)
-    voyage_start <- data_df[["Voyage Start"]]
-    voyage_end <- data_df[["Voyage End"]]
     
-    incomplete_dates <- unique(c(which(is.na(voyage_end)), which(is.na(voyage_start))))
-    if (length(incomplete_dates) > 0){
-      incomplete_date_rows <- data_df[incomplete_dates,]
-      vessel_voyage <- unique(incomplete_date_rows[,which(names(incomplete_date_rows) %in% c("Vessel", "Voyage"))])
-      for(i in 1:nrow(vessel_voyage)){
-        data_df_filtered <- data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),]
-        is_any_voyage_date_correct <- any(!is.na(data_df_filtered$`Voyage Start`) & !is.na(data_df_filtered$`Voyage End`))
-        is_any_survey_date_correct <- any(!is.na(data_df_filtered$`Survey Date`))
-        if(is_any_voyage_date_correct){
-          correct_dates <- data_df_filtered[!is.na(data_df_filtered),][1,c("Voyage Start", "Voyage End")]
-          data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage Start`)), "Voyage Start"] <- correct_dates[1]
-          data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage End`)), "Voyage End"] <- correct_dates[2]
-        } else if(!is_any_voyage_date_correct & is_any_survey_date_correct){
-          incomplete_date_rows_filtered <- incomplete_date_rows[(incomplete_date_rows$Vessel == vessel_voyage[i,1]) & (incomplete_date_rows$Voyage == vessel_voyage[i,2]),]
-          estimate_start <- min(incomplete_date_rows_filtered$`Survey Date`)
-          estimate_end <- min(incomplete_date_rows_filtered$`Survey Date`)
-          data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage Start`)), c("Voyage Start")] <-  estimate_start
-          data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage End`)), c("Voyage End")] <-  estimate_end
-        } else if(!is_any_voyage_date_correct & !is_any_survey_date_correct) {
-          data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage Start`) | is.na(data_df$`Voyage End`)), "error_flag"] <- 1
+    if(any(c("Voyage Start", "Voyage End") %in% colnames(data_df))){
+      # Check that voyage dates of observation are within in voyage dates and that 
+      # none of the dates are NA. If Voyage dates are NA set start and end to min 
+      # and max observation date. Check that voyage dates associated with a vessels 
+      # voyage are unique (There should only be on departure and return date)
+      voyage_start <- data_df[["Voyage Start"]]
+      voyage_end <- data_df[["Voyage End"]]
+      
+      incomplete_dates <- unique(c(which(is.na(voyage_end)), which(is.na(voyage_start))))
+      if (length(incomplete_dates) > 0){
+        incomplete_date_rows <- data_df[incomplete_dates,]
+        vessel_voyage <- unique(incomplete_date_rows[,which(names(incomplete_date_rows) %in% c("Vessel", "Voyage"))])
+        for(i in 1:nrow(vessel_voyage)){
+          data_df_filtered <- data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),]
+          is_any_voyage_date_correct <- any(!is.na(data_df_filtered$`Voyage Start`) & !is.na(data_df_filtered$`Voyage End`))
+          is_any_survey_date_correct <- any(!is.na(data_df_filtered$`Survey Date`))
+          if(is_any_voyage_date_correct){
+            correct_dates <- data_df_filtered[!is.na(data_df_filtered),][1,c("Voyage Start", "Voyage End")]
+            data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage Start`)), "Voyage Start"] <- correct_dates[1]
+            data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage End`)), "Voyage End"] <- correct_dates[2]
+          } else if(!is_any_voyage_date_correct & is_any_survey_date_correct){
+            incomplete_date_rows_filtered <- incomplete_date_rows[(incomplete_date_rows$Vessel == vessel_voyage[i,1]) & (incomplete_date_rows$Voyage == vessel_voyage[i,2]),]
+            estimate_start <- min(incomplete_date_rows_filtered$`Survey Date`)
+            estimate_end <- min(incomplete_date_rows_filtered$`Survey Date`)
+            data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage Start`)), c("Voyage Start")] <-  estimate_start
+            data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage End`)), c("Voyage End")] <-  estimate_end
+          } else if(!is_any_voyage_date_correct & !is_any_survey_date_correct) {
+            data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]) & (is.na(data_df$`Voyage Start`) | is.na(data_df$`Voyage End`)), "error_flag"] <- 1
+          }
+        }
+        
+      }
+      
+      
+      post_voyage_start <- data_df[["Voyage Start"]]
+      post_voyage_end <- data_df[["Voyage End"]]
+      na_present <- ((is.na(post_voyage_start) | is.null(post_voyage_start)) | (is.na(post_voyage_end) | is.null(post_voyage_end))) & ((is.na(voyage_start) | is.null(voyage_start)) | (is.na(voyage_end) | is.null(voyage_end)))
+      dated_estimated <- !((is.na(post_voyage_start) | is.null(post_voyage_start)) | (is.na(post_voyage_end) | is.null(post_voyage_end))) & ((is.na(voyage_start) | is.null(voyage_start)) | (is.na(voyage_end) | is.null(voyage_end)))
+      
+      if (any(dated_estimated | na_present)) {
+        grandparent <- as.character(sys.call(sys.parent()))[1]
+        parent <- as.character(match.call())[1]
+        if (any(dated_estimated) & !any(na_present)) {
+          warning1 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have their voyage dates estimated from their vessel",
+                            toString(data_df[dated_estimated , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[dated_estimated]))
+          base::message(warning1)
+        }
+        if (any(na_present)) {
+          warning2 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have voyage dates",
+                            toString(data_df[na_present , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[na_present]))
+          base::message(warning2)
+        }  
+        
+        if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
+          # Append the warning to an existing matrix 
+          warnings <- data.frame(
+            ID = data_df[dated_estimated, 1],
+            index = which(dated_estimated),
+            message = "Invalid Voyage Date. Date was successfully estimated."
+          )
+          contribute_to_metadata_report("Estimated Voyage Date", warnings, parent_key = "Warning")
+          warnings <- data.frame(
+            ID = data_df[na_present, 1],
+            index = which(na_present),
+            message = "Invalid Voyage Date. "
+          )
+          contribute_to_metadata_report("Invalid Voyage Date", warnings, parent_key = "Warning")
+        }
+        
+      }
+      
+      survey_date_error <- (data_df$`Survey Date` < data_df$`Voyage Start` | data_df$`Survey Date` > data_df$`Voyage End`)
+      data_df$error_flag <- data_df$error_flag | survey_date_error
+      
+      if(any(survey_date_error)){
+        if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
+          # Append the warning to an existing matrix 
+          warnings <- data.frame(
+            ID = data_df[survey_date_error, 1],
+            index = which(survey_date_error),
+            message = "Survey date outside voyage date range"
+          )
+          contribute_to_metadata_report("Survey Date", warnings, parent_key = "Warning")
         }
       }
       
-    }
-    
-    
-    post_voyage_start <- data_df[["Voyage Start"]]
-    post_voyage_end <- data_df[["Voyage End"]]
-    na_present <- ((is.na(post_voyage_start) | is.null(post_voyage_start)) | (is.na(post_voyage_end) | is.null(post_voyage_end))) & ((is.na(voyage_start) | is.null(voyage_start)) | (is.na(voyage_end) | is.null(voyage_end)))
-    dated_estimated <- !((is.na(post_voyage_start) | is.null(post_voyage_start)) | (is.na(post_voyage_end) | is.null(post_voyage_end))) & ((is.na(voyage_start) | is.null(voyage_start)) | (is.na(voyage_end) | is.null(voyage_end)))
-    
-    if (any(dated_estimated | na_present)) {
-      grandparent <- as.character(sys.call(sys.parent()))[1]
-      parent <- as.character(match.call())[1]
-      if (any(dated_estimated) & !any(na_present)) {
-        warning1 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have their voyage dates estimated from their vessel",
-                          toString(data_df[dated_estimated , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[dated_estimated]))
-        base::message(warning1)
-      }
-      if (any(na_present)) {
-        warning2 <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have voyage dates",
-                          toString(data_df[na_present , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[na_present]))
-        base::message(warning2)
-      }  
-      
-      if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
-        # Append the warning to an existing matrix 
-        warnings <- data.frame(
-          ID = data_df[dated_estimated, 1],
-          index = which(dated_estimated),
-          message = "Invalid Voyage Date. Date was successfully estimated."
-        )
-        contribute_to_metadata_report("Estimated Voyage Date", warnings, parent_key = "Warning")
-        warnings <- data.frame(
-          ID = data_df[na_present, 1],
-          index = which(na_present),
-          message = "Invalid Voyage Date. "
-        )
-        contribute_to_metadata_report("Invalid Voyage Date", warnings, parent_key = "Warning")
-      }
-      
-    }
-    
-    survey_date_error <- (data_df$`Survey Date` < data_df$`Voyage Start` | data_df$`Survey Date` > data_df$`Voyage End`)
-    data_df$error_flag <- data_df$error_flag | survey_date_error
-    
-    if(any(survey_date_error)){
-      if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
-        # Append the warning to an existing matrix 
-        warnings <- data.frame(
-          ID = data_df[survey_date_error, 1],
-          index = which(survey_date_error),
-          message = "Survey date outside voyage date range"
-        )
-        contribute_to_metadata_report("Survey Date", warnings, parent_key = "Warning")
-      }
-    }
-    
-    vessel_voyage <- unique(data_df[,which(names(data_df) %in% c("Vessel", "Voyage"))])
-    for (i in 1:nrow(vessel_voyage)){
-      filtered_data_df <- data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),]
-      start_dates <- unique(filtered_data_df$`Voyage Start`) 
-      end_dates <- unique(filtered_data_df$`Voyage End`)
-      if(length(start_dates) > 1){
-        mf_start <- names(sort(table(start_dates), decreasing = TRUE)[1])
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), "Voyage Start"] <- mf_start
-      }
-      if(length(end_dates) > 1){
-        mf_end <- names(sort(table(end_dates), decreasing = TRUE)[1])
-        data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), "Voyage End"] <- mf_end
+      vessel_voyage <- unique(data_df[,which(names(data_df) %in% c("Vessel", "Voyage"))])
+      for (i in 1:nrow(vessel_voyage)){
+        filtered_data_df <- data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]),]
+        start_dates <- unique(filtered_data_df$`Voyage Start`) 
+        end_dates <- unique(filtered_data_df$`Voyage End`)
+        if(length(start_dates) > 1){
+          mf_start <- names(sort(table(start_dates), decreasing = TRUE)[1])
+          data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), "Voyage Start"] <- mf_start
+        }
+        if(length(end_dates) > 1){
+          mf_end <- names(sort(table(end_dates), decreasing = TRUE)[1])
+          data_df[(data_df$Vessel == vessel_voyage[i,1]) & (data_df$Voyage == vessel_voyage[i,2]), "Voyage End"] <- mf_end
+        }
       }
     }
   }, error = function(e){
