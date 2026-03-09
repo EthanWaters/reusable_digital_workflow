@@ -463,9 +463,9 @@ aggregate_manta_tows_site_resolution_research <- function(data_df) {
       `Reef ID` = `Reef ID`,
       coords = list(get_start_and_end_coords_research(`Start Lat`, `Start Lng`, `End Lat`, `End Lng`)),
       `Distance (metres)` = sum(`Distance (metres)`),
-      `Average Speed (km/h)` = mean(`Average Speed (km/h)`),
       `COTS Observed` = sum(`COTS Observed`),
       `Feeding Scars` =  get_worst_case_feeding_scar(`Feeding Scars`),
+      `Feeding Scars` =  sum(`Feeding Scars`),
       `Hard Coral` = get_median_coral_cover(`Hard Coral`),
       `Soft Coral` = get_median_coral_cover(`Soft Coral`),
       `Recently Dead Coral` = get_median_coral_cover(`Recently Dead Coral`),
@@ -1193,14 +1193,12 @@ verify_scar <- function(data_df) {
     valid_scar <- c("a", "p", "c")
     
     col_names <- colnames(data_df)
-    col_names <- tolower(col_names)
+    
     search_word <- "scar"
     matching_columns <- col_names[grepl(search_word, col_names)]
     
     for (col in matching_columns) {
-      check_valid_scar <- data_df[[col]] %in% valid_scar
-      is_not_valid <- ifelse(is.na(check_valid_scar), TRUE, check_valid_scar)
-      is_not_valid <- !is_not_valid
+      is_not_valid <- !(data_df[[col]] %in% valid_scar)
       data_df[["error_flag"]] <- as.integer(data_df[["error_flag"]] | is_not_valid)
       
       if (any(is_not_valid )) {
@@ -1500,9 +1498,7 @@ verify_na_null <- function(data_df, configuration) {
     if (any(check)) {
       grandparent <- as.character(sys.call(sys.parent()))[1]
       parent <- as.character(match.call())[1]
-      warning <- paste("Warning in", parent , "within", grandparent, "- The rows with the following IDs have missing data:",
-                       toString(data_df[check , 1]), "Their respective row indexes are:", toString((1:nrow(data_df))[check]))
-      base::message(warning)
+  
       
       if (exists("contribute_to_metadata_report") && is.function(contribute_to_metadata_report)) {
         # Append the warning to an existing matrix 
@@ -1597,9 +1593,7 @@ verify_coral_cover <- function(data_df) {
     )
     
     col_names <- colnames(data_df)
-    
-    # Convert column names to lowercase
-    col_names <- tolower(col_names)
+
     
     # Iterate through the column names containing "coral"
     for (col in col_names) {

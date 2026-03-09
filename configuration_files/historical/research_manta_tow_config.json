@@ -26,104 +26,103 @@
     "transformations": [
       {
         "target_field": "ID",
-        "source_field": "CrownOfThornsStarfishSurveillanceId",
+        "source_field": "COTS Surveillance id",
         "position": 1,
         "verify_na_exempt": true
       },
       {
         "target_field": "Tow date",
-        "source_field": "SurveyTime",
+        "source_field": "Tow time",
         "position": 2,
         "verify_na_exempt": false
       },
       {
         "target_field": "Vessel",
-        "source_field": "VesselName_ID",
+        "source_field": "Vessel",
         "position": 4,
         "verify_na_exempt": false
       },
       {
         "target_field": "Voyage",
-        "source_field": "VoyageTitle",
+        "source_field": "Voyage",
         "position": 5,
         "verify_na_exempt": false
       },
       {
         "target_field": "Reef ID",
-        "source_field": "ReefLabel",
+        "source_field": "Reef label",
         "position": 6,
         "verify_na_exempt": false
       },
       {
         "target_field": "Reef",
-        "source_field": "ReefName",
+        "source_field": "Reef name",
         "position": 7,
         "verify_na_exempt": false
       },
       {
         "target_field": "Start Lat",
-        "source_field": "StartLatitude",
+        "source_field": "Start lat",
         "position": 8,
         "verify_na_exempt": false
       },
       {
         "target_field": "Start Lng",
-        "source_field": "StartLongitude",
+        "source_field": "Start long",
         "position": 9,
         "verify_na_exempt": false
       },
       {
         "target_field": "End Lat",
-        "source_field": "EndLatitude",
+        "source_field": "End lat",
         "position": 10,
         "verify_na_exempt": false
       },
       {
         "target_field": "End Lng",
-        "source_field": "EndLongitude",
+        "source_field": "End long",
         "position": 11,
         "verify_na_exempt": false
       },
       {
         "target_field": "Distance (metres)",
-        "source_field": "TowDistance",
+        "source_field": "Distance (m)",
         "position": 12,
         "verify_na_exempt": false
       },
-
+      {
+        "target_field": "Average Speed (km/h)",
+        "source_field": "Average speed (km/h)",
+        "position": 13,
+        "verify_na_exempt": false
+      },
       {
         "target_field": "COTS Observed",
-        "source_field": "CrownOfThornsStarfishCount",
+        "source_field": "COTS observed",
         "position": 14,
         "verify_na_exempt": false
       },
       {
         "target_field": "Feeding Scars",
-        "source_field": "FeedingScarCountRangeCode",
+        "source_field": "Feeding scars",
         "position": 15,
         "verify_na_exempt": false
       },
       {
-        "target_field": "Feeding Scars Count",
-        "source_field": "ScarsCount",
-        "position": 21,
-        "verify_na_exempt": true
-      },
-      {
         "target_field": "Hard Coral",
-        "source_field": "HardCoralProportionRangeCode",
+        "source_field": "Hard coral",
         "position": 16,
         "verify_na_exempt": false
       },
       {
         "target_field": "Soft Coral",
-        "source_field": "SoftCoralProportionRangeCode",
+        "source_field": "Soft coral",
         "position": 17,
         "verify_na_exempt": false
       },
       {
         "target_field": "Recently Dead Coral",
-        "source_field": "RecentlyDeadCoralProportionRangeCode",
+        "source_field": "Recently dead coral",
         "position": 18,
         "verify_na_exempt": false
       }
@@ -135,12 +134,6 @@
         "default": "separate_date_time({TRANSFORMED_DATAFRAME}$`Tow date`)",
         "function_call": true,
         "verify_na_exempt": false
-      },
-      {
-        "field": "Average Speed (km/h)",
-        "position": 13,
-        "function_call": false,
-        "verify_na_exempt": true
       },
       {
         "field": "Nearest Site",
@@ -216,10 +209,6 @@
       {
         "field": "Feeding Scars",
         "data_type": "character"
-      },
-      {
-        "field": "Feeding Scars Count",
-        "data_type": "numeric"
       },
       {
         "field": "Hard Coral",
