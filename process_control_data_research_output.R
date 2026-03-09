@@ -58,8 +58,8 @@ main <- function(new_path, configuration_path = NULL, kml_path = NULL, leg_path 
     # most recent config file with the keyword is utilsied 
     if (is.null(configuration_path)) {
       configuration_path <- find_recent_file("configuration_files/", paste("research_",keyword, sep=""), "json")
-      configuration <- fromJSON(configuration_path)
     }
+    configuration <- fromJSON(configuration_path)
 
     # If parameters are not provided the workflow checks the expected location for 
     # the most recent file that meets the requirements. 

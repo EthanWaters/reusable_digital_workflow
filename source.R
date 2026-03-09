@@ -368,9 +368,9 @@ aggregate_culls_site_resolution_research <- function(data_df) {
       Bottomtime = sum(Bottomtime),
       `Depth (meters)` = mean(`Depth (meters)`),
       `Cohort 1 (<15cm)` = sum(`Cohort 1 (<15cm)`),
-      `Cohort2 (15-25cm)` = sum(`Cohort2 (15-25cm)`),
-      `Cohort3 (25-40cm)` = sum(`Cohort3 (25-40cm)`),
-      `Cohort4 (>40cm)` = sum(`Cohort4 (>40cm)`),
+      `Cohort 2 (15-25cm)` = sum(`Cohort 2 (15-25cm)`),
+      `Cohort 3 (25-40cm)` = sum(`Cohort 3 (25-40cm)`),
+      `Cohort 4 (>40cm)` = sum(`Cohort 4 (>40cm)`),
       `Nearest Site` = `Nearest Site`,
       error_flag = as.numeric(any(as.logical(error_flag)))
     ) %>%
@@ -465,7 +465,7 @@ aggregate_manta_tows_site_resolution_research <- function(data_df) {
       `Distance (metres)` = sum(`Distance (metres)`),
       `COTS Observed` = sum(`COTS Observed`),
       `Feeding Scars` =  get_worst_case_feeding_scar(`Feeding Scars`),
-      `Feeding Scars` =  sum(`Feeding Scars`),
+      `Feeding Scars Count` =  sum(`Feeding Scars Count`),
       `Hard Coral` = get_median_coral_cover(`Hard Coral`),
       `Soft Coral` = get_median_coral_cover(`Soft Coral`),
       `Recently Dead Coral` = get_median_coral_cover(`Recently Dead Coral`),
@@ -1491,8 +1491,9 @@ verify_na_null <- function(data_df, configuration) {
     nonexempt_cols <- c(nonexempt_new_cols, nonexempt_existing_cols)
     nonexempt_cols <- nonexempt_cols[nonexempt_cols %in% colnames(data_df)]
     nonexempt_df <- data_df[,nonexempt_cols]
-    na_present <- apply(nonexempt_df, 2, function(x) is.na(x) | is.null(x) | x == "")
-    na_present <- ifelse(is.na(na_present), TRUE, na_present)
+    na_present <- apply(nonexempt_df, 2, function(x) {
+      is.na(x) | trimws(as.character(x)) == ""
+    })
     check <- rowSums(na_present) > 0
     data_df[,"error_flag"] <- as.integer(data_df[,"error_flag"] | check)
     if (any(check)) {

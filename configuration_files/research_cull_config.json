@@ -28,7 +28,7 @@
         "target_field": "Capture ID",
         "source_field": "CrownOfThornsStarfishCullDiveId",
         "position": 1,
-        "verify_na_exempt": false
+        "verify_na_exempt": true
       },
       {
         "target_field": "Vessel",
